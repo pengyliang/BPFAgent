@@ -1,0 +1,4 @@
+name: struct_nesting_or_rename
+feature: nested task_struct.thread.fsbase access
+min_kernel: 5.15
+description: Accesses a nested task_struct.thread.fsbase path whose nesting/layout differs across kernels, exposing struct nesting compatibility issues.

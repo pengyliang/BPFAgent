@@ -1,0 +1,4 @@
+name: program_type_unsupported
+feature: fentry program type
+min_kernel: 5.5
+description: Uses an fentry program section, which is unsupported on kernels earlier than 5.5.

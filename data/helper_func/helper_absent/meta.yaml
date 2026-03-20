@@ -1,0 +1,4 @@
+name: helper_absent
+feature: bpf_get_current_task_btf helper availability
+min_kernel: 5.11
+description: Uses bpf_get_current_task_btf, which is unavailable on older kernels and should fail helper resolution there.

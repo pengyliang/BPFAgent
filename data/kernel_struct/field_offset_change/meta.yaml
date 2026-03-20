@@ -1,0 +1,4 @@
+name: field_offset_change
+feature: task_struct fixed-offset field access
+min_kernel: 6.6
+description: Reads task_struct.tgid via a hard-coded Linux 6.6 offset; older kernels with different struct layout may produce incorrect values.

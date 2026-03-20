@@ -1,0 +1,18 @@
+{
+  "kernel_version": {
+    "raw": "5.4.0-test",
+    "major": 5,
+    "minor": 4,
+    "patch": 0,
+    "distro_suffix": "-test"
+  },
+  "btf": {
+    "available": false
+  },
+  "helper_whitelist": [
+    "bpf_map_lookup_elem"
+  ],
+  "map_type_support": [
+    "BPF_MAP_TYPE_HASH"
+  ]
+}

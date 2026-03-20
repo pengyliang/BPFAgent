@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="142">
+
+  <defs>
+    <style>
+      .title { font: 700 18px/1.2 sans-serif; fill:#111; }
+      .th    { font: 700 12px/1.2 sans-serif; fill:#111; }
+      .td    { font: 12px/1.2 sans-serif; fill:#222; }
+      .grid  { stroke:#e6e6e6; stroke-width:1; vector-effect: non-scaling-stroke; }
+    </style>
+  </defs>
+        
+<text x="24" y="26" class="title">Top error signatures</text>
+<text x="24" y="58" class="th">signature</text>
+<text x="820" y="58" class="th">count</text>
+<line x1="20" y1="66" x2="960" y2="66" class="grid" />
+<text x="24" y="86" class="td">load_failed</text>
+<text x="820" y="86" class="td">2</text>
+<line x1="20" y1="98" x2="960" y2="98" class="grid" />
+<text x="24" y="114" class="td">runtime_test_failed</text>
+<text x="820" y="114" class="td">1</text>
+<line x1="20" y1="126" x2="960" y2="126" class="grid" />
+<text x="24" y="142" class="td">compile_failed:/host/data/verifier/dynptr_memory_model/dynptr_memory_model.bpf.c:34:23: error: variable has incomplet...</text>
+<text x="820" y="142" class="td">1</text>
+<line x1="20" y1="154" x2="960" y2="154" class="grid" />
+</svg>

@@ -1,0 +1,276 @@
+{
+  "metrics_1_40": [
+    {
+      "id": 1,
+      "name": "per_case_agent_calls_during_repair",
+      "value": {}
+    },
+    {
+      "id": 2,
+      "name": "total_agent_calls_during_repair",
+      "value": 0
+    },
+    {
+      "id": 3,
+      "name": "initial_failure_count",
+      "value": 0
+    },
+    {
+      "id": 4,
+      "name": "total_repair_attempt_count",
+      "value": 0
+    },
+    {
+      "id": 5,
+      "name": "total_repair_success_case_count",
+      "value": 0
+    },
+    {
+      "id": 6,
+      "name": "total_repair_success_rate",
+      "value": null
+    },
+    {
+      "id": 7,
+      "name": "total_fixed_time_sum",
+      "value": 0
+    },
+    {
+      "id": 8,
+      "name": "total_token_consumption_sum",
+      "value": null
+    },
+    {
+      "id": 9,
+      "name": "category_has_repair_needed",
+      "value": {}
+    },
+    {
+      "id": 10,
+      "name": "category_repair_needed_case_count",
+      "value": {}
+    },
+    {
+      "id": 11,
+      "name": "category_repair_success_case_count",
+      "value": {}
+    },
+    {
+      "id": 12,
+      "name": "category_repair_success_rate",
+      "value": {}
+    },
+    {
+      "id": 13,
+      "name": "category_total_fixed_time_sum",
+      "value": {}
+    },
+    {
+      "id": 14,
+      "name": "category_total_token_consumption_sum",
+      "value": {}
+    },
+    {
+      "id": 15,
+      "name": "initial_failed_stage_distribution_count",
+      "value": {}
+    },
+    {
+      "id": 16,
+      "name": "initial_failed_stage_distribution_ratio",
+      "value": {}
+    },
+    {
+      "id": 17,
+      "name": "final_repair_result_counts",
+      "value": {
+        "success_count": 18,
+        "failure_count": 0
+      }
+    },
+    {
+      "id": 18,
+      "name": "final_failed_stage_distribution_count_need_repair_initially",
+      "value": {}
+    },
+    {
+      "id": 19,
+      "name": "final_failed_stage_distribution_ratio_need_repair_initially",
+      "value": {}
+    },
+    {
+      "id": 20,
+      "name": "per_stage_repair_success_rate",
+      "value": {}
+    },
+    {
+      "id": 21,
+      "name": "per_stage_repair_success_cases_count",
+      "value": {}
+    },
+    {
+      "id": 22,
+      "name": "per_stage_repair_total_cases_count",
+      "value": {}
+    },
+    {
+      "id": 23,
+      "name": "final_failure_stage_distribution_all",
+      "value": {}
+    },
+    {
+      "id": 24,
+      "name": "final_failure_stage_distribution_all_ratio",
+      "value": {}
+    },
+    {
+      "id": 25,
+      "name": "repair_round_histogram",
+      "value": {}
+    },
+    {
+      "id": 26,
+      "name": "repair_round_average",
+      "value": null
+    },
+    {
+      "id": 27,
+      "name": "repair_round_max",
+      "value": null
+    },
+    {
+      "id": 28,
+      "name": "repair_rounds_per_case",
+      "value": {}
+    },
+    {
+      "id": 29,
+      "name": "analyzer_last_can_fix_distribution",
+      "value": {
+        "can_fix_true": 0,
+        "can_fix_false": 0,
+        "can_fix_none": 18
+      }
+    },
+    {
+      "id": 30,
+      "name": "can_fix_true_final_success_case_count",
+      "value": 0
+    },
+    {
+      "id": 31,
+      "name": "can_fix_true_final_failed_case_count",
+      "value": 0
+    },
+    {
+      "id": 32,
+      "name": "can_fix_false_final_success_case_count",
+      "value": 0
+    },
+    {
+      "id": 33,
+      "name": "can_fix_false_final_failed_case_count",
+      "value": 0
+    },
+    {
+      "id": 34,
+      "name": "analyze_can_fix_mismatch_rate",
+      "value": null
+    },
+    {
+      "id": 35,
+      "name": "error_signature_counts_top10",
+      "value": []
+    },
+    {
+      "id": 36,
+      "name": "cases_hit_same_error_threshold_count",
+      "value": 0
+    },
+    {
+      "id": 37,
+      "name": "cases_hit_same_error_threshold_details",
+      "value": []
+    },
+    {
+      "id": 38,
+      "name": "error_signature_counts_aggregate_total_unique_signatures",
+      "value": 0
+    },
+    {
+      "id": 39,
+      "name": "per_case_last_analyzer_can_fix",
+      "value": {
+        "feature/attach_type_unsupported": null,
+        "feature/btf_unsupported": null,
+        "feature/isa_upgrade_incompatible": null,
+        "feature/map_type_unsupported": null,
+        "feature/program_type_unsupported": null,
+        "helper_func/helper_absent": null,
+        "helper_func/helper_arg_decrease": null,
+        "helper_func/helper_arg_increase": null,
+        "helper_func/helper_renamed": null,
+        "kernel_struct/field_add_remove": null,
+        "kernel_struct/field_offset_change": null,
+        "kernel_struct/field_type_change": null,
+        "kernel_struct/struct_nesting_or_rename": null,
+        "verifier/bpf_to_bpf_fault": null,
+        "verifier/dynptr_memory_model": null,
+        "verifier/kfunc_support": null,
+        "verifier/loop_support": null,
+        "verifier/ptr_to_btf_id": null
+      }
+    },
+    {
+      "id": 40,
+      "name": "per_case_final_status",
+      "value": {
+        "feature/attach_type_unsupported": "success",
+        "feature/btf_unsupported": "success",
+        "feature/isa_upgrade_incompatible": "success",
+        "feature/map_type_unsupported": "success",
+        "feature/program_type_unsupported": "success",
+        "helper_func/helper_absent": "success",
+        "helper_func/helper_arg_decrease": "success",
+        "helper_func/helper_arg_increase": "success",
+        "helper_func/helper_renamed": "success",
+        "kernel_struct/field_add_remove": "success",
+        "kernel_struct/field_offset_change": "success",
+        "kernel_struct/field_type_change": "success",
+        "kernel_struct/struct_nesting_or_rename": "success",
+        "verifier/bpf_to_bpf_fault": "success",
+        "verifier/dynptr_memory_model": "success",
+        "verifier/kfunc_support": "success",
+        "verifier/loop_support": "success",
+        "verifier/ptr_to_btf_id": "success"
+      }
+    }
+  ],
+  "generated_at": "2026-03-20T07:59:48.366952+00:00",
+  "cases": [
+    "feature/attach_type_unsupported",
+    "feature/btf_unsupported",
+    "feature/isa_upgrade_incompatible",
+    "feature/map_type_unsupported",
+    "feature/program_type_unsupported",
+    "helper_func/helper_absent",
+    "helper_func/helper_arg_decrease",
+    "helper_func/helper_arg_increase",
+    "helper_func/helper_renamed",
+    "kernel_struct/field_add_remove",
+    "kernel_struct/field_offset_change",
+    "kernel_struct/field_type_change",
+    "kernel_struct/struct_nesting_or_rename",
+    "verifier/bpf_to_bpf_fault",
+    "verifier/dynptr_memory_model",
+    "verifier/kfunc_support",
+    "verifier/loop_support",
+    "verifier/ptr_to_btf_id"
+  ],
+  "total_files": 18,
+  "deploy_success_count": 18,
+  "deploy_failure_count": 0,
+  "deploy_success_rate": 100.0,
+  "deploy_failed_files": [],
+  "deploy_failed_stages": []
+}

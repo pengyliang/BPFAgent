@@ -1,0 +1,4 @@
+name: bpf_to_bpf_fault
+feature: verifier_state_explosion_global_subprog
+min_kernel: 5.6
+description: Stresses verifier with many call sites into a non-static global subprogram and multiple branches on unknown scalars. Older kernels (e.g. 5.4) are more likely to fail load due to complexity/state limits; 5.15+ is expected to handle it.

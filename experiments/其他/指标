@@ -1,0 +1,40 @@
+
+1. 总修复指标
+- 每个需要修复的case在修复过程中调用的agent次数
+- 总agent调用次数
+- 初始失败数量:可能需要解析deploy_1的结果. 
+- 总尝试修复数
+- 总修复成功数
+- 总修复率(修复成功数量/初始失败数量)
+- 总消耗时间: 修改代码实现
+- 总token消耗数: 修改代码实现
+
+按类别分的指标: 类别是否有需要修复的case, 类别case修复数量, 类别case修复成功数, 类别case修复成功率, 类别case消耗总时间, 类别casetoken消耗数.
+
+2. 按阶段分的指标(单独实现一个函数来统计): 
+- 初始失败阶段占比分布: 可从case的deploy_1/deploy_summary.json中提取统计
+- 最终修复结果: 可从workflow中最后一次deploy结果提取
+- 最终修复完仍然失败的最终失败阶段占比分布: 根据上面两个指标得出 
+- 每个阶段修复成功率. 根据workflow_summary.json进行推断. 
+
+建议先解析workflow_summary.json中阶段变化得到stage_changes, 再根据stage_changes计算指标.
+stage_changes 格式为:
+[
+    {
+        "case": "case_name",
+        "deploy_1_status": "static_check_failed",
+        "deploy_2_status": "static_check_success",
+        "deploy_3_status": "success"
+    },
+    {
+        "case": "case_name",
+        "deploy_1_status": "static_check_failed",
+        "deploy_2_status": "static_check_success",
+        "deploy_3_status": "compile_failed",
+        "deploy_4_status": "runtime_test_failed"
+    }
+]
+
+3. agent指标(单独实现一个函数来统计, 可从每个case的workflow_summary.json中提取)
+- Repair修复轮数(repair调用次数, 可参考repair/repair_n中的n)
+- Anaylze:can_fix 与结局一致性(Analyze说能修却最终稿修复失败), error_signature_counts(卡在同一错误类别最后被迫退出情况).

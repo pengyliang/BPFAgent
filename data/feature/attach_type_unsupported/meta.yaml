@@ -1,0 +1,4 @@
+name: attach_type_unsupported
+feature: kprobe attach target do_sys_openat2
+min_kernel: 5.6
+description: Attaches kprobe to do_sys_openat2, an attach target unavailable on older kernels.

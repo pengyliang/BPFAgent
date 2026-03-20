@@ -1,0 +1,4 @@
+name: loop_support
+feature: bounded_loop_in_verifier
+min_kernel: 5.3
+description: Uses a bounded for-loop in eBPF program, rejected by older kernels without loop support.

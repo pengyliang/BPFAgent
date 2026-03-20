@@ -1,0 +1,2 @@
+PyYAML==6.0.3
+langgraph==1.1.2

@@ -1,0 +1,4 @@
+name: map_type_unsupported
+feature: BPF_MAP_TYPE_RINGBUF
+min_kernel: 5.8
+description: Declares and uses a ring buffer map, which is unsupported on kernels earlier than 5.8.

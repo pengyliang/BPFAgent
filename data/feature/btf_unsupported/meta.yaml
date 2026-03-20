@@ -1,0 +1,4 @@
+name: btf_unsupported
+feature: CO-RE with BTF requirement
+min_kernel: 5.11
+description: Uses bpf_get_current_task_btf and BPF_CORE_READ, requiring kernel BTF (CONFIG_DEBUG_INFO_BTF) on target systems.

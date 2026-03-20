@@ -1,0 +1,21 @@
+{
+  "source_file": "tests/data/test_ebpf.bpf.c",
+  "bpf_helper_calls": [
+    {
+      "helper": "bpf_map_lookup_elem",
+      "line": null,
+      "column": 13
+    }
+  ],
+  "struct_field_access_paths": [],
+  "map_operation_sequence": [
+    {
+      "step": 1,
+      "operation": "lookup",
+      "helper": "bpf_map_lookup_elem",
+      "map_symbol": "counter",
+      "line": null,
+      "column": 13
+    }
+  ]
+}

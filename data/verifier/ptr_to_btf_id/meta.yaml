@@ -1,0 +1,4 @@
+name: ptr_to_btf_id
+feature: PTR_TO_BTF_ID
+min_kernel: 5.11
+description: Uses bpf_get_current_task_btf and BTF-based field access requiring PTR_TO_BTF_ID support.

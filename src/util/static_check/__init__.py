@@ -1,0 +1,2 @@
+"""Static compatibility checks."""
+

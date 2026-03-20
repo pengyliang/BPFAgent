@@ -1,0 +1,4 @@
+name: helper_arg_increase
+feature: bpf_snprintf extended-argument form
+min_kernel: 5.13
+description: Uses bpf_snprintf with extended argument list, representing helper ABI parameter increase and incompatibility on older kernels.

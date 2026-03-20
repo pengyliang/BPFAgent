@@ -1,0 +1,14 @@
+static_check_failed:
+  attach_target_not_found: can_fix=false+直接报告部署内核上缺少该 attach target，需要更换目标符号、部署环境或人工重设计挂载方式。
+  core_requires_btf: can_fix=true+移除 CO-RE/BPF_CORE_READ 依赖，改成非 CO-RE 读取方式。
+  map_feature_incompatible: can_fix=true+将当前内核不支持的 map 或 helper 替换为兼容实现，并同步调整相关读写逻辑。
+compile_failed:
+  missing_header_dependency: can_fix=true+补充缺失头文件，为未声明的宏、结构体或函数提供定义。
+  missing_linux_types_header: can_fix=true+在 BPF 头文件前补充 `#include <linux/types.h>`，提供
+    `__u32/__u64` 等基础类型定义。
+  missing_bpf_map_type_definition: can_fix=true+在 BPF 头文件前补充 `#include <linux/bpf.h>`，提供
+    `BPF_MAP_TYPE_*` 等常量定义。
+runtime_test_failed:
+  runtime_validation_mismatch: can_fix=true+校正运行时语义或硬编码偏移，优先保证读取字段和预期值一致。
+load_failed:
+  load_verifier_rejection: can_fix=true+根据 verifier 日志做最小修复，优先补边界检查、简化分支并替换不兼容 helper。

@@ -1,0 +1,530 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+from langgraph.graph import END, StateGraph
+
+from src.agent.error_solver_agent import ErrorSolverAgent
+from src.agent.repair.patterns import recognize_error
+from src.agent.reflect.reflect_agent import run_reflect
+from src.core.coordinator import Coordinator, stable_error_signature
+from src.core.io import read_json, write_json
+from src.core.state import CasePaths, CaseState
+
+
+SAME_ERROR_THRESHOLD = 3
+
+
+def _stage_success(payload: Optional[Dict[str, Any]]) -> bool:
+    return bool(isinstance(payload, dict) and payload.get("success"))
+
+
+def _inc_signature(state: CaseState, sig: str) -> int:
+    counts = state.setdefault("error_signature_counts", {})
+    cur = int(counts.get(sig) or 0) + 1
+    counts[sig] = cur
+    state["last_error_signature"] = sig
+    return cur
+
+
+@dataclass(frozen=True)
+class WorkflowArtifacts:
+    compile_path: Path
+    load_path: Path
+    attach_path: Path
+    runtime_path: Path
+    detach_path: Path
+
+
+def _artifact_paths(state: CaseState) -> WorkflowArtifacts:
+    return WorkflowArtifacts(
+        compile_path=Path(state["compile_result_path"]),
+        load_path=Path(state["load_result_path"]),
+        attach_path=Path(state["attach_result_path"]),
+        runtime_path=Path(state["runtime_result_path"]),
+        detach_path=Path(state["detach_result_path"]),
+    )
+
+
+def build_case_graph(
+    *,
+    coordinator: Coordinator,
+    enable_resolve_agent: bool = True,
+    enable_reflect_agent: bool = False,
+    use_pipeline_dirs: bool = False,
+):
+    g: StateGraph = StateGraph(CaseState)
+    error_solver = ErrorSolverAgent(llm=getattr(coordinator, "llm", None))
+
+    def node_end(state: CaseState) -> CaseState:
+        return state
+
+    def node_static_check(state: CaseState) -> CaseState:
+        static_report = coordinator.run_static_check(
+            summaries=[{"source_file": state["current_source_file"]}],
+            kernel_profile=state.get("kernel_profile") or {},
+            output_path=state["static_check_path"],
+        )
+        state["static_check"] = static_report
+        if _stage_success(static_report):
+            if state.get("failed_stage") == "static_check_failed":
+                state.pop("failed_stage", None)
+        else:
+            state["failed_stage"] = "static_check_failed"
+        return state
+
+    def node_compile(state: CaseState) -> CaseState:
+        artifacts = _artifact_paths(state)
+        compile_report = coordinator.run_compile(
+            source_file=state["current_source_file"],
+            object_file=state["object_file"],
+            vmlinux_header_dir=state.get("vmlinux_header_dir"),
+        )
+        write_json(artifacts.compile_path, compile_report)
+        state["compile"] = compile_report
+        if _stage_success(compile_report):
+            if state.get("failed_stage") == "compile_failed":
+                state.pop("failed_stage", None)
+        else:
+            state["failed_stage"] = "compile_failed"
+        return state
+
+    def node_load_attach(state: CaseState) -> CaseState:
+        artifacts = _artifact_paths(state)
+        backend = coordinator.choose_loader_backend(
+            attempt=int(state.get("load_backend_attempt") or 0),
+            last_error_sig=state.get("last_error_signature"),
+        )
+        payload = coordinator.run_load_attach(
+            source_file=state["current_source_file"],
+            object_file=str((state.get("compile") or {}).get("object_file") or state["object_file"]),
+            pin_path=state["pin_path"],
+            program_type=state.get("program_type"),
+            backend=backend,
+        )
+        load_report = payload.get("load") if isinstance(payload, dict) else None
+        attach_report = payload.get("attach") if isinstance(payload, dict) else None
+        proc = payload.get("_process") if isinstance(payload, dict) else None
+        state["_load_backend"] = backend  # internal
+        state["_load_process"] = proc  # internal
+        state["load"] = load_report or {}
+        state["attach"] = attach_report or {}
+        if _stage_success(state["load"]) and _stage_success(state["attach"]):
+            if state.get("failed_stage") in {"load_failed", "attach_failed", "load_attach_failed"}:
+                state.pop("failed_stage", None)
+        elif not _stage_success(state["load"]):
+            state["failed_stage"] = "load_failed"
+        elif not _stage_success(state["attach"]):
+            state["failed_stage"] = "attach_failed"
+        else:
+            state["failed_stage"] = "load_attach_failed"
+        write_json(artifacts.load_path, state["load"])
+        write_json(artifacts.attach_path, state["attach"])
+        return state
+
+    def node_runtime(state: CaseState) -> CaseState:
+        artifacts = _artifact_paths(state)
+        runtime_report = coordinator.run_runtime_test(
+            # Use original case_dir for runtime workload/validator scripts.
+            # After error_solver patches code into retry_code/, the parent directory
+            # may not contain workload.sh/validator.yaml, which would incorrectly
+            # mark runtime as "skipped" (workload_not_found).
+            source_file=state["original_source_file"],
+            pin_path=state["pin_path"],
+            attach_report=state.get("attach"),
+        )
+        state["runtime"] = runtime_report
+        if _stage_success(runtime_report):
+            if state.get("failed_stage") == "runtime_test_failed":
+                state.pop("failed_stage", None)
+        else:
+            state["failed_stage"] = "runtime_test_failed"
+        write_json(artifacts.runtime_path, runtime_report)
+        return state
+
+    def node_detach(state: CaseState) -> CaseState:
+        artifacts = _artifact_paths(state)
+        backend = state.get("_load_backend")
+        proc = state.get("_load_process")
+        detach_report = coordinator.run_detach(
+            backend=backend,
+            pin_path=state["pin_path"],
+            load_report=state.get("load"),
+            attach_report=state.get("attach"),
+            proc=proc,
+        )
+        state["detach"] = detach_report
+        if _stage_success(detach_report):
+            if state.get("failed_stage") == "detach_failed":
+                state.pop("failed_stage", None)
+        else:
+            state["failed_stage"] = "detach_failed"
+        write_json(artifacts.detach_path, detach_report)
+        return state
+
+    def node_error_solver(state: CaseState) -> CaseState:
+        deploy = {
+            "success": False,
+            "stage": state.get("failed_stage") or "unknown",
+            "compile": state.get("compile"),
+            "load": state.get("load"),
+            "attach": state.get("attach"),
+            "runtime": state.get("runtime"),
+            "detach": state.get("detach"),
+        }
+        sig = stable_error_signature(deploy)
+        seen = _inc_signature(state, sig)
+        error_stage = str(deploy.get("stage") or "unknown")
+
+        try:
+            current_text = Path(state["current_source_file"]).read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            current_text = ""
+
+        signal = recognize_error(deploy)
+
+        current_pipeline = int(state.get("pipeline_index") or 1)
+        next_pipeline = current_pipeline + 1
+        attempt_list = state.setdefault("repair_attempts", [])
+        max_patches = max(0, int(getattr(getattr(coordinator, "config", None), "agent_max_patches", 2) or 0))
+
+        if len(attempt_list) >= max_patches:
+            state["final_decision"] = "failed_no_patch"
+            return state
+
+        base = Path(state["original_source_file"]).name.replace(".bpf.c", "")
+
+        # error_solver patches are written for the *next* pipeline directory.
+        if use_pipeline_dirs:
+            case_root = Path(state["logs_dir"])
+            next_pipeline_dir = case_root / f"pipeline_{next_pipeline}"
+            # error_solve stays under <case_root>/error_solve/
+            next_error_solve_dir = case_root / "error_solve"
+            next_retry_code_dir = next_error_solve_dir / "retry_code" / f"pipeline_{next_pipeline}"
+            next_error_record_path = next_error_solve_dir / "error_record.json"
+        else:
+            next_pipeline_dir = None
+            next_error_solve_dir = Path(state["error_solve_dir"])
+            next_retry_code_dir = Path(state["retry_code_dir"])
+            next_error_record_path = Path(state["error_record_path"])
+
+        new_code_path = str(next_retry_code_dir / f"{base}.{next_pipeline}.bpf.c")
+
+        # Feed the error-solver with the stage-specific JSON paths.
+        stage_to_path = {
+            "static_check_failed": state.get("static_check_path"),
+            "compile_failed": state.get("compile_result_path"),
+            "load_failed": state.get("load_result_path"),
+            "attach_failed": state.get("attach_result_path"),
+            "runtime_test_failed": state.get("runtime_result_path"),
+            "detach_failed": state.get("detach_result_path"),
+        }
+        state_result_json = str(stage_to_path.get(error_stage) or state.get("deploy_result_path") or "")
+        error_message_json = str(stage_to_path.get(error_stage) or state.get("load_result_path") or "")
+
+        res = error_solver.solve(
+            error_solve_dir=str(next_error_solve_dir),
+            retry_code_dir=str(next_retry_code_dir),
+            error_record_path=str(next_error_record_path),
+            case_display=state.get("case_display") or "",
+            error_state=error_stage,
+            state_result_json=state_result_json,
+            error_message_json=error_message_json,
+            new_code_path=new_code_path,
+            current_source_file=state["current_source_file"],
+            current_code=current_text,
+            signal=signal,
+            patch_history=state.get("patch_history") or [],
+            repair_method_yaml_path=str(Path(__file__).resolve().parents[2] / "knowledge_base" / "repair" / "repair_method.yaml"),
+            verbose=True,
+        )
+
+        attempt_list.append(
+            {
+                "attempt_index": next_pipeline,
+                "error_signature": sig,
+                "error_signature_seen": seen,
+                "source_before": state["current_source_file"],
+                "patched": bool(res.patched),
+                "patched_path": res.patched_path,
+                "llm_thought": res.llm_thought,
+                "llm_rationale": res.llm_rationale,
+                "stage": error_stage,
+            }
+        )
+
+        if res.patched and res.patched_path:
+            state.setdefault("patch_history", []).append(f"attempt:{next_pipeline}")
+            state.setdefault("retry_code_paths", []).append(res.patched_path)
+            state["current_source_file"] = res.patched_path
+
+            # Switch all stage artifact output paths to the next pipeline directory.
+            if use_pipeline_dirs and next_pipeline_dir is not None:
+                stage_dir = next_pipeline_dir
+
+                artifact_stem = str(state.get("artifact_stem") or "")
+
+                def pp(name: str) -> str:
+                    suffix = f"_{artifact_stem}" if artifact_stem else ""
+                    return str(stage_dir / f"{name}{suffix}.json")
+
+                # Update artifact paths (static/compile/load/attach/runtime/detach).
+                state["pipeline_index"] = next_pipeline
+                state["attempt_index"] = next_pipeline
+                state["static_check_path"] = pp("static_check")
+                state["compile_result_path"] = pp("compile_result")
+                state["load_result_path"] = pp("load_result")
+                state["attach_result_path"] = pp("attach_result")
+                state["runtime_result_path"] = pp("runtime_result")
+                state["detach_result_path"] = pp("detach_result")
+                # deploy_result is written by main after the workflow completes.
+                state["deploy_result_path"] = str(stage_dir / "deploy_result.json")
+
+                state["error_solve_dir"] = str(next_error_solve_dir)
+                state["retry_code_dir"] = str(next_retry_code_dir)
+                state["error_record_path"] = str(next_error_record_path)
+            return state
+
+        state["final_decision"] = "failed_no_patch"
+        return state
+
+    def node_reflect(state: CaseState) -> CaseState:
+        # Build deploy-like payload for reflect based purely on stage reports in state.
+        success, stage = coordinator.classify_deploy_stage(
+            compile_report=state.get("compile"),
+            load_report=state.get("load"),
+            attach_report=state.get("attach"),
+            runtime_report=state.get("runtime"),
+            detach_report=state.get("detach"),
+        )
+        deploy_payload = {
+            "success": bool(success),
+            "stage": stage,
+            "compile": state.get("compile"),
+            "load": state.get("load"),
+            "attach": state.get("attach"),
+            "runtime": state.get("runtime"),
+            "detach": state.get("detach"),
+        }
+        final_success = bool(success)
+
+        key_lines: list[str] = []
+        if not final_success:
+            signal = recognize_error(deploy_payload)
+            key_lines = list(signal.key_lines[:30])
+
+        outputs = run_reflect(
+            llm=getattr(error_solver, "llm", None),
+            logs_dir=state["logs_dir"],
+            category=state.get("category") or "",
+            case_rel=state.get("case_rel") or "",
+            case_display=state.get("case_display") or "",
+            kernel_profile=state.get("kernel_profile") or {},
+            deploy=deploy_payload,
+            error_signature_counts=state.get("error_signature_counts") or {},
+            last_error_signature=state.get("last_error_signature"),
+            key_lines=key_lines,
+            attempts=state.get("repair_attempts") or [],
+            repair_method_yaml_path=str(Path(__file__).resolve().parents[2] / "knowledge_base" / "repair" / "repair_method.yaml"),
+        )
+
+        state["reflect_record_path"] = outputs.reflect_record_json
+        state["repair_report_path"] = outputs.repair_report_json
+        return state
+
+    def route_after_static_check(state: CaseState) -> str:
+        payload = read_json(state["static_check_path"]) or state.get("static_check") or {}
+        state["static_check"] = payload
+        if _stage_success(payload):
+            return "compile"
+        state["failed_stage"] = "static_check_failed"
+        if enable_resolve_agent:
+            return "error_solver"
+        if enable_reflect_agent:
+            return "reflect"
+        return "end"
+
+    def route_after_compile(state: CaseState) -> str:
+        payload = read_json(state["compile_result_path"]) or state.get("compile") or {}
+        state["compile"] = payload
+        if _stage_success(payload):
+            return "load_attach"
+        state["failed_stage"] = "compile_failed"
+        if enable_resolve_agent:
+            return "error_solver"
+        if enable_reflect_agent:
+            return "reflect"
+        return "end"
+
+    def route_after_load_attach(state: CaseState) -> str:
+        load_payload = read_json(state["load_result_path"]) or state.get("load") or {}
+        attach_payload = read_json(state["attach_result_path"]) or state.get("attach") or {}
+        state["load"] = load_payload
+        state["attach"] = attach_payload
+        if _stage_success(load_payload) and _stage_success(attach_payload):
+            state.pop("failed_stage", None)
+            return "runtime"
+        # Distinguish load vs attach failure for better error_solver labeling.
+        if not _stage_success(load_payload):
+            state["failed_stage"] = "load_failed"
+        elif not _stage_success(attach_payload):
+            state["failed_stage"] = "attach_failed"
+        else:
+            state["failed_stage"] = "load_attach_failed"
+        return "detach"
+
+    def route_after_runtime(state: CaseState) -> str:
+        runtime_payload = read_json(state["runtime_result_path"]) or state.get("runtime") or {}
+        state["runtime"] = runtime_payload
+        if _stage_success(runtime_payload):
+            state.pop("failed_stage", None)
+        else:
+            state["failed_stage"] = "runtime_test_failed"
+        return "detach"
+
+    def route_after_detach(state: CaseState) -> str:
+        detach_payload = read_json(state["detach_result_path"]) or state.get("detach") or {}
+        state["detach"] = detach_payload
+        failed_stage = state.get("failed_stage")
+        if failed_stage:
+            if enable_resolve_agent:
+                return "error_solver"
+            if enable_reflect_agent:
+                return "reflect"
+            return "end"
+        if enable_reflect_agent:
+            return "reflect"
+        return "end"
+
+    def route_after_error_solver(state: CaseState) -> str:
+        sig = state.get("last_error_signature") or "unknown"
+        counts = state.get("error_signature_counts") or {}
+        if int(counts.get(sig) or 0) >= SAME_ERROR_THRESHOLD:
+            state["final_decision"] = "failed_reflect"
+            return "reflect" if enable_reflect_agent else "end"
+        if state.get("final_decision") == "failed_no_patch":
+            return "reflect" if enable_reflect_agent else "end"
+        return "static_check"
+
+    g.add_node("static_check", node_static_check)
+    g.add_node("compile", node_compile)
+    g.add_node("load_attach", node_load_attach)
+    g.add_node("runtime", node_runtime)
+    g.add_node("detach", node_detach)
+    g.add_node("error_solver", node_error_solver)
+    g.add_node("reflect", node_reflect)
+    g.add_node("end", node_end)
+
+    g.set_entry_point("static_check")
+    g.add_conditional_edges(
+        "static_check",
+        route_after_static_check,
+        {"compile": "compile", "error_solver": "error_solver", "reflect": "reflect", "end": "end"},
+    )
+    g.add_conditional_edges(
+        "compile",
+        route_after_compile,
+        {"load_attach": "load_attach", "error_solver": "error_solver", "reflect": "reflect", "end": "end"},
+    )
+    g.add_conditional_edges(
+        "load_attach",
+        route_after_load_attach,
+        {"runtime": "runtime", "error_solver": "error_solver", "reflect": "reflect", "end": "end"},
+    )
+    g.add_conditional_edges(
+        "runtime",
+        route_after_runtime,
+        {"detach": "detach", "error_solver": "error_solver", "reflect": "reflect", "end": "end"},
+    )
+    g.add_conditional_edges(
+        "detach",
+        route_after_detach,
+        {"error_solver": "error_solver", "reflect": "reflect", "end": "end"},
+    )
+    g.add_conditional_edges(
+        "error_solver",
+        route_after_error_solver,
+        {"static_check": "static_check", "reflect": "reflect", "end": "end"},
+    )
+    g.add_edge("reflect", END)
+    g.add_edge("end", END)
+
+    return g.compile()
+
+
+def init_case_state(
+    *,
+    paths: CasePaths,
+    category: str,
+    case_rel: str,
+    kernel_profile: Dict[str, Any],
+    source_file: str,
+    object_file: str,
+    pin_path: str,
+    program_type: Optional[str],
+    vmlinux_header_dir: Optional[str],
+    artifact_stem: str,
+    use_pipeline_dirs: bool = False,
+) -> CaseState:
+    logs_dir = paths.logs_dir  # case root (may contain pipeline_* dirs)
+    pipeline_index = 1
+    pipeline_dir = logs_dir / f"pipeline_{pipeline_index}" if use_pipeline_dirs else logs_dir
+
+    # Keep error_solve artifacts under <case_root>/error_solve/ (not inside pipeline_n).
+    error_solve_dir = logs_dir / "error_solve"
+    if use_pipeline_dirs:
+        retry_code_dir = error_solve_dir / "retry_code" / f"pipeline_{pipeline_index}"
+    else:
+        retry_code_dir = error_solve_dir / "retry_code"
+    error_record_path = error_solve_dir / "error_record.json"
+
+    def p(name: str) -> str:
+        # File name suffix for multi-source cases.
+        if artifact_stem:
+            return str(pipeline_dir / f"{name}_{artifact_stem}.json")
+        return str(pipeline_dir / f"{name}.json")
+
+    state: CaseState = {
+        "category": category,
+        "case_rel": case_rel,
+        "case_display": f"{category}/{case_rel}/{Path(source_file).name}",
+        "logs_dir": str(logs_dir),
+        "build_dir": str(paths.build_dir),
+        "shared_logs_dir": str(paths.shared_logs_dir),
+        "kernel_profile": dict(kernel_profile or {}),
+        "artifact_stem": artifact_stem,
+        "original_source_file": source_file,
+        "current_source_file": source_file,
+        "object_file": object_file,
+        "pin_path": pin_path,
+        "program_type": program_type,
+        "vmlinux_header_dir": vmlinux_header_dir,
+        "static_check_path": p("static_check"),
+        "compile_result_path": p("compile_result"),
+        "load_result_path": p("load_result"),
+        "attach_result_path": p("attach_result"),
+        "runtime_result_path": p("runtime_result"),
+        "detach_result_path": p("detach_result"),
+        "deploy_result_path": p("deploy_result"),
+        "retry_code_dir": str(retry_code_dir),
+        "error_solve_dir": str(error_solve_dir),
+        "error_record_path": str(error_record_path),
+        # attempt_index is used for patch version numbering and some routing heuristics.
+        # For loader backend rotation we keep a separate load_backend_attempt.
+        "pipeline_index": pipeline_index,
+        "attempt_index": pipeline_index,
+        "load_backend_attempt": 0,
+        "patch_history": [],
+        "repair_attempts": [],
+        "retry_code_paths": [],
+        "error_signature_counts": {},
+        "last_error_signature": None,
+        "failed_stage": "",
+        "final_decision": "",
+        "repair_report_path": None,
+        "reflect_record_path": None,
+    }
+    return state
+

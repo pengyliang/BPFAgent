@@ -1,0 +1,4 @@
+name: field_type_change
+feature: task_struct.__state width/type assumption
+min_kernel: 5.15
+description: Reads task_struct.__state as a 64-bit value, relying on newer-kernel type/layout assumptions that are incompatible on older kernels.

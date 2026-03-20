@@ -1,0 +1,28 @@
+{
+  "source_file": "tests/data/test_ebpf_2.bpf.c",
+  "bpf_helper_calls": [
+    {
+      "helper": "bpf_ringbuf_reserve",
+      "line": null,
+      "column": 9
+    },
+    {
+      "helper": "bpf_get_current_pid_tgid",
+      "line": null,
+      "column": 14
+    },
+    {
+      "helper": "bpf_ringbuf_submit",
+      "line": 25,
+      "column": 5
+    }
+  ],
+  "struct_field_access_paths": [
+    {
+      "path": "e.pid",
+      "line": null,
+      "column": 5
+    }
+  ],
+  "map_operation_sequence": []
+}

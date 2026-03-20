@@ -1,0 +1,11 @@
+rule:
+  id: "helper_ringbuf_fallback"
+  match_condition:
+    kernel_version: "< 5.8"
+    pattern: "bpf_ringbuf_submit|bpf_ringbuf_output"
+  transform:
+    type: "ast_replace"
+    target: "perf_event_output"
+    extra_map_inject: true
+  priority: 10
+  test_case: "tests/helper/ringbuf_fallback.c"

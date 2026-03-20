@@ -1,0 +1,4 @@
+name: kfunc_support
+feature: bpf_kfunc_call
+min_kernel: 6.2
+description: Uses task reference kfuncs (bpf_task_acquire/release) that are unavailable on older kernels.

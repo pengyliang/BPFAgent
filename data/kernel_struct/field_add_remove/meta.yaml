@@ -1,0 +1,4 @@
+name: field_add_remove
+feature: task_struct.bpf_storage field existence
+min_kernel: 5.11
+description: Accesses task_struct.bpf_storage, a field introduced in newer kernels; loading fails on kernels where the field does not exist.

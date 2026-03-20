@@ -1,0 +1,4 @@
+name: isa_upgrade_incompatible
+feature: BPF_JMP32 instruction class
+min_kernel: 5.1
+description: Uses 32-bit jump semantics (JMP32 class) that are incompatible with older kernels lacking newer BPF ISA support.

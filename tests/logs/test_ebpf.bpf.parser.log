@@ -1,0 +1,5 @@
+status: SUCCESS
+source_file: tests/data/test_ebpf.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -Itests/data -I/usr/include/x86_64-linux-gnu tests/data/test_ebpf.bpf.c
+stderr:
+<empty>

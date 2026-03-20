@@ -1,0 +1,4 @@
+name: dynptr_memory_model
+feature: bpf_dynptr
+min_kernel: 6.0
+description: Uses dynptr ring buffer helpers, rejected by kernels without dynptr memory model support.
