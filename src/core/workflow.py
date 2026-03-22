@@ -19,6 +19,7 @@ from src.agent.repairer import RepairerAgent
 from src.core.coordinator import Coordinator, stable_error_signature
 from src.core.io import write_json
 from src.core.state import CasePaths, CaseState
+from src.util.static_check.ast_summary import build_static_check_summaries
 
 
 SAME_ERROR_THRESHOLD = 4
@@ -56,6 +57,7 @@ def build_case_graph(
     *,
     coordinator: Coordinator,
     enable_resolve_agent: bool = True,
+    enable_inspector_agent: bool = True,
     enable_reflect_agent: bool = False,
     use_pipeline_dirs: bool = False,
 ):
@@ -112,8 +114,16 @@ def build_case_graph(
         state["_load_process"] = None
 
         # 每个 deploy_n 目录固定落盘 static_check.json（与 compile/load 等一致），供回放与 main 汇总读取。
+        # 先 clang AST；失败则 ast_fallback，static_checker 退回源码分析。
+        static_artifact_dir = Path(state["static_check_path"]).parent
+        static_artifact_dir.mkdir(parents=True, exist_ok=True)
+        summaries = build_static_check_summaries(
+            [state["current_source_file"]],
+            artifact_dir=static_artifact_dir,
+            vmlinux_header_dir=state.get("vmlinux_header_dir"),
+        )
         static_report = coordinator.run_static_check(
-            summaries=[{"source_file": state["current_source_file"]}],
+            summaries=summaries,
             kernel_profile=state.get("kernel_profile") or {},
             output_path=state["static_check_path"],
         )
@@ -281,7 +291,7 @@ def build_case_graph(
 
     def route_after_repairer(state: CaseState) -> str:
         if state.get("candidate_source_file") and state.get("final_decision") != "failed_no_patch":
-            return "inspector"
+            return "inspector" if enable_inspector_agent else "deploy_tool"
         return "refiner" if enable_reflect_agent else "end"
 
     def route_after_inspector(state: CaseState) -> str:
@@ -303,7 +313,11 @@ def build_case_graph(
     g.set_entry_point("deploy_tool")
     g.add_conditional_edges("deploy_tool", route_after_deploy_tool, {"analyzer": "analyzer", "refiner": "refiner", "end": "end"})
     g.add_conditional_edges("analyzer", route_after_analyzer, {"repairer": "repairer", "refiner": "refiner", "end": "end"})
-    g.add_conditional_edges("repairer", route_after_repairer, {"inspector": "inspector", "refiner": "refiner", "end": "end"})
+    g.add_conditional_edges(
+        "repairer",
+        route_after_repairer,
+        {"deploy_tool": "deploy_tool", "inspector": "inspector", "refiner": "refiner", "end": "end"},
+    )
     g.add_conditional_edges("inspector", route_after_inspector, {"deploy_tool": "deploy_tool", "repairer": "repairer", "refiner": "refiner"})
     g.add_edge("refiner", END)
     g.add_edge("end", END)

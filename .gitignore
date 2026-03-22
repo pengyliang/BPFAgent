@@ -1,3 +1,10 @@
 env/
+venv/
 output/
 configs/
+__pycache__/
+visualize/
+app_config.py
+.cursor/
+docs/
+experiments/

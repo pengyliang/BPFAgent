@@ -9,6 +9,10 @@ import json
 import re
 from pathlib import Path
 
+# When False, skip helper/map/program-type *minimum kernel version* gates.
+# (bpftool whitelist, GPL helper license, attach target, BTF-for-fentry, etc. still apply.)
+ENABLE_MIN_KERNEL_CHECKS = False
+
 # Curated minimal GPL-only helper set. Can be extended via rules later.
 GPL_ONLY_HELPERS = {
     "bpf_probe_write_user",
@@ -67,13 +71,16 @@ def _version_lt(current, minimum):
 
 
 def _normalize_program_type(sec_value):
+    """Map SEC() first segment to a slug aligned with kernel_profile program_type_support."""
     prefix = sec_value.split("/", 1)[0]
+    if prefix.startswith("raw_tp") or prefix == "raw_tracepoint":
+        return "raw_tracepoint"
+    if prefix == "cgroup":
+        return "cgroup_skb"
+    if prefix.startswith("cgroup_"):
+        return prefix
     if prefix in {"kprobe", "kretprobe", "tracepoint", "xdp", "lsm", "iter", "fentry", "fexit"}:
         return prefix
-    if prefix.startswith("raw_tp"):
-        return "raw_tracepoint"
-    if prefix.startswith("cgroup"):
-        return "cgroup_skb"
     return prefix
 
 
@@ -151,19 +158,28 @@ def analyze_single_source(summary, kernel_profile):
     kernel_ver = _kernel_tuple(kernel_profile)
     helper_whitelist = set(kernel_profile.get("helper_whitelist", []))
     map_support = _supported_set(kernel_profile.get("map_type_support", []))
+    program_type_support = set(kernel_profile.get("program_type_support", []))
     btf_available = bool(kernel_profile.get("btf", {}).get("available", False))
 
     sections = _extract_sections(source_text)
     license_text = _extract_license(source_text)
     map_types = _extract_map_types(source_text)
-    helper_calls = [
-        x.get("helper") for x in summary.get("bpf_helper_calls", []) if isinstance(x, dict) and x.get("helper")
-    ]
+    # AST 失败（clang/JSON）时明确不走摘要里的 helper 列表，强制源码正则回退
+    if summary.get("ast_fallback"):
+        helper_calls = []
+    else:
+        helper_calls = [
+            x.get("helper")
+            for x in summary.get("bpf_helper_calls", [])
+            if isinstance(x, dict) and x.get("helper")
+        ]
     if not helper_calls:
         candidates = re.findall(r"\b(bpf_[A-Za-z0-9_]+)\s*\(", source_text or "")
         policy_known = set(HELPER_MIN_KERNEL) | set(GPL_ONLY_HELPERS) | set(HELPER_PROGRAM_ALLOWLIST)
         if helper_whitelist:
-            helper_calls = [c for c in candidates if c in helper_whitelist or c in policy_known]
+            # 必须保留源码里出现的全部 bpf_*，否则「不在白名单里的新 helper」会被提前过滤掉，
+            # 例如 helper_absent 里的 bpf_get_current_task_btf 在旧内核上不会出现在 bpftool whitelist。
+            helper_calls = sorted(set(candidates))
         else:
             helper_calls = [c for c in candidates if c in policy_known]
 
@@ -173,18 +189,19 @@ def analyze_single_source(summary, kernel_profile):
     issues = []
 
     for helper in helper_calls:
-        min_ver = HELPER_MIN_KERNEL.get(helper)
-        if min_ver and _version_lt(kernel_ver, min_ver):
-            issues.append(
-                _issue(
-                    "helper_availability",
-                    "error",
-                    "helper_min_kernel",
-                    f"Helper {helper} requires kernel >= {min_ver[0]}.{min_ver[1]}.",
-                    "Use fallback helper sequence from static rules or choose another helper.",
-                    {"helper": helper, "kernel": kernel_profile.get("kernel_version", {}).get("raw")},
+        if ENABLE_MIN_KERNEL_CHECKS:
+            min_ver = HELPER_MIN_KERNEL.get(helper)
+            if min_ver and _version_lt(kernel_ver, min_ver):
+                issues.append(
+                    _issue(
+                        "helper_availability",
+                        "error",
+                        "helper_min_kernel",
+                        f"Helper {helper} requires kernel >= {min_ver[0]}.{min_ver[1]}.",
+                        "Use fallback helper sequence from static rules or choose another helper.",
+                        {"helper": helper, "kernel": kernel_profile.get("kernel_version", {}).get("raw")},
+                    )
                 )
-            )
 
         if helper_whitelist and helper not in helper_whitelist:
             issues.append(
@@ -224,18 +241,19 @@ def analyze_single_source(summary, kernel_profile):
             )
 
     for map_type in map_types:
-        min_ver = MAP_TYPE_MIN_KERNEL.get(map_type)
-        if min_ver and _version_lt(kernel_ver, min_ver):
-            issues.append(
-                _issue(
-                    "map_type_availability",
-                    "error",
-                    "map_type_min_kernel",
-                    f"Map type {map_type} requires kernel >= {min_ver[0]}.{min_ver[1]}.",
-                    "Use downgrade rule to supported map type on target kernel.",
-                    {"map_type": map_type},
+        if ENABLE_MIN_KERNEL_CHECKS:
+            min_ver = MAP_TYPE_MIN_KERNEL.get(map_type)
+            if min_ver and _version_lt(kernel_ver, min_ver):
+                issues.append(
+                    _issue(
+                        "map_type_availability",
+                        "error",
+                        "map_type_min_kernel",
+                        f"Map type {map_type} requires kernel >= {min_ver[0]}.{min_ver[1]}.",
+                        "Use downgrade rule to supported map type on target kernel.",
+                        {"map_type": map_type},
+                    )
                 )
-            )
 
         normalized = map_type.replace("BPF_MAP_TYPE_", "", 1)
         if map_support and map_type not in map_support and normalized not in map_support:
@@ -252,18 +270,31 @@ def analyze_single_source(summary, kernel_profile):
 
     for sec in program_sections:
         ptype = _normalize_program_type(sec)
-        min_ver = PROGRAM_TYPE_MIN_KERNEL.get(ptype)
-        if min_ver and _version_lt(kernel_ver, min_ver):
+        if program_type_support and ptype not in program_type_support:
             issues.append(
                 _issue(
                     "program_type_attach_availability",
                     "error",
-                    "program_type_min_kernel",
-                    f'SEC("{sec}") requires kernel >= {min_ver[0]}.{min_ver[1]}.',
-                    "Change SEC program type or use a newer kernel.",
-                    {"sec": sec},
+                    "program_type_not_supported",
+                    f'Program type "{ptype}" from SEC("{sec}") is not in bpftool program type support list for this kernel.',
+                    "Use a program type listed in kernel_profile program_type_support, or upgrade the kernel / bpftool probe environment.",
+                    {"sec": sec, "program_type": ptype},
                 )
             )
+
+        if ENABLE_MIN_KERNEL_CHECKS:
+            min_ver = PROGRAM_TYPE_MIN_KERNEL.get(ptype)
+            if min_ver and _version_lt(kernel_ver, min_ver):
+                issues.append(
+                    _issue(
+                        "program_type_attach_availability",
+                        "error",
+                        "program_type_min_kernel",
+                        f'SEC("{sec}") requires kernel >= {min_ver[0]}.{min_ver[1]}.',
+                        "Change SEC program type or use a newer kernel.",
+                        {"sec": sec},
+                    )
+                )
 
         if ptype in {"fentry", "fexit"} and not btf_available:
             issues.append(
@@ -345,7 +376,7 @@ def _build_report(results):
     error_count = 0
     warning_count = 0
     for res in results:
-        for issue in res["issues"]:
+        for issue in res.get("issues") or []:
             if issue["level"] == "error":
                 error_count += 1
             elif issue["level"] == "warning":
@@ -370,6 +401,11 @@ def _build_report(results):
 def analyze_case_static_checks(summaries, kernel_profile, output_path=None):
     results = [analyze_single_source(s, kernel_profile) for s in summaries]
     report = _build_report(results)
+    report["results"] = results
+    report["summary"] = {
+        "error_count": int((report.get("error_warning_count") or {}).get("error") or 0),
+        "warning_count": int((report.get("error_warning_count") or {}).get("warning") or 0),
+    }
 
     if output_path:
         out = Path(output_path)

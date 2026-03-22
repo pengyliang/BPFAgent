@@ -1,4 +1,5 @@
 #include "vmlinux.h"
+#include <bpf/bpf_core_read.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 
@@ -23,20 +24,26 @@ int helper_absent(struct trace_event_raw_sys_enter *ctx)
     __u64 *val = bpf_map_lookup_elem(&counter, &key);
     __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);
     struct task_struct *task;
+    __u32 cur_tgid;
+    __u32 task_tgid;
 
     if (!val)
         return 0;
 
-    if (target_tgid && *target_tgid) {
-        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);
-        if (tgid != *target_tgid)
-            return 0;
-    }
+    cur_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);
+    if (target_tgid && *target_tgid && cur_tgid != *target_tgid)
+        return 0;
 
     task = (struct task_struct *)bpf_get_current_task_btf();
-    if (task)
-        (*val)++;
+    if (!task)
+        return 0;
 
+    /* 确认 BTF task 与当前上下文一致：task->tgid 应等于当前线程组 ID */
+    task_tgid = BPF_CORE_READ(task, tgid);
+    if (task_tgid == 0 || task_tgid != cur_tgid)
+        return 0;
+
+    (*val)++;
     return 0;
 }
 

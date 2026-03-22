@@ -1,21 +1,37 @@
+import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 import yaml
 
-from src.agent.base import load_knowledge_rules
+if "openai" not in sys.modules:
+    openai_stub = types.ModuleType("openai")
+
+    class _DummyOpenAI:  # pragma: no cover - test import stub only
+        def __init__(self, *args, **kwargs):
+            pass
+
+    openai_stub.OpenAI = _DummyOpenAI
+    sys.modules["openai"] = openai_stub
+
+from src.agent.base import load_knowledge_rules, normalize_repair_knowledge_obj
 from src.agent.refiner import (
     RefinerAgent,
     _collect_successful_stage_advances,
-    _merge_rule,
     _normalize_method_text,
-    _normalize_repair_method_updates,
 )
 
 
 class TestAgentKnowledge(unittest.TestCase):
+    def test_load_knowledge_rules_returns_empty_when_knowledge_base_disabled(self):
+        with patch("src.agent.base.knowledge_base_enabled", return_value=False):
+            selected = load_knowledge_rules("static_check_failed", "static_check_failed:attach_target_not_found")
+
+        self.assertEqual(selected, "")
+
     def test_load_knowledge_rules_supports_stage_mapping_format(self):
         payload = {
             "static_check_failed": {
@@ -35,44 +51,38 @@ class TestAgentKnowledge(unittest.TestCase):
                 selected = load_knowledge_rules("static_check_failed", "static_check_failed:attach_target_not_found")
 
         loaded = yaml.safe_load(selected)
-        self.assertEqual(
-            loaded,
-            {
-                "static_check_failed": {
-                    "attach_target_not_found": ["不要继续自动修改源码，直接报告目标符号不存在。"],
-                }
-            },
-        )
+        self.assertEqual(loaded["version"], 2)
+        self.assertIn("attach_target_missing", loaded["patterns"])
+        self.assertEqual(loaded["patterns"]["attach_target_missing"]["can_fix"], False)
+        self.assertIn("attach_target_not_found", loaded["patterns"]["attach_target_missing"]["aliases"])
 
-    def test_merge_rule_only_adds_new_entries(self):
-        norm_a = _normalize_method_text("根据 verifier 日志补边界检查。", default_can_fix=True)
-        db: dict = {
-            "load_failed": {
-                "verifier_reject": [norm_a],
-            }
+    def test_load_knowledge_rules_prefers_alias_match_in_pattern_schema(self):
+        payload = {
+            "version": 2,
+            "patterns": {
+                "helper_unsupported": {
+                    "aliases": ["unknown_func"],
+                    "stage_hints": ["load_failed"],
+                    "can_fix": True,
+                    "repair_methods": ["替换为当前内核支持的 helper。"],
+                },
+                "header_dependency_missing": {
+                    "aliases": ["missing_header_include"],
+                    "stage_hints": ["compile_failed"],
+                    "can_fix": True,
+                    "repair_methods": ["补齐头文件依赖。"],
+                },
+            },
         }
-        updates = _normalize_repair_method_updates(
-            {
-                "load_failed": {
-                    "verifier_reject": "根据 verifier 日志补边界检查。",
-                    "unknown_func": "替换为当前内核支持的 helper 或降级实现。",
-                }
-            }
-        )
 
-        merged, added = _merge_rule(db, updates)
+        with tempfile.TemporaryDirectory() as td:
+            kb_path = Path(td) / "repair_method.yaml"
+            kb_path.write_text(yaml.safe_dump(payload, sort_keys=False, allow_unicode=True), encoding="utf-8")
+            with patch("src.agent.base.knowledge_base_path", return_value=kb_path):
+                selected = load_knowledge_rules("load_failed", "load_failed:unknown_func")
 
-        self.assertEqual(merged["load_failed"]["verifier_reject"], [norm_a])
-        norm_b = _normalize_method_text("替换为当前内核支持的 helper 或降级实现。", default_can_fix=True)
-        self.assertEqual(merged["load_failed"]["unknown_func"], [norm_b])
-        self.assertEqual(
-            added,
-            {
-                "load_failed": {
-                    "unknown_func": [norm_b],
-                }
-            },
-        )
+        loaded = yaml.safe_load(selected)
+        self.assertEqual(list(loaded["patterns"].keys()), ["helper_unsupported"])
 
     def test_collect_successful_stage_advances_only_records_stage_progress(self):
         state = {
@@ -105,11 +115,9 @@ class TestAgentKnowledge(unittest.TestCase):
 
         self.assertEqual(len(advances), 1)
         self.assertEqual(advances[0]["stage"], "static_check_failed")
-        self.assertEqual(advances[0]["error_type"], "core_requires_btf")
-        self.assertEqual(
-            advances[0]["repair_method"],
-            "can_fix=true+移除 CO-RE 依赖。",
-        )
+        self.assertEqual(advances[0]["observed_error_type"], "core_requires_btf")
+        self.assertEqual(advances[0]["pattern_id"], "core_requires_btf")
+        self.assertEqual(advances[0]["entry"]["repair_methods"], ["移除 CO-RE 依赖。"])
 
     def test_refiner_build_rule_updates_returns_empty_without_stage_progress(self):
         agent = RefinerAgent(llm=None)
@@ -144,7 +152,19 @@ class TestAgentKnowledge(unittest.TestCase):
             "补充边界检查并简化 verifier 难以推理的分支。具体步骤：1. 删除多余分支。2. 增加空指针判断。",
             default_can_fix=True,
         )
-        self.assertEqual(normalized, "can_fix=true+补充边界检查并简化 verifier 难以推理的分支。")
+        self.assertEqual(normalized, "补充边界检查并简化 verifier 难以推理的分支。")
+
+    def test_normalize_repair_knowledge_obj_migrates_legacy_can_fix_prefix(self):
+        normalized = normalize_repair_knowledge_obj(
+            {
+                "static_check_failed": {
+                    "attach_target_not_found": ["can_fix=false+停止自动源码修复并提示更换目标符号。"],
+                }
+            }
+        )
+        rule = normalized["patterns"]["attach_target_missing"]
+        self.assertEqual(rule["can_fix"], False)
+        self.assertEqual(rule["repair_methods"], ["停止自动源码修复并提示更换目标符号。"])
 
 
 if __name__ == "__main__":

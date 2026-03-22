@@ -111,8 +111,23 @@ class RepairerAgent(BaseAgent):
                         temperature=temperature,
                         max_tokens=1800,
                     )
+                    llm_meta = self.last_llm_response_meta()
                     if (raw_output or "").strip():
                         any_llm_nonempty = True
+                    elif bool(llm_meta.get("reasoning_only")):
+                        finish_reason = llm_meta.get("finish_reason") or "unknown"
+                        rationale = f"LLM 仅输出了 reasoning，未产出最终 content（finish_reason={finish_reason}）。"
+                        return self._record_no_patch(
+                            state=state,
+                            repair_idx=repair_idx,
+                            repair_dir=repair_dir,
+                            previous_node=previous_node,
+                            repair_context=repair_context,
+                            before_path=before_path,
+                            rationale=rationale,
+                            raw_output=raw_output,
+                            workflow_reason="thinking_only_content_missing",
+                        )
                     obj = self.extract_json(raw_output)
                     cand: str | None = None
                     if obj and isinstance(obj.get("patched_code"), str):
@@ -178,8 +193,23 @@ class RepairerAgent(BaseAgent):
                         temperature=temperature,
                         max_tokens=1800,
                     )
+                    llm_meta = self.last_llm_response_meta()
                     if (raw_output or "").strip():
                         any_llm_nonempty = True
+                    elif bool(llm_meta.get("reasoning_only")):
+                        finish_reason = llm_meta.get("finish_reason") or "unknown"
+                        rationale = f"LLM 仅输出了 reasoning，未产出最终 content（finish_reason={finish_reason}）。"
+                        return self._record_no_patch(
+                            state=state,
+                            repair_idx=repair_idx,
+                            repair_dir=repair_dir,
+                            previous_node=previous_node,
+                            repair_context=repair_context,
+                            before_path=before_path,
+                            rationale=rationale,
+                            raw_output=raw_output,
+                            workflow_reason="thinking_only_content_missing",
+                        )
                     obj = self.extract_json(raw_output)
                     cand_nc: str | None = None
                     if obj and isinstance(obj.get("patched_code"), str):

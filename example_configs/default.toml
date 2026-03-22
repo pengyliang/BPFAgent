@@ -10,7 +10,7 @@ max_patches = 2
 
 [llm]
 # deepseek|openai|anthropic 
-provider = "deepseek"
+#provider = "deepseek"
 
 model = "deepseek-chat"
 

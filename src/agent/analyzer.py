@@ -6,11 +6,13 @@ from prompts.analyzer import ANALYZER_PROMPT
 from src.agent.base import (
     BaseAgent,
     build_error_signal,
+    canonical_pattern_id,
     default_can_fix,
     deploy_summary_payload,
     load_knowledge_rules,
     read_text,
     static_check_requires_environment_change,
+    static_issue_codes,
 )
 from src.core.state import CaseState
 
@@ -36,7 +38,7 @@ class AnalyzerAgent(BaseAgent):
             "deploy_summary": deploy_summary,
         }
         signal = build_error_signal(state)
-        kb_text = load_knowledge_rules(failed_stage, state.get("last_error_signature"))
+        kb_text = load_knowledge_rules(failed_stage, state.get("last_error_signature"), signal.key_lines[:20])
         current_code = read_text(state["current_source_file"])
 
         can_fix = default_can_fix(failed_stage, failed_payload)
@@ -85,6 +87,7 @@ class AnalyzerAgent(BaseAgent):
 
         if force_cannot_fix:
             can_fix = False
+            forced_error_type = canonical_pattern_id((static_issue_codes(failed_payload) or [repair_action.get("error_type")])[0])
             if not analysis_report or analysis_report.startswith("阶段 `static_check_failed` 失败"):
                 analysis_report = (
                     "静态检查失败，根因属于目标内核能力或部署环境约束，无法仅通过修改当前源码解决。"
@@ -92,7 +95,7 @@ class AnalyzerAgent(BaseAgent):
                     "此类问题应停止自动修复，改为提示更换内核、调整部署目标，或由人工重新设计挂载方式。"
                 )
             repair_action = {
-                "error_type": str(repair_action.get("error_type") or "environment_unsupported"),
+                "error_type": forced_error_type,
                 "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
                 "key_lines": signal.key_lines[:10],
             }

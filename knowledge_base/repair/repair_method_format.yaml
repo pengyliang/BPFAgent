@@ -1,0 +1,13 @@
+version: 2
+patterns:
+  <pattern_id>:
+    summary: <root_cause_summary>
+    aliases:
+      - <observed_error_type_or_issue_code>
+    stage_hints:
+      - <deploy_failed_stage>
+    can_fix: true
+    repair_methods:
+      - <repair_method>
+    handoff: <only_when_can_fix_is_false>
+  

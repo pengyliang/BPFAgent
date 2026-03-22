@@ -314,13 +314,22 @@ program too large
 
     @patch("src.util.deploy.executor._run_command")
     def test_compile_core_generation_failure(self, run_cmd_mock):
-        run_cmd_mock.return_value = {
-            "command": [],
-            "returncode": 1,
-            "stdout": "",
-            "stderr": "bpftool failed",
-            "timed_out": False,
-        }
+        run_cmd_mock.side_effect = [
+            {
+                "command": [],
+                "returncode": 1,
+                "stdout": "",
+                "stderr": "bpftool failed",
+                "timed_out": False,
+            },
+            {
+                "command": [],
+                "returncode": 0,
+                "stdout": "",
+                "stderr": "",
+                "timed_out": False,
+            },
+        ]
 
         with tempfile.TemporaryDirectory() as td:
             source = Path(td) / "core_case_fail.bpf.c"
@@ -330,9 +339,11 @@ program too large
                 object_file=str(Path(td) / "core_case_fail.bpf.o"),
             )
 
-        self.assertFalse(result["success"])
-        self.assertEqual(result["compile_mode"], "core")
-        self.assertIn("Failed to generate vmlinux.h", result["stderr"])
+        self.assertTrue(result["success"])
+        self.assertEqual(result["compile_mode"], "non-core")
+        self.assertIsNone(result["vmlinux_header"])
+        self.assertFalse(result["vmlinux_generation"]["success"])
+        self.assertIn(f"-I/usr/include/{platform.machine()}-linux-gnu", result["command"])
 
     @patch("src.util.deploy.executor.load_bpf_program_with_libbpf_loader")
     @patch("src.util.deploy.executor._run_command")

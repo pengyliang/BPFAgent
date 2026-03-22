@@ -1,4 +1,5 @@
-#include "vmlinux.h"
+#include <linux/types.h>
+#include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 
@@ -16,16 +17,13 @@ struct {
     __type(value, __u32); /* target tgid */
 } cfg SEC(".maps");
 
-const char expected_str[] = "ok";
-
 SEC("tracepoint/syscalls/sys_enter_openat")
-int helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)
+int helper_absent(struct trace_event_raw_sys_enter *ctx)
 {
     __u32 key = 0;
     __u64 *val = bpf_map_lookup_elem(&counter, &key);
     __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);
-    const char s1[] = "ok";
-    long ret;
+    struct task_struct *task;
 
     if (!val)
         return 0;
@@ -36,8 +34,8 @@ int helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)
             return 0;
     }
 
-    ret = bpf_strncmp(s1, sizeof(s1), expected_str);
-    if (ret == 0)
+    task = (struct task_struct *)bpf_get_current_task_btf();
+    if (task)
         (*val)++;
 
     return 0;

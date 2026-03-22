@@ -5,7 +5,6 @@ import platform
 import re
 import subprocess
 from pathlib import Path
-import shutil
 
 MAP_HELPER_OPERATION = {
     "bpf_map_lookup_elem": "lookup",
@@ -80,18 +79,6 @@ def _generate_vmlinux_header(header_path, bpftool_bin="bpftool", kernel_btf_path
         "command": cmd,
         "stderr": result.stderr,
     }
-
-def _install_fallback_vmlinux(header_path):
-    """Install a minimal vmlinux.h when kernel BTF is unavailable."""
-    dst = Path(header_path)
-    fallback = Path(__file__).resolve().parent / "vmlinux_fallback" / "vmlinux.h"
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        shutil.copyfile(fallback, dst)
-        return True, None
-    except OSError as exc:
-        return False, str(exc)
-
 
 def _walk(node):
     """Yield each AST node in depth-first order."""
@@ -170,6 +157,18 @@ def _extract_map_symbol_from_call(call_node):
     return _extract_declref_name(args[0])
 
 
+def _ast_fallback_summary(file_path, *, reason: str):
+    """When clang/AST fails, return a minimal summary so static_checker uses source-text heuristics."""
+    return {
+        "source_file": str(Path(file_path)),
+        "ast_fallback": True,
+        "ast_fallback_reason": reason,
+        "bpf_helper_calls": [],
+        "struct_field_access_paths": [],
+        "map_operation_sequence": [],
+    }
+
+
 def _write_parser_log(log_path, source_file, command, stderr_text, success):
     log_file = Path(log_path)
     log_file.parent.mkdir(parents=True, exist_ok=True)
@@ -238,37 +237,9 @@ def parse_ebpf_source(
                 bpftool_bin=bpftool_bin,
                 kernel_btf_path=kernel_btf_path,
             )
-            if not header_result["success"]:
-                ok, err = _install_fallback_vmlinux(vmlinux_header)
-                if not ok:
-                    _write_parser_log(
-                        log_path,
-                        file_path,
-                        header_result["command"],
-                        f"Failed to generate vmlinux.h: {header_result['stderr']}; fallback install failed: {err}",
-                        False,
-                    )
-                    with open(output_path, "w", encoding="utf-8") as f:
-                        json.dump(
-                            {
-                                "source_file": str(source),
-                                "bpf_helper_calls": [],
-                                "struct_field_access_paths": [],
-                                "map_operation_sequence": [],
-                            },
-                            f,
-                            indent=2,
-                            ensure_ascii=True,
-                        )
-                    print(f"Error parsing AST. Check {log_path} for details.")
-                    return {
-                        "source_file": str(source),
-                        "bpf_helper_calls": [],
-                        "struct_field_access_paths": [],
-                        "map_operation_sequence": [],
-                    }
+        if vmlinux_header.exists():
             cmd.append(f"-D__TARGET_ARCH_{_target_arch_define()}")
-        cmd.append(f"-I{vmlinux_header.parent}")
+            cmd.append(f"-I{vmlinux_header.parent}")
 
     cmd.append(file_path)
 
@@ -294,10 +265,25 @@ def parse_ebpf_source(
             cmd.insert(-1, f"-I{stub_dir}")
             used_stub_include = True
 
+    out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    stdout_text = (parse_result.stdout if parse_result else "") or ""
+    rc = parse_result.returncode if parse_result is not None else -1
+
+    # Clang failed or produced no AST JSON → static_checker 走源码正则等回退逻辑
+    if rc != 0 or not stdout_text.strip():
+        reason = f"clang_exit_{rc}" if rc != 0 else "empty_clang_stdout"
+        fb = _ast_fallback_summary(file_path, reason=reason)
+        _write_parser_log(log_path, file_path, cmd, last_stderr, False)
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(fb, f, indent=2, ensure_ascii=True)
+        print(f"AST skipped ({reason}); static check will use source-text analysis. See {log_path}")
+        return fb
+
     try:
         # Parse stdout as JSON AST whenever available, even if clang has diagnostics.
-        ast_root = json.loads((parse_result.stdout if parse_result else "") or "{}")
-        ok = parse_result is not None and bool(parse_result.stdout)
+        ast_root = json.loads(stdout_text)
+        ok = bool(stdout_text.strip())
         _write_parser_log(log_path, file_path, cmd, last_stderr, ok)
 
         helper_calls = []
@@ -355,37 +341,23 @@ def parse_ebpf_source(
 
         ast_summary = {
             "source_file": str(Path(file_path)),
+            "ast_fallback": False,
             "bpf_helper_calls": helper_calls,
             "struct_field_access_paths": unique_struct_access_paths,
             "map_operation_sequence": map_operations,
         }
 
-        with open(output_path, "w", encoding="utf-8") as f:
+        with open(out_path, "w", encoding="utf-8") as f:
             json.dump(ast_summary, f, indent=2, ensure_ascii=True)
         print(f"AST successfully parsed and saved to {output_path}")
         return ast_summary
     except json.JSONDecodeError:
         _write_parser_log(log_path, file_path, cmd, last_stderr, False)
-        # Ensure output is always valid JSON, even when parse fails.
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "source_file": str(Path(file_path)),
-                    "bpf_helper_calls": [],
-                    "struct_field_access_paths": [],
-                    "map_operation_sequence": [],
-                },
-                f,
-                indent=2,
-                ensure_ascii=True,
-            )
-        print(f"Error parsing AST. Check {log_path} for details.")
-        return {
-            "source_file": str(Path(file_path)),
-            "bpf_helper_calls": [],
-            "struct_field_access_paths": [],
-            "map_operation_sequence": [],
-        }
+        fb = _ast_fallback_summary(file_path, reason="ast_json_decode_error")
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(fb, f, indent=2, ensure_ascii=True)
+        print(f"Error parsing AST JSON. Check {log_path} for details; static check will use source-text analysis.")
+        return fb
 
 if __name__ == "__main__":
     import sys

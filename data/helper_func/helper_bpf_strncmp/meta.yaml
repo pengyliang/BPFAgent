@@ -1,0 +1,4 @@
+name: helper_bpf_strncmp_unsupport
+feature: bpf_strncmp helper function
+min_kernel: 5.17
+description: Uses bpf_strncmp helper function, which is unsupported on older kernels.

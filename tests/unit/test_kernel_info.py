@@ -23,6 +23,7 @@ class TestKernelInfoCollector(unittest.TestCase):
             self.assertIn("btf", data)
             self.assertIn("helper_whitelist", data)
             self.assertIn("map_type_support", data)
+            self.assertIn("program_type_support", data)
             self.assertIn("verifier_limits", data)
             self.assertIn("clang", data)
             self.assertIn("bpftool_feature_probe", data)
@@ -36,6 +37,7 @@ class TestKernelInfoCollector(unittest.TestCase):
             # Type checks
             self.assertIsInstance(data["helper_whitelist"], list)
             self.assertIsInstance(data["map_type_support"], list)
+            self.assertIsInstance(data["program_type_support"], list)
             self.assertIn("config", data)
             self.assertIsInstance(data["config"]["bpf_flags"], dict)
 

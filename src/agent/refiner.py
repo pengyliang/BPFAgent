@@ -1,175 +1,158 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
 from prompts.refiner import REFINER_PROMPT
-from src.agent.base import BaseAgent, build_error_signal, knowledge_base_path
+from src.agent.base import (
+    BaseAgent,
+    VALID_FAIL_STAGES,
+    build_error_signal,
+    canonical_pattern_id,
+    knowledge_base_enabled,
+    knowledge_base_path,
+    normalize_repair_knowledge_obj,
+    normalize_repair_method,
+    normalize_string_list,
+)
 from src.core.state import CaseState
 
 
-def _slugify(text: str) -> str:
-    s = re.sub(r"[^a-zA-Z0-9]+", "_", (text or "").strip()).strip("_").lower()
-    return s or "rule"
-
-
-VALID_FAIL_STAGES = {
-    "static_check_failed",
-    "compile_failed",
-    "load_failed",
-    "attach_failed",
-    "runtime_test_failed",
-}
-
-
-def _parse_can_fix_prefix(text: str) -> tuple[Optional[bool], str]:
-    raw = str(text or "").strip()
-    m = re.match(r"^can_fix\s*=\s*(true|false)\s*\+\s*(.*)$", raw, flags=re.IGNORECASE)
-    if not m:
-        return None, raw
-    return m.group(1).lower() == "true", m.group(2).strip()
-
-
 def _normalize_method_text(text: str, *, default_can_fix: bool) -> str:
-    _, body = _parse_can_fix_prefix(text)
-    body = re.sub(r"\s+", " ", body).strip()
-    if "具体步骤" in body:
-        body = body.split("具体步骤", 1)[0].rstrip(" ：:，,；;。")
-    body = re.sub(r"^[0-9]+[.)、]\s*", "", body)
-    parts = [p.strip(" ，,；;。") for p in re.split(r"[。；;!?！？]", body) if p.strip(" ，,；;。")]
-    body = "。".join(parts[:2]).strip()
-    if not body:
-        body = "按当前失败阶段采取最小必要修复。"
-    elif not body.endswith("。"):
-        body = body + "。"
-    return f"can_fix={'true' if default_can_fix else 'false'}+{body}"
+    del default_can_fix
+    return normalize_repair_method(text)
 
 
-RepairDb = Dict[str, Dict[str, List[str]]]
-AppendTriple = Tuple[str, str, str]
+PatternEntry = Dict[str, Any]
+RepairDb = Dict[str, PatternEntry]
+AppendTriple = Tuple[str, PatternEntry]
 
 
 def _dedupe_preserve_order(items: List[str]) -> List[str]:
     seen: set[str] = set()
     out: List[str] = []
     for x in items:
-        if x not in seen:
+        if isinstance(x, str) and x not in seen:
             seen.add(x)
             out.append(x)
     return out
 
 
-def _ingest_raw_methods(raw: Any) -> List[str]:
-    if isinstance(raw, str):
-        t = raw.strip()
-        if not t:
-            return []
-        return [_normalize_method_text(t, default_can_fix=True)]
-    if isinstance(raw, list):
-        out: List[str] = []
-        for x in raw:
-            if isinstance(x, str) and x.strip():
-                out.append(_normalize_method_text(x.strip(), default_can_fix=True))
-        return _dedupe_preserve_order(out)
-    return []
-
-
-def _mapping_value_to_appends(stage: str, et: str, val: Any) -> List[AppendTriple]:
-    """仅支持标量字符串或字符串列表；合并侧一律做「在 error_type 下增量追加（规范化后精确去重）」。"""
-    out: List[AppendTriple] = []
-    if isinstance(val, str):
-        m = _normalize_method_text(val.strip(), default_can_fix=True)
-        if m:
-            out.append((stage, et, m))
-        return out
-    if isinstance(val, list):
-        for item in val:
-            if isinstance(item, str):
-                m = _normalize_method_text(item.strip(), default_can_fix=True)
-                if m:
-                    out.append((stage, et, m))
-        return out
-    return out
+def _sanitize_pattern_entry(entry: Dict[str, Any]) -> PatternEntry:
+    aliases = _dedupe_preserve_order(normalize_string_list(entry.get("aliases")))
+    stage_hints = _dedupe_preserve_order(
+        [stage for stage in normalize_string_list(entry.get("stage_hints")) if stage in VALID_FAIL_STAGES]
+    )
+    evidence_hint = _dedupe_preserve_order(normalize_string_list(entry.get("evidence_hint")))
+    repair_methods = _dedupe_preserve_order([normalize_repair_method(x) for x in entry.get("repair_methods") or [] if x])
+    summary = str(entry.get("summary") or "").strip()
+    handoff = str(entry.get("handoff") or "").strip()
+    can_fix = bool(entry.get("can_fix", True))
+    cleaned: PatternEntry = {
+        "summary": summary,
+        "aliases": aliases,
+        "stage_hints": stage_hints,
+        "can_fix": can_fix,
+        "evidence_hint": evidence_hint,
+        "repair_methods": repair_methods,
+    }
+    if handoff:
+        cleaned["handoff"] = normalize_repair_method(handoff)
+    return cleaned
 
 
 def _ensure_repair_db(path: Path) -> RepairDb:
     if path.exists():
         try:
             obj = yaml.safe_load(path.read_text(encoding="utf-8", errors="ignore"))
-            if isinstance(obj, dict):
-                cleaned: RepairDb = {}
-                for stage, mapping in obj.items():
-                    if stage not in VALID_FAIL_STAGES or not isinstance(mapping, dict):
-                        continue
-                    entries: Dict[str, List[str]] = {}
-                    for error_type, raw in mapping.items():
-                        key = str(error_type or "").strip()
-                        if not key:
-                            continue
-                        methods = _ingest_raw_methods(raw)
-                        if methods:
-                            entries[key] = methods
-                    if entries:
-                        cleaned[str(stage)] = entries
-                return cleaned
+            normalized = normalize_repair_knowledge_obj(obj)
+            patterns = normalized.get("patterns")
+            if isinstance(patterns, dict):
+                return {str(pattern_id): _sanitize_pattern_entry(dict(entry or {})) for pattern_id, entry in patterns.items()}
         except Exception:
             pass
     return {}
 
 
 def _repair_db_to_yaml_obj(db: RepairDb) -> Dict[str, Any]:
-    """写出时保持层级：fail_stage → error_type → methods（YAML 列表）。"""
-    out: Dict[str, Any] = {}
-    for stage, smap in db.items():
-        stage_out: Dict[str, Any] = {}
-        for et, methods in smap.items():
-            if methods:
-                stage_out[et] = list(methods)
-        if stage_out:
-            out[stage] = stage_out
+    out: Dict[str, Any] = {"version": 2, "patterns": {}}
+    for pattern_id, entry in db.items():
+        cleaned = _sanitize_pattern_entry(entry)
+        payload: Dict[str, Any] = {
+            "aliases": list(cleaned.get("aliases") or []),
+            "stage_hints": list(cleaned.get("stage_hints") or []),
+            "can_fix": bool(cleaned.get("can_fix", True)),
+            "repair_methods": list(cleaned.get("repair_methods") or []),
+        }
+        if cleaned.get("summary"):
+            payload["summary"] = cleaned["summary"]
+        if cleaned.get("evidence_hint"):
+            payload["evidence_hint"] = list(cleaned["evidence_hint"])
+        if cleaned.get("handoff"):
+            payload["handoff"] = cleaned["handoff"]
+        out["patterns"][pattern_id] = payload
     return out
 
 
 def _normalize_repair_method_updates(obj: Any) -> List[AppendTriple]:
-    result: List[AppendTriple] = []
     if not isinstance(obj, dict):
-        return result
-    for stage, mapping in obj.items():
-        stage_name = str(stage or "").strip()
-        if stage_name not in VALID_FAIL_STAGES or not isinstance(mapping, dict):
-            continue
-        for error_type, val in mapping.items():
-            et = str(error_type or "").strip()
-            if not et:
-                continue
-            result.extend(_mapping_value_to_appends(stage_name, et, val))
-    return result
+        return []
+    root = obj
+    if "patterns" not in obj and obj.get("version") != 2 and not any(str(k) in VALID_FAIL_STAGES for k in obj.keys()):
+        root = {"version": 2, "patterns": obj}
+    normalized = normalize_repair_knowledge_obj(root)
+    patterns = normalized.get("patterns") if isinstance(normalized, dict) else None
+    if not isinstance(patterns, dict):
+        return []
+    return [(str(pattern_id), _sanitize_pattern_entry(dict(entry or {}))) for pattern_id, entry in patterns.items()]
 
 
 def _merge_rule(db: RepairDb, appends: List[AppendTriple]) -> tuple[RepairDb, RepairDb]:
-    """在各自 error_type 下追加 method；是否与已有条目语义重复由 Refiner 提示词约束，此处只做规范化后的精确去重。"""
+    """按 pattern_id 合并知识；列表字段仅做精确去重，布尔可修性采用保守合并。"""
     added: RepairDb = {}
-    for stage, et, method in appends:
-        if not method.strip():
+    for pattern_id, incoming in appends:
+        incoming = _sanitize_pattern_entry(incoming)
+        if not any(
+            [
+                incoming.get("summary"),
+                incoming.get("aliases"),
+                incoming.get("stage_hints"),
+                incoming.get("repair_methods"),
+                incoming.get("handoff"),
+            ]
+        ):
             continue
-        stage_bucket = db.setdefault(stage, {})
-        before = list(stage_bucket.get(et, []))
-        cur = list(before)
-        if method not in cur:
-            cur.append(method)
-        if cur == before:
+        before = _sanitize_pattern_entry(dict(db.get(pattern_id) or {})) if pattern_id in db else None
+        if before is None:
+            db[pattern_id] = incoming
+            added[pattern_id] = incoming
             continue
-        stage_bucket[et] = cur
-        added.setdefault(stage, {})[et] = list(cur)
+
+        merged = dict(before)
+        if incoming.get("summary") and not merged.get("summary"):
+            merged["summary"] = incoming["summary"]
+        for key in ("aliases", "stage_hints", "evidence_hint", "repair_methods"):
+            cur = list(merged.get(key) or [])
+            for item in incoming.get(key) or []:
+                if item not in cur:
+                    cur.append(item)
+            merged[key] = cur
+        merged["can_fix"] = bool(merged.get("can_fix", True) and incoming.get("can_fix", True))
+        if incoming.get("handoff") and not merged.get("handoff"):
+            merged["handoff"] = incoming["handoff"]
+        merged = _sanitize_pattern_entry(merged)
+        if merged == before:
+            continue
+        db[pattern_id] = merged
+        added[pattern_id] = merged
     return db, added
 
 
-def _appends_jsonable(appends: List[AppendTriple]) -> List[Dict[str, str]]:
-    return [{"stage": s, "error_type": e, "repair_method": m} for s, e, m in appends]
+def _appends_jsonable(appends: List[AppendTriple]) -> List[Dict[str, Any]]:
+    return [{"pattern_id": pattern_id, **entry} for pattern_id, entry in appends]
 
 
 def _collect_successful_stage_advances(state: CaseState) -> List[Dict[str, Any]]:
@@ -207,14 +190,24 @@ def _collect_successful_stage_advances(state: CaseState) -> List[Dict[str, Any]]
         repair_method = str(attempt.get("repair_method") or "").strip()
         if not error_type or not repair_method:
             continue
+        pattern_id = canonical_pattern_id(error_type)
+        can_fix = bool(attempt.get("can_fix", True))
+        normalized_method = normalize_repair_method(repair_method)
+        entry: PatternEntry = {
+            "aliases": [error_type] if error_type != pattern_id else [],
+            "stage_hints": [previous_stage],
+            "can_fix": can_fix,
+            "repair_methods": [normalized_method] if can_fix else [],
+            "evidence_hint": [],
+        }
+        if not can_fix:
+            entry["handoff"] = normalized_method
         advances.append(
             {
                 "stage": previous_stage,
-                "error_type": error_type,
-                "repair_method": _normalize_method_text(
-                    repair_method,
-                    default_can_fix=bool(attempt.get("can_fix", True)),
-                ),
+                "observed_error_type": error_type,
+                "pattern_id": pattern_id,
+                "entry": _sanitize_pattern_entry(entry),
             }
         )
     return advances
@@ -289,40 +282,46 @@ class RefinerAgent(BaseAgent):
         kernel_ver = str(((state.get("kernel_profile") or {}).get("kernel_version") or {}).get("raw") or "")
         attempts_yaml = yaml.safe_dump(state.get("repair_attempts") or [], sort_keys=False, allow_unicode=True)
         shared_history_yaml = yaml.safe_dump(state.get("shared_history") or [], sort_keys=False, allow_unicode=True)
-        db_path = knowledge_base_path()
-        db = _ensure_repair_db(db_path)
-        existing_yaml = yaml.safe_dump(_repair_db_to_yaml_obj(db), sort_keys=False, allow_unicode=True).strip() or "{}"
-        system_prompt = REFINER_PROMPT.render(
-            {
-                "case_display": state.get("case_display") or "",
-                "kernel_version": kernel_ver,
-                "final_stage": str(deploy_payload.get("stage") or "unknown"),
-                "final_success": str(bool(deploy_payload.get("success"))).lower(),
-                "error_signature_counts": yaml.safe_dump(
-                    state.get("error_signature_counts") or {}, sort_keys=True, allow_unicode=True
-                ),
-                "key_lines": "\n".join(signal.key_lines[:30]),
-                "attempts_summary": attempts_yaml,
-                "shared_history": shared_history_yaml,
-                "existing_repair_method": existing_yaml,
-            }
-        )
-        raw_output = self.call_llm(
-            system_prompt=system_prompt,
-            user_prompt="请输出需要新增到 repair_method.yaml 的 YAML 映射。",
-            temperature=0.1,
-            max_tokens=900,
-        )
-        self.set_thought(state, raw_output or "基于 repair_attempts 与 deploy 结果生成知识库总结。")
-
         now = self.now()
-        updates = self._build_rule_updates(state, raw_output, signal)
-        db, added_updates = _merge_rule(db, updates)
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        db_path.write_text(
-            yaml.safe_dump(_repair_db_to_yaml_obj(db), sort_keys=False, allow_unicode=True),
-            encoding="utf-8",
-        )
+        kb_enabled = knowledge_base_enabled()
+        db_path = knowledge_base_path() if kb_enabled else None
+        raw_output = ""
+        updates: List[AppendTriple] = []
+        added_updates: RepairDb = {}
+        if kb_enabled and db_path is not None:
+            db = _ensure_repair_db(db_path)
+            existing_yaml = yaml.safe_dump(_repair_db_to_yaml_obj(db), sort_keys=False, allow_unicode=True).strip() or "{}"
+            system_prompt = REFINER_PROMPT.render(
+                {
+                    "case_display": state.get("case_display") or "",
+                    "kernel_version": kernel_ver,
+                    "final_stage": str(deploy_payload.get("stage") or "unknown"),
+                    "final_success": str(bool(deploy_payload.get("success"))).lower(),
+                    "error_signature_counts": yaml.safe_dump(
+                        state.get("error_signature_counts") or {}, sort_keys=True, allow_unicode=True
+                    ),
+                    "key_lines": "\n".join(signal.key_lines[:30]),
+                    "attempts_summary": attempts_yaml,
+                    "shared_history": shared_history_yaml,
+                    "existing_repair_method": existing_yaml,
+                }
+            )
+            raw_output = self.call_llm(
+                system_prompt=system_prompt,
+                user_prompt="请输出需要新增到 repair_method.yaml 的 YAML 映射。",
+                temperature=0.1,
+                max_tokens=900,
+            )
+            self.set_thought(state, raw_output or "基于 repair_attempts 与 deploy 结果生成知识库总结。")
+            updates = self._build_rule_updates(state, raw_output, signal)
+            db, added_updates = _merge_rule(db, updates)
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            db_path.write_text(
+                yaml.safe_dump(_repair_db_to_yaml_obj(db), sort_keys=False, allow_unicode=True),
+                encoding="utf-8",
+            )
+        else:
+            self.set_thought(state, "知识库已禁用，Refiner 仅汇总流程信息，不读取或写入 repair_method.yaml。")
 
         reflect_record_path = Path(state["logs_dir"]) / "reflect_record.json"
         if state.get("write_reflect_record_artifacts", True):
@@ -348,7 +347,7 @@ class RefinerAgent(BaseAgent):
                 "output": {
                     "proposed_updates": _appends_jsonable(updates),
                     "applied_updates": added_updates,
-                    "updated_repair_method": str(db_path),
+                    "updated_repair_method": str(db_path) if db_path is not None else None,
                 },
                 "updated_at": now,
             }
@@ -392,7 +391,7 @@ class RefinerAgent(BaseAgent):
                     "final_decision": state.get("final_decision"),
                     "reflect_record_path": state.get("reflect_record_path"),
                     "repair_report_path": state.get("repair_report_path"),
-                    "knowledge_base_path": str(db_path),
+                    "knowledge_base_path": str(db_path) if db_path is not None else None,
                     "applied_updates": added_updates,
                 },
                 "result_params": {
@@ -412,32 +411,39 @@ class RefinerAgent(BaseAgent):
                 "deploy_state": bool(state.get("deploy_state")),
                 "failed_stage": state.get("failed_stage") or "",
                 "has_repaired": state.get("has_repaired"),
-                "applied_updates_stages": len(added_updates or {}),
-                "applied_updates_total_mappings": sum(len(v or {}) for v in (added_updates or {}).values()),
+                "applied_updates_patterns": len(added_updates or {}),
+                "applied_updates_total_methods": sum(
+                    len((entry or {}).get("repair_methods") or []) for entry in (added_updates or {}).values()
+                ),
             },
         )
         return state
 
     def _build_rule_updates(self, state: CaseState, raw_output: str, signal) -> List[AppendTriple]:
         successful_advances = _collect_successful_stage_advances(state)
-        allowed_pairs = {(item["stage"], item["error_type"]) for item in successful_advances}
+        allowed_pattern_ids = {str(item.get("pattern_id") or "").strip() for item in successful_advances}
+        allowed_aliases = {str(item.get("observed_error_type") or "").strip() for item in successful_advances}
         yaml_block = self.extract_yaml(raw_output or "")
         if yaml_block:
             try:
                 obj = yaml.safe_load(yaml_block)
                 normalized = _normalize_repair_method_updates(obj)
-                filtered = [(s, e, m) for s, e, m in normalized if (s, e) in allowed_pairs]
+                filtered = []
+                for pattern_id, entry in normalized:
+                    aliases = {str(x).strip() for x in entry.get("aliases") or [] if str(x).strip()}
+                    if pattern_id in allowed_pattern_ids or bool(aliases & allowed_aliases):
+                        filtered.append((pattern_id, entry))
                 if filtered:
                     return filtered
             except Exception:
                 pass
 
         out: List[AppendTriple] = []
-        seen: set[tuple[str, str]] = set()
+        seen: set[str] = set()
         for item in successful_advances:
-            st, et = item["stage"], item["error_type"]
-            if (st, et) in seen:
+            pattern_id = str(item.get("pattern_id") or "").strip()
+            if not pattern_id or pattern_id in seen:
                 continue
-            seen.add((st, et))
-            out.append((st, et, item["repair_method"]))
+            seen.add(pattern_id)
+            out.append((pattern_id, dict(item.get("entry") or {})))
         return out

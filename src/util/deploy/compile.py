@@ -165,7 +165,7 @@ def compile_bpf_program(
     source_file: str,
     object_file: Optional[str] = None,
     clang_bin: str = "clang",
-    optimize: str = "-O2",
+    optimize: str = "-O3",
     debug: bool = True,
     mcpu: Optional[str] = None,
     compile_mode: str = "auto",
@@ -198,52 +198,30 @@ def compile_bpf_program(
 
     if effective_mode == "core":
         header_dir = Path(vmlinux_header_dir) if vmlinux_header_dir else obj.parent
-        vmlinux_header = header_dir / "vmlinux.h"
+        candidate_header = header_dir / "vmlinux.h"
 
-        if not vmlinux_header.exists():
+        if candidate_header.exists():
+            vmlinux_header = candidate_header
+        else:
             vmlinux_generation = _generate_vmlinux_header(
-                vmlinux_header,
+                candidate_header,
                 bpftool_bin=bpftool_bin,
                 kernel_btf_path=kernel_btf_path,
                 timeout=timeout,
             )
-            if not vmlinux_generation["success"]:
-                try:
-                    fallback = (
-                        Path(__file__).resolve().parents[3] / "scripts" / "setup" / "vmlinux_fallback" / "vmlinux.h"
-                    )
-                    vmlinux_header.parent.mkdir(parents=True, exist_ok=True)
-                    vmlinux_header.write_text(fallback.read_text(encoding="utf-8"), encoding="utf-8")
-                    effective_mode = "non-core"
-                except OSError:
-                    return {
-                        "success": False,
-                        "stage": "compile",
-                        "source_file": str(source),
-                        "object_file": str(obj),
-                        "compile_mode": effective_mode,
-                        "command": cmd,
-                        "stdout": "",
-                        "stderr": (
-                            "Failed to generate vmlinux.h for CO-RE compile. "
-                            f"stderr: {vmlinux_generation['stderr']}"
-                        ),
-                        "returncode": vmlinux_generation["returncode"],
-                        "timed_out": vmlinux_generation["timed_out"],
-                        "vmlinux_header": str(vmlinux_header),
-                        "vmlinux_generation": vmlinux_generation,
-                    }
+            if vmlinux_generation["success"]:
+                vmlinux_header = candidate_header
+            else:
+                effective_mode = "non-core"
 
-        if effective_mode == "core":
-            cmd.extend(
-                [
-                    f"-D__TARGET_ARCH_{_target_arch_define()}",
-                    f"-I{vmlinux_header.parent}",
-                    f"-I{source.parent}",
-                ]
-            )
-        else:
-            cmd.extend([f"-I{vmlinux_header.parent}", f"-I{source.parent}"])
+    if effective_mode == "core":
+        cmd.extend(
+            [
+                f"-D__TARGET_ARCH_{_target_arch_define()}",
+                f"-I{vmlinux_header.parent}",
+                f"-I{source.parent}",
+            ]
+        )
     else:
         arch_include = f"/usr/include/{platform.machine()}-linux-gnu"
         cmd.extend([f"-I{arch_include}"])

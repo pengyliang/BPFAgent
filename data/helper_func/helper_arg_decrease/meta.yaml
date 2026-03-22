@@ -1,4 +1,0 @@
-name: helper_arg_decrease
-feature: bpf_strncmp reduced-argument form
-min_kernel: 5.17
-description: Uses bpf_strncmp with a reduced argument form compared to older helper APIs, modeling helper ABI parameter reduction incompatibility.

@@ -29,8 +29,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.setup.kernel_info_collector import collect_kernel_info
+from src.util.static_check.ast_summary import build_static_check_summaries
 from src.core.coordinator import Coordinator, CoordinatorConfig
-from src.core.config import load_app_config, get_api_key
+from src.core.config_loader import DEFAULT_CONFIG_PATH, get_api_key, load_app_config
 from src.core.llm.openai_compat import OpenAICompatClient, OpenAICompatConfig
 from src.core.io import read_json
 from src.util.deploy.executor import make_deploy_result_summary, save_deploy_report
@@ -456,7 +457,6 @@ def run_pipeline(
     enable_reflect_agent=True,
     app_config=None,
 ):
-    agent_mode = bool(enable_resolve_agent or enable_reflect_agent)
     data_path = Path(data_dir)
     logs_path = Path(logs_dir)
     build_path = Path(build_dir)
@@ -474,9 +474,13 @@ def run_pipeline(
     if not bpf_sources:
         raise RuntimeError(f"No .bpf.c files found under {data_path}")
 
-    # NOTE: We intentionally do not generate ast_summary.json anymore.
-    # Static checker can derive needed info directly from source text.
-    summaries = [{"source_file": str(src)} for src in bpf_sources]
+    # 先对每份源码跑 clang AST；若 clang 失败或无法解析 JSON，parse_ebpf_source 会标记
+    # ast_fallback 并返回空 bpf_helper_calls，static_checker 再退回源码正则分析。
+    summaries = build_static_check_summaries(
+        bpf_sources,
+        artifact_dir=logs_path,
+        vmlinux_header_dir=str(shared_logs_path),
+    )
 
     kernel_profile_path = Path(kernel_profile_path)
     kernel_version = kernel_profile.get("kernel_version", {})
@@ -488,11 +492,18 @@ def run_pipeline(
     )
 
     if app_config is None:
-        app_config = load_app_config(str(REPO_ROOT / "configs" / "default.toml"))
+        app_config = load_app_config(str(DEFAULT_CONFIG_PATH))
+
+    effective_resolve_agent = bool(enable_resolve_agent and app_config.agent.agent_mode and app_config.agent.analyzer_enabled)
+    effective_inspector_agent = bool(effective_resolve_agent and app_config.agent.inspector_enabled)
+    effective_reflect_agent = bool(enable_reflect_agent and app_config.agent.agent_mode and app_config.agent.refiner_enabled)
+    agent_mode = bool(effective_resolve_agent or effective_reflect_agent)
 
     # Build OpenAI-compatible client if enabled and key exists.
     llm_client = None
     if app_config.llm.enabled:
+        if app_config.llm.show_terminal_output:
+            print(f"当前使用的模型: {app_config.llm.model}")
         key = get_api_key(app_config.llm)
         if key:
             llm_client = OpenAICompatClient(
@@ -501,24 +512,34 @@ def run_pipeline(
                     model=app_config.llm.model,
                     api_key=key,
                     timeout_s=app_config.llm.timeout_s,
+                    extra_body=app_config.llm.extra_body,
+                    show_terminal_output=app_config.llm.show_terminal_output,
                 )
             )
+        else:
+            if app_config.llm.show_terminal_output:
+                print("LLM 已启用，但未获取到 API Key，当前不会创建模型客户端。")
+    else:
+        if app_config.llm.show_terminal_output:
+            print("LLM 已禁用，当前不会使用模型。")
 
     coordinator = coordinator or Coordinator(
         config=CoordinatorConfig(
             max_retries=int(app_config.max_retry or 1),
-            enable_agent=bool(enable_resolve_agent and app_config.agent.enable_agent),
+            enable_agent=bool(effective_resolve_agent),
             agent_max_patches=int(app_config.agent.agent_max_patches or 2),
+            enable_static_check=bool(app_config.static_check.enabled),
         )
     )
     # Coordinator is deterministic; LLM is consumed by agent modules.
     coordinator.llm = llm_client  # type: ignore[attr-defined]
     case_graph = build_case_graph(
         coordinator=coordinator,
-        enable_resolve_agent=bool(enable_resolve_agent),
+        enable_resolve_agent=bool(effective_resolve_agent),
+        enable_inspector_agent=bool(effective_inspector_agent),
         # Reflect depends on the same agent enable flag as resolve.
-        enable_reflect_agent=bool(enable_reflect_agent and app_config.agent.enable_agent),
-        use_pipeline_dirs=bool(enable_resolve_agent),
+        enable_reflect_agent=bool(effective_reflect_agent),
+        use_pipeline_dirs=bool(effective_resolve_agent),
     )
 
     static_report_path = logs_path / "static_check.json"
@@ -558,7 +579,7 @@ def run_pipeline(
             program_type=program_type,
             vmlinux_header_dir=str(shared_logs_path),
             artifact_stem=("" if single_source_case else stem),
-            use_pipeline_dirs=bool(enable_resolve_agent),
+            use_pipeline_dirs=bool(effective_resolve_agent),
             write_repair_error_record=not agent_mode,
             write_reflect_record_artifacts=not agent_mode,
         )
@@ -566,7 +587,7 @@ def run_pipeline(
 
         # Summarize deploy stage from per-stage *_result.json files (no deploy_summary node).
         stage_root = logs_path
-        if enable_resolve_agent:
+        if effective_resolve_agent:
             # Prefer the latest deploy/deploy_* dir; fall back to legacy pipeline_* dirs.
             max_n = 0
             best_stage_root = None
@@ -637,7 +658,7 @@ def run_pipeline(
             runtime_report=runtime_report,
             detach_report=detach_report,
         )
-        if enable_resolve_agent:
+        if effective_resolve_agent:
             agent_final_status = _resolve_agent_final_status(final_state, fallback_stage=stage)
             if agent_final_status is not None:
                 success, stage = agent_final_status
@@ -834,8 +855,11 @@ def run_for_groups(
     output_root = REPO_ROOT / "output" / kernel_output_version
     logs_base = output_root / "log"
     build_root = output_root / "build"
+    app_config = load_app_config(config_path or str(DEFAULT_CONFIG_PATH))
+    effective_resolve_agent = bool(enable_resolve_agent and app_config.agent.agent_mode and app_config.agent.analyzer_enabled)
+    effective_reflect_agent = bool(enable_reflect_agent and app_config.agent.agent_mode and app_config.agent.refiner_enabled)
 
-    mode_name = "agent_mode" if (enable_resolve_agent or enable_reflect_agent) else "no_agent_mode"
+    mode_name = "agent_mode" if (effective_resolve_agent or effective_reflect_agent) else "no_agent_mode"
     mode_logs_root = logs_base / mode_name
 
     all_cases = _discover_data_cases(data_root)
@@ -853,7 +877,6 @@ def run_for_groups(
     )
     print(f"Kernel profile loaded: {kernel_profile_path}")
 
-    app_config = load_app_config(config_path or str(REPO_ROOT / "configs" / "default.toml"))
     prepared_cases = []
     for case in cases:
         case_logs_dir_base = mode_logs_root / case["category"] / case["case_rel"]
@@ -881,8 +904,8 @@ def run_for_groups(
             bpftool_output_path=str(global_bpftool_probe),
             shared_logs_dir=str(logs_base),
             coordinator=None,
-            enable_resolve_agent=enable_resolve_agent,
-            enable_reflect_agent=enable_reflect_agent,
+            enable_resolve_agent=effective_resolve_agent,
+            enable_reflect_agent=effective_reflect_agent,
             app_config=app_config,
         )
         return {
@@ -1048,8 +1071,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--config",
-        default=str(REPO_ROOT / "configs" / "default.toml"),
-        help="配置文件路径（TOML），默认使用 configs/default.toml。API Key 仍建议用环境变量注入。",
+        default=str(DEFAULT_CONFIG_PATH),
+        help="配置文件路径（Python），默认使用仓库根目录的 app_config.py。",
     )
     args = parser.parse_args()
     if args.no_agent:

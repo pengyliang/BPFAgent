@@ -180,6 +180,58 @@ def _extract_helpers_and_maps(bpftool_json):
     return sorted(helper_set), filtered_maps
 
 
+# bpftool `feature probe` JSON: program_types.have_*_prog_type -> canonical SEC/libbpf slugs
+# used by static_checker (must stay in sync with src.util.static_check.static_checker._normalize_program_type).
+BPFGOOL_PROG_TYPE_PROBE_TO_CANONICAL = {
+    "have_socket_filter_prog_type": ("socket_filter",),
+    "have_kprobe_prog_type": ("kprobe", "kretprobe"),
+    "have_sched_cls_prog_type": ("sched_cls",),
+    "have_sched_act_prog_type": ("sched_act",),
+    "have_tracepoint_prog_type": ("tracepoint",),
+    "have_xdp_prog_type": ("xdp",),
+    "have_perf_event_prog_type": ("perf_event",),
+    "have_cgroup_skb_prog_type": ("cgroup_skb",),
+    "have_cgroup_sock_prog_type": ("cgroup_sock",),
+    "have_lwt_in_prog_type": ("lwt_in",),
+    "have_lwt_out_prog_type": ("lwt_out",),
+    "have_lwt_xmit_prog_type": ("lwt_xmit",),
+    "have_sock_ops_prog_type": ("sock_ops",),
+    "have_sk_skb_prog_type": ("sk_skb",),
+    "have_cgroup_device_prog_type": ("cgroup_device",),
+    "have_sk_msg_prog_type": ("sk_msg",),
+    "have_raw_tracepoint_prog_type": ("raw_tracepoint",),
+    "have_cgroup_sock_addr_prog_type": ("cgroup_sock_addr",),
+    "have_lwt_seg6local_prog_type": ("lwt_seg6local",),
+    "have_lirc_mode2_prog_type": ("lirc_mode2",),
+    "have_sk_reuseport_prog_type": ("sk_reuseport",),
+    "have_flow_dissector_prog_type": ("flow_dissector",),
+    "have_cgroup_sysctl_prog_type": ("cgroup_sysctl",),
+    "have_raw_tracepoint_writable_prog_type": ("raw_tracepoint_writable",),
+    "have_cgroup_sockopt_prog_type": ("cgroup_sockopt",),
+    "have_tracing_prog_type": ("fentry", "fexit", "iter"),
+    "have_struct_ops_prog_type": ("struct_ops",),
+    "have_ext_prog_type": ("ext",),
+    "have_lsm_prog_type": ("lsm",),
+    "have_sk_lookup_prog_type": ("sk_lookup",),
+    "have_syscall_prog_type": ("syscall",),
+    "have_netfilter_prog_type": ("netfilter",),
+}
+
+
+def _extract_program_type_support(bpftool_json):
+    """Return sorted canonical program type names supported on this kernel (from bpftool JSON)."""
+    node = bpftool_json.get("program_types") if isinstance(bpftool_json, dict) else None
+    if not isinstance(node, dict):
+        return []
+    supported = set()
+    for key, val in node.items():
+        if val is not True:
+            continue
+        for name in BPFGOOL_PROG_TYPE_PROBE_TO_CANONICAL.get(key, ()):
+            supported.add(name)
+    return sorted(supported)
+
+
 def _collect_clang_info():
     result = _run_cmd(["clang", "--version"])
     first_line = result["stdout"].splitlines()[0] if result["stdout"] else ""
@@ -224,6 +276,7 @@ def collect_kernel_info(output_path="kernel_profile.json", artifacts_dir=None, b
 
     bpftool_info = _collect_bpftool_features()
     helper_whitelist, map_type_support = _extract_helpers_and_maps(bpftool_info["json"])
+    program_type_support = _extract_program_type_support(bpftool_info["json"])
 
     clang_info = _collect_clang_info()
 
@@ -242,6 +295,7 @@ def collect_kernel_info(output_path="kernel_profile.json", artifacts_dir=None, b
         },
         "helper_whitelist": helper_whitelist,
         "map_type_support": map_type_support,
+        "program_type_support": program_type_support,
         "verifier_limits": _infer_verifier_limits(kernel_version),
         "clang": clang_info,
         "bpftool_feature_probe": {

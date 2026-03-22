@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -38,6 +39,7 @@ class CoordinatorConfig:
     loader_backend_order: Tuple[LoadBackend, ...] = ("libbpf_daemon", "libbpf_once", "bpftool")
     enable_agent: bool = True
     agent_max_patches: int = 2
+    enable_static_check: bool = True
 
 
 @dataclass
@@ -64,6 +66,20 @@ class Coordinator:
         kernel_profile: Dict[str, Any],
         output_path: Optional[str],
     ) -> Dict[str, Any]:
+        if not self.config.enable_static_check:
+            report = {
+                "success": True,
+                "stage": "static_check",
+                "skipped": True,
+                "reason": "disabled",
+                "error_warning_count": {"error": 0, "warning": 0},
+                "issues": [],
+            }
+            if output_path:
+                out = Path(output_path)
+                out.parent.mkdir(parents=True, exist_ok=True)
+                out.write_text(json.dumps(report, indent=2, ensure_ascii=True), encoding="utf-8")
+            return report
         return self.static_tool.run(
             summaries=summaries,
             kernel_profile=kernel_profile,

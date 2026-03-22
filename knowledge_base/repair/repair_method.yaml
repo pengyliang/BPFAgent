@@ -1,14 +1,219 @@
-static_check_failed:
-  attach_target_not_found: can_fix=false+直接报告部署内核上缺少该 attach target，需要更换目标符号、部署环境或人工重设计挂载方式。
-  core_requires_btf: can_fix=true+移除 CO-RE/BPF_CORE_READ 依赖，改成非 CO-RE 读取方式。
-  map_feature_incompatible: can_fix=true+将当前内核不支持的 map 或 helper 替换为兼容实现，并同步调整相关读写逻辑。
-compile_failed:
-  missing_header_dependency: can_fix=true+补充缺失头文件，为未声明的宏、结构体或函数提供定义。
-  missing_linux_types_header: can_fix=true+在 BPF 头文件前补充 `#include <linux/types.h>`，提供
-    `__u32/__u64` 等基础类型定义。
-  missing_bpf_map_type_definition: can_fix=true+在 BPF 头文件前补充 `#include <linux/bpf.h>`，提供
-    `BPF_MAP_TYPE_*` 等常量定义。
-runtime_test_failed:
-  runtime_validation_mismatch: can_fix=true+校正运行时语义或硬编码偏移，优先保证读取字段和预期值一致。
-load_failed:
-  load_verifier_rejection: can_fix=true+根据 verifier 日志做最小修复，优先补边界检查、简化分支并替换不兼容 helper。
+version: 2
+patterns:
+  kernel_struct_offset_mismatch:
+    summary: 读取内核结构体字段时依赖硬编码偏移或错误字段布局，导致运行时语义不匹配。
+    aliases:
+      - hardcoded_offset_read
+      - field_offset_mismatch
+    stage_hints:
+      - runtime_test_failed
+      - load_failed
+    can_fix: true
+    evidence_hint:
+      - 硬编码 offset
+      - field offset
+      - 读取字段值异常
+      - 结构体布局变化
+    repair_methods:
+      - 将硬编码字段偏移访问替换为 CO-RE 感知的字段读取；若目标环境缺少 BTF，再实现受控的非 CO-RE 兼容路径。
+      - 统一收敛到 `BPF_CORE_READ` 或等价安全读取接口，避免直接依赖 `task_struct` 等内核结构体的固定布局。
+  # runtime_semantic_mismatch:
+  #   summary: 程序已成功编译加载，但运行结果与校验预期不一致。
+  #   aliases:
+  #     - runtime_validation_failed
+  #     - runtime_validation_mismatch
+  #     - validator_mismatch
+  #   stage_hints:
+  #     - runtime_test_failed
+  #   can_fix: true
+  #   evidence_hint:
+  #     - validation mismatch
+  #     - expected
+  #     - actual
+  #     - validator
+  #   repair_methods:
+  #     - 先定位观测语义偏差来自字段读取、过滤条件还是事件选择，再做最小源码修复，避免为通过测试而改写原始业务语义。
+  #     - 若偏差来自结构体字段访问或事件上下文理解错误，优先修正读取路径与边界条件，而不是改测试期望。
+  helper_signature_mismatch:
+    summary: helper 或辅助宏的声明、参数类型或返回值用法与当前源码不匹配。
+    aliases:
+      - missing_declaration
+      - implicit_function_declaration
+      - helper_mismatch
+    stage_hints:
+      - compile_failed
+      - load_failed
+    can_fix: true
+    evidence_hint:
+      - implicit declaration
+      - incompatible function
+      - too many arguments
+      - passing argument
+    repair_methods:
+      - 对齐 helper 的声明、参数类型和调用方式，优先采用当前头文件和 helper 约束下的最小兼容写法。
+      - 若问题来自 CO-RE 相关辅助宏，先补齐必要头文件，再校正调用签名和目标字段类型。
+  helper_unsupported:
+    summary: 当前内核或 verifier 不允许使用某个 helper，需要改写为兼容实现。
+    aliases:
+      - unknown_func
+      - invalid_func
+      - helper_not_allowed
+    stage_hints:
+      - static_check_failed
+      - load_failed
+    can_fix: true
+    evidence_hint:
+      - unknown func
+      - helper call
+      - not allowed
+    repair_methods:
+      - 将目标内核不支持的 helper 替换为等价的兼容 helper，或改写为不依赖该 helper 的简单实现。
+  verifier_memory_bounds:
+    summary: verifier 无法证明当前内存访问安全，通常需要补充边界检查或缩小访问范围。
+    aliases:
+      - invalid_mem_access
+      - out_of_bounds
+      - ptr_to_stack
+    stage_hints:
+      - load_failed
+    can_fix: true
+    evidence_hint:
+      - invalid mem access
+      - out of bounds
+      - ptr_to_stack
+    repair_methods:
+      - 在可疑指针解引用前补充 verifier 可证明的空值、范围和长度检查，并缩小一次访问的内存跨度。
+      - 尽量把复杂指针运算拆成 verifier 更容易推理的简单步骤，必要时引入临时变量保存中间结果。
+  verifier_reg_type_mismatch:
+    summary: verifier 推断出的寄存器类型与 helper、上下文或内存访问要求不一致。
+    aliases:
+      - reg_type_mismatch
+      - invalid_bpf_context_access
+    stage_hints:
+      - load_failed
+    can_fix: true
+    evidence_hint:
+      - type mismatch
+      - expected=
+      - got=
+      - invalid bpf_context access
+    repair_methods:
+      - 调整寄存器来源和类型收敛路径，避免把不透明指针直接传给 helper 或用于上下文字段访问。
+  verifier_rejection_generic:
+    summary: verifier 拒绝加载，但日志尚不足以归入更细的内存、寄存器或循环类错误。
+    aliases:
+      - load_verifier_rejection
+      - verifier_reject
+    stage_hints:
+      - load_failed
+    can_fix: true
+    evidence_hint:
+      - verifier
+      - rejected
+    repair_methods:
+      - 根据 verifier 关键日志做最小修复，优先补边界检查、收紧分支条件，并删去 verifier 难以证明的冗余路径。
+  map_type_unsupported:
+    summary: 当前 map 类型或相关 map 特性不受目标内核支持。
+    aliases:
+      - invalid_map_type
+      - map_feature_incompatible
+      - map_type_not_in_probe
+    stage_hints:
+      - static_check_failed
+      - load_failed
+    can_fix: true
+    evidence_hint:
+      - unsupported map
+      - map type
+      - map feature
+    repair_methods:
+      - 将不兼容的 map 类型或特性替换为目标内核支持的实现，并同步调整对应的读写逻辑和初始化方式。
+  header_dependency_missing:
+    summary: 缺失头文件或声明依赖，导致编译阶段无法解析宏、结构体或函数声明。
+    aliases:
+      - missing_header_dependency
+      - missing_header_include
+    stage_hints:
+      - compile_failed
+    can_fix: true
+    evidence_hint:
+      - fatal error
+      - no such file
+      - undeclared
+      - bpf_core_read
+    repair_methods:
+      - 补齐当前源码实际依赖的头文件，并按依赖顺序放在 BPF 程序所需的最小集合内，避免额外引入无关头文件。
+      - 使用 `BPF_CORE_READ` 或相关 CO-RE 宏时，显式引入 `<bpf/bpf_core_read.h>`。
+  linux_types_definition_missing:
+    summary: 基础 Linux 类型定义缺失，导致 `__u32`、`__u64` 等类型不可用。
+    aliases:
+      - missing_linux_types_header
+    stage_hints:
+      - compile_failed
+    can_fix: true
+    repair_methods:
+      - 在 BPF 相关头文件之前补充 `<linux/types.h>`，先恢复基础类型定义，再保留其余修复逻辑不变。
+  bpf_map_constant_missing:
+    summary: BPF map 常量或类型定义缺失，通常来自 `linux/bpf.h` 依赖未正确引入。
+    aliases:
+      - missing_bpf_map_type_definition
+    stage_hints:
+      - compile_failed
+    can_fix: true
+    repair_methods:
+      - 补充 `<linux/bpf.h>` 或等价定义来源，恢复 `BPF_MAP_TYPE_*` 等常量与结构声明。
+  core_requires_btf:
+    summary: 当前源码依赖 CO-RE/BTF 能力，但部署目标缺少对应 BTF 支持。
+    aliases:
+      - core_requires_btf
+    stage_hints:
+      - static_check_failed
+      - runtime_test_failed
+    can_fix: true
+    evidence_hint:
+      - source code has vmlinux.h dependency
+      - no /sys/kernel/btf/vmlinux
+      - co-re
+      - btf
+    repair_methods:
+      - 删除vmlinux.h头文件依赖，为字段读取提供非 CO-RE 降级路径，确保在缺少 BTF 的目标内核上仍可维持原始观测语义。
+  attach_target_missing:
+    summary: attach 目标符号或 attach target 在当前部署内核不存在。
+    aliases:
+      - attach_target_not_found
+      - missing_attach_target
+    stage_hints:
+      - static_check_failed
+      - attach_failed
+    can_fix: false
+    evidence_hint:
+      - target symbol not found
+      - missing attach target
+    repair_methods: []
+    handoff: 目标内核缺少所需 attach target；应由人工确认部署内核上的真实目标符号或重新定义观测目标，停止自动源码修复。
+  attach_type_unsupported:
+    summary: 当前内核能力不支持所选 attach 方式或所需最小内核版本。
+    aliases:
+      - program_type_min_kernel
+      - program_type_not_supported
+      - fentry_fexit_require_btf
+    stage_hints:
+      - static_check_failed
+      - attach_failed
+    can_fix: false
+    evidence_hint:
+      - requires kernel
+      - not supported
+      - requires BTF
+    repair_methods: []
+    handoff: 当前部署环境不支持该 attach 方式；除非人工确认存在不改变观测语义的 attach fallback，否则应停止自动源码修复并改由环境或方案调整处理。
+  external_runtime_dependency_missing:
+    summary: 运行时测试依赖的 workload、validator 或外部条件不存在。
+    aliases:
+      - workload_not_found
+      - validator_not_found
+    stage_hints:
+      - runtime_test_failed
+    can_fix: false
+    repair_methods: []
+    handoff: 失败根因来自运行时依赖缺失，而非源码错误；应补齐 workload 或 validator 后再复测，停止自动源码修复。

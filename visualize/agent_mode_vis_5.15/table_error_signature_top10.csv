@@ -1,4 +1,0 @@
-signature,count
-load_failed,2
-runtime_test_failed,1
-compile_failed:/host/data/verifier/dynptr_memory_model/dynptr_memory_model.bpf.c:34:23: error: variable has incomplete type 'struct bpf_dynptr',1

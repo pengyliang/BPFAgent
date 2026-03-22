@@ -1,4 +1,4 @@
 name: helper_absent
 feature: bpf_get_current_task_btf helper availability
 min_kernel: 5.11
-description: Uses bpf_get_current_task_btf, which is unavailable on older kernels and should fail helper resolution there.
+description: Uses bpf_get_current_task_btf plus BPF_CORE_READ(task, tgid) to verify the returned task matches current tgid before counting; helper is unavailable on older kernels (fail load) and CO-RE/BTF path applies on capable kernels.

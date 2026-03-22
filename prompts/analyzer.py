@@ -36,9 +36,12 @@ ANALYZER_PROMPT = PromptTemplate(
 {knowledge_rules}
 
 知识库解读要点：
-- 规则按「失败阶段 → error_type → **若干条可选 repair_method**」组织；同一 error_type 下可能有多条并列策略
-- 请结合当前报错与 deploy 上下文，**从中选择最贴合的一条（或在必要时简短综合）**，写入你输出 JSON 中的 `repair_method`，供 Repairer 执行；不要机械罗列全部条目
-- 如果没有合适的条目, 则由你自行分析, 并写入你输出 JSON 中的 `repair_method`
+- 规则按「pattern_id → 根因摘要/aliases/stage_hints/can_fix/repair_methods/handoff」组织；`pattern_id` 是更稳定的根因类型，不一定等于当前表面的报错名
+- 请优先根据当前 `error_signature` 命中的 `pattern_id` 或 `aliases` 选规则，再用 `failed_stage`、关键报错行和上下文做确认
+- 输出 JSON 中的 `error_type` 应优先填写你最终判定的 `pattern_id`；若知识库无匹配，再退回最贴近的现象名
+- 若命中 `can_fix=true` 的 pattern，请从 `repair_methods` 中选择最贴合的一条（必要时可简短综合）写入 `repair_method`
+- 若命中 `can_fix=false` 的 pattern，请优先参考 `handoff`，并明确停止自动源码修复
+- 如果没有合适的条目，则由你自行分析，并写入你输出 JSON 中的 `repair_method`
 
 关键报错行:
 {key_lines}
@@ -55,6 +58,7 @@ ANALYZER_PROMPT = PromptTemplate(
 - 如果问题主要来自源码逻辑、字段访问、边界检查、helper/声明使用、attach 逻辑或运行时语义偏差，则 `can_fix=true`
 - 如果问题主要来自环境缺失、外部依赖不存在、内核不支持且无法通过最小代码改动规避，则 `can_fix=false`
 - 对 `static_check_failed`，若 issue code 命中 `attach_target_not_found`、`missing_attach_target`、`program_type_min_kernel`、`program_type_not_supported`、`fentry_fexit_require_btf`，必须判定 `can_fix=false`
+- `error_type` 应尽量输出稳定的根因 pattern 名，而不是仅描述当前阶段症状
 - `repair_method` 必须足够具体，能直接指导 Repairer 修改代码
 - `analysis_report` 必须说明关键证据，便于人工复核
 """,

@@ -60,6 +60,8 @@ class TestStaticChecker(unittest.TestCase):
             "btf": {"available": False},
             "helper_whitelist": ["bpf_map_lookup_elem"],
             "map_type_support": ["BPF_MAP_TYPE_HASH"],
+            # tests/data: kprobe + tracepoint samples
+            "program_type_support": ["kprobe", "kretprobe", "tracepoint"],
         }
 
         with open(ast_summary_path, "w", encoding="utf-8") as f:
@@ -89,10 +91,19 @@ class TestStaticChecker(unittest.TestCase):
         self.assertIn("helper_availability", all_checks)
         self.assertIn("map_type_availability", all_checks)
 
-        # Ringbuf sample should trigger at least one unsupported check on synthetic 5.4 profile.
-        self.assertTrue(
-            "helper_min_kernel" in all_codes or "map_type_not_in_probe" in all_codes or "map_type_min_kernel" in all_codes
-        )
+        # Ringbuf sample on synthetic 5.4: min-kernel codes only if enabled; else probe/whitelist.
+        from src.util.static_check import static_checker as _sc
+
+        if _sc.ENABLE_MIN_KERNEL_CHECKS:
+            self.assertTrue(
+                "helper_min_kernel" in all_codes
+                or "map_type_not_in_probe" in all_codes
+                or "map_type_min_kernel" in all_codes
+            )
+        else:
+            self.assertTrue(
+                "helper_not_in_probe" in all_codes or "map_type_not_in_probe" in all_codes
+            )
 
 
 if __name__ == "__main__":
