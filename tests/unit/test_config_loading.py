@@ -13,6 +13,7 @@ class TestConfigLoading(unittest.TestCase):
             CONFIG = {
                 "max_retry": 3,
                 "log_level": 1,
+                "concurrent_workers": 8,
                 "agent_mode": True,
                 "analyzer": False,
                 "refiner": True,
@@ -43,6 +44,8 @@ class TestConfigLoading(unittest.TestCase):
 
         self.assertEqual(app_config.max_retry, 3)
         self.assertEqual(app_config.log_level, 1)
+        self.assertEqual(app_config.max_repair_attempts, 3)
+        self.assertEqual(app_config.concurrent_workers, 8)
         self.assertTrue(app_config.agent.agent_mode)
         self.assertFalse(app_config.agent.analyzer_enabled)
         self.assertTrue(app_config.agent.refiner_enabled)

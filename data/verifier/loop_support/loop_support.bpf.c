@@ -38,6 +38,7 @@ int isa_upgrade_incompatible(struct trace_event_raw_sys_enter *ctx)
         return 0;
 
     __u32 i = 0;
+    /* Crutial block */
     while (i < 100){    // bounded loop
         i++;
         if (i % 2 == 0)
@@ -45,7 +46,7 @@ int isa_upgrade_incompatible(struct trace_event_raw_sys_enter *ctx)
         else
             pid -= 1;
     }
-
+    /* Crutial block end */
     if (pid > pid_threshold)
         (*val)++;
 

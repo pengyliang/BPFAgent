@@ -1,219 +1,177 @@
 version: 2
 patterns:
-  kernel_struct_offset_mismatch:
-    summary: 读取内核结构体字段时依赖硬编码偏移或错误字段布局，导致运行时语义不匹配。
+  helper_api_compatibility:
     aliases:
-      - hardcoded_offset_read
-      - field_offset_mismatch
+    - helper_not_in_probe
+    - map_type_not_in_probe
+    - helper_bpf_probe_read_kernel_missing
+    - helper_bpf_strncmp_missing
+    - helper_bpf_get_current_task_btf_missing
+    - helper_bpf_snprintf_missing
+    - bpf_snprintf_rodata_relocation_failed
+    - helper_api_compatibility
     stage_hints:
-      - runtime_test_failed
-      - load_failed
-    can_fix: true
-    evidence_hint:
-      - 硬编码 offset
-      - field offset
-      - 读取字段值异常
-      - 结构体布局变化
-    repair_methods:
-      - 将硬编码字段偏移访问替换为 CO-RE 感知的字段读取；若目标环境缺少 BTF，再实现受控的非 CO-RE 兼容路径。
-      - 统一收敛到 `BPF_CORE_READ` 或等价安全读取接口，避免直接依赖 `task_struct` 等内核结构体的固定布局。
-  # runtime_semantic_mismatch:
-  #   summary: 程序已成功编译加载，但运行结果与校验预期不一致。
-  #   aliases:
-  #     - runtime_validation_failed
-  #     - runtime_validation_mismatch
-  #     - validator_mismatch
-  #   stage_hints:
-  #     - runtime_test_failed
-  #   can_fix: true
-  #   evidence_hint:
-  #     - validation mismatch
-  #     - expected
-  #     - actual
-  #     - validator
-  #   repair_methods:
-  #     - 先定位观测语义偏差来自字段读取、过滤条件还是事件选择，再做最小源码修复，避免为通过测试而改写原始业务语义。
-  #     - 若偏差来自结构体字段访问或事件上下文理解错误，优先修正读取路径与边界条件，而不是改测试期望。
-  helper_signature_mismatch:
-    summary: helper 或辅助宏的声明、参数类型或返回值用法与当前源码不匹配。
-    aliases:
-      - missing_declaration
-      - implicit_function_declaration
-      - helper_mismatch
-    stage_hints:
-      - compile_failed
-      - load_failed
-    can_fix: true
-    evidence_hint:
-      - implicit declaration
-      - incompatible function
-      - too many arguments
-      - passing argument
-    repair_methods:
-      - 对齐 helper 的声明、参数类型和调用方式，优先采用当前头文件和 helper 约束下的最小兼容写法。
-      - 若问题来自 CO-RE 相关辅助宏，先补齐必要头文件，再校正调用签名和目标字段类型。
-  helper_unsupported:
-    summary: 当前内核或 verifier 不允许使用某个 helper，需要改写为兼容实现。
-    aliases:
-      - unknown_func
-      - invalid_func
-      - helper_not_allowed
-    stage_hints:
-      - static_check_failed
-      - load_failed
-    can_fix: true
-    evidence_hint:
-      - unknown func
-      - helper call
-      - not allowed
-    repair_methods:
-      - 将目标内核不支持的 helper 替换为等价的兼容 helper，或改写为不依赖该 helper 的简单实现。
-  verifier_memory_bounds:
-    summary: verifier 无法证明当前内存访问安全，通常需要补充边界检查或缩小访问范围。
-    aliases:
-      - invalid_mem_access
-      - out_of_bounds
-      - ptr_to_stack
-    stage_hints:
-      - load_failed
-    can_fix: true
-    evidence_hint:
-      - invalid mem access
-      - out of bounds
-      - ptr_to_stack
-    repair_methods:
-      - 在可疑指针解引用前补充 verifier 可证明的空值、范围和长度检查，并缩小一次访问的内存跨度。
-      - 尽量把复杂指针运算拆成 verifier 更容易推理的简单步骤，必要时引入临时变量保存中间结果。
-  verifier_reg_type_mismatch:
-    summary: verifier 推断出的寄存器类型与 helper、上下文或内存访问要求不一致。
-    aliases:
-      - reg_type_mismatch
-      - invalid_bpf_context_access
-    stage_hints:
-      - load_failed
-    can_fix: true
-    evidence_hint:
-      - type mismatch
-      - expected=
-      - got=
-      - invalid bpf_context access
-    repair_methods:
-      - 调整寄存器来源和类型收敛路径，避免把不透明指针直接传给 helper 或用于上下文字段访问。
-  verifier_rejection_generic:
-    summary: verifier 拒绝加载，但日志尚不足以归入更细的内存、寄存器或循环类错误。
-    aliases:
-      - load_verifier_rejection
-      - verifier_reject
-    stage_hints:
-      - load_failed
-    can_fix: true
-    evidence_hint:
-      - verifier
-      - rejected
-    repair_methods:
-      - 根据 verifier 关键日志做最小修复，优先补边界检查、收紧分支条件，并删去 verifier 难以证明的冗余路径。
-  map_type_unsupported:
-    summary: 当前 map 类型或相关 map 特性不受目标内核支持。
-    aliases:
-      - invalid_map_type
-      - map_feature_incompatible
-      - map_type_not_in_probe
-    stage_hints:
-      - static_check_failed
-      - load_failed
-    can_fix: true
-    evidence_hint:
-      - unsupported map
-      - map type
-      - map feature
-    repair_methods:
-      - 将不兼容的 map 类型或特性替换为目标内核支持的实现，并同步调整对应的读写逻辑和初始化方式。
-  header_dependency_missing:
-    summary: 缺失头文件或声明依赖，导致编译阶段无法解析宏、结构体或函数声明。
-    aliases:
-      - missing_header_dependency
-      - missing_header_include
-    stage_hints:
-      - compile_failed
-    can_fix: true
-    evidence_hint:
-      - fatal error
-      - no such file
-      - undeclared
-      - bpf_core_read
-    repair_methods:
-      - 补齐当前源码实际依赖的头文件，并按依赖顺序放在 BPF 程序所需的最小集合内，避免额外引入无关头文件。
-      - 使用 `BPF_CORE_READ` 或相关 CO-RE 宏时，显式引入 `<bpf/bpf_core_read.h>`。
-  linux_types_definition_missing:
-    summary: 基础 Linux 类型定义缺失，导致 `__u32`、`__u64` 等类型不可用。
-    aliases:
-      - missing_linux_types_header
-    stage_hints:
-      - compile_failed
+    - static_check_failed
+    - compile_failed
+    - load_failed
     can_fix: true
     repair_methods:
-      - 在 BPF 相关头文件之前补充 `<linux/types.h>`，先恢复基础类型定义，再保留其余修复逻辑不变。
-  bpf_map_constant_missing:
-    summary: BPF map 常量或类型定义缺失，通常来自 `linux/bpf.h` 依赖未正确引入。
+    - 将不可用的辅助函数替换为功能等价且兼容性更好的替代实现（如使用 bpf_probe_read_kernel_str 配合手动循环比较替代 bpf_strncmp）。
+    - 若存在功能等价的旧版辅助函数，优先直接替换。若无直接等价函数，则通过组合其他可用辅助函数实现原语逻辑。
+    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY
+      并补全 key_size/value_size 定义。
+    - 将 bpf_ringbuf_output 替换为 bpf_perf_event_output，传入上下文 ctx、map 指针以及 BPF_F_CURRENT_CPU
+      标志（或结合 bpf_get_smp_processor_id）。
+    - 若目标内核不支持 bpf_ktime_get_boot_ns（常见于 < 5.8 内核），将其替换为兼容性更好的 bpf_ktime_get_ns。
+    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read。
+    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），使用 `#pragma unroll` 展开的手动循环逐字节比较字符串，以兼容旧版本内核。
+    - 修改代码，移除对 bpf_snprintf 的调用。由于 bpf_snprintf 常用于格式化输出字符串到 map 或 ringbuf，在低版本内核中，应改用
+      bpf_probe_read_kernel_str 等可用函数读取字符串，并手动逐字节拷贝到目标 buffer 中，或者直接输出原始数据而避免在内核态进行格式化处理。
+    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将 `BPF_CORE_READ` 宏调用替换为显式的 `bpf_probe_read`
+      调用。
+    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY
+      并补全 key_size/value_size 定义（通常为 4 字节）。
+    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+），将其替换为 bpf_get_current_task，并检查后续成员访问逻辑是否兼容。
+    - 若目标内核不支持 bpf_snprintf (Linux 5.13+)，应将其替换为 bpf_probe_read_kernel_str (Linux
+      5.5+) 或 bpf_probe_read (Linux 4.7+)，并适配返回值逻辑（如将 bpf_probe_read 的 0 返回值映射为正数）以保留原有的条件判断结构。
+    - 修改代码，将bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。
+    - 修改代码，移除对bpf_snprintf的调用，改用bpf_probe_read_kernel_str读取字符串，手动逐字节拷贝到目标buffer中，或直接输出原始数据避免在内核态进行格式化处理。
+    - 修改代码，将不被支持的bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。
+    - 修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容。将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。
+    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。
+    - 修改代码，使用`#pragma unroll`展开的手动循环逐字节比较字符串，替代不可用的bpf_strncmp函数，兼容低版本内核。
+    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），直接在调用点展开使用 `#pragma unroll` 的手动循环逐字节比较实现，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。
+    - 修改代码，将BPF_MAP_TYPE_RINGBUF地图类型替换为BPF_MAP_TYPE_PERF_EVENT_ARRAY，并补全key_size和value_size定义（通常为4字节）。再将bpf_ringbuf_output替换为bpf_perf_event_output，传入上下文ctx、map指针以及BPF_F_CURRENT_CPU标志。
+    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+）且不支持CO-RE BTF，将其替换为 bpf_get_current_task，移除vmlinux.h引入并前向声明不完整struct
+      task_struct，使用对应架构内核版本的固定偏移量结合bpf_probe_read读取成员，彻底消除对CO-RE BTF的依赖。
+    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），在调用点直接展开使用 `#pragma unroll` 的手动循环逐字节比较实现，显式保留最大比较长度参数，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。
+    - 在Linux 5.13以下内核使用bpf_snprintf时，需直接移除对bpf_snprintf的调用，若存在字符串常量输出仍导致.rodata.str1.1重定位失败，需彻底移除包含静态字符串常量的输出调用，保留原有核心业务逻辑。
+    - 修改代码，将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。
+    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在 BPF_CORE_READ
+      宏调用则将其替换为显式的 bpf_probe_read 调用。
+    - 修改代码，将 `bpf_ktime_get_boot_ns` 替换为兼容性更好的 `bpf_ktime_get_ns`。具体修改：在源文件 /host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c
+      中，将所有对 `bpf_ktime_get_boot_ns()` 的调用替换为 `bpf_ktime_get_ns()`，并同步更新对应的头文件或函数声明。
+    - 修改代码，将所有 bpf_ktime_get_boot_ns 替换为 bpf_ktime_get_ns。bpf_ktime_get_ns 是更早期内核版本就支持的兼容函数，返回墙上时间（wall
+      clock time）纳秒数，功能等价且覆盖更广的内核版本。
+    - 修改代码，将 bpf_probe_read_kernel 替换为兼容性更好的 bpf_probe_read（Linux 4.7+ 支持）。具体为在 btf_unsupported.bpf.c
+      文件中，将所有 bpf_probe_read_kernel 调用替换为 bpf_probe_read。
+    - 修改代码：在源文件 /host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c
+      中，将所有对 `bpf_probe_read_kernel()` 的调用替换为 `bpf_probe_read()`，包括函数调用参数保持不变。
+    summary: 使用的 BPF 辅助函数在当前内核版本或配置中不可用
+  unbounded_loop:
     aliases:
-      - missing_bpf_map_type_definition
+    - unbounded_loop
     stage_hints:
-      - compile_failed
+    - load_failed
     can_fix: true
     repair_methods:
-      - 补充 `<linux/bpf.h>` 或等价定义来源，恢复 `BPF_MAP_TYPE_*` 等常量与结构声明。
-  core_requires_btf:
-    summary: 当前源码依赖 CO-RE/BTF 能力，但部署目标缺少对应 BTF 支持。
+    - 在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。
+    - 若编译器不支持 unroll 或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。
+    - 修改代码，在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。若编译器不支持unroll或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。
+    - 在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令，解决验证器无法证明循环有界的问题。
+    - 修改代码，在循环调用 global_add_stress 的 `for` 循环声明之前添加 `#pragma unroll` 指令，将其改为 `#pragma
+      unroll\nfor (...)`，强制 clang 将该循环在编译时完全展开为线性顺序执行的指令序列，从而消除指令级别的回跳（back-edge）边，绕过
+      BPF 验证器的有界性检查。此修改不影响 global_add_stress 的任何业务逻辑（所有 bit 判断及 (*val) 增量累加均完整保留），仅改变循环的编译展开行为。
+    summary: 循环逻辑上虽有界但验证器无法证明，导致加载失败
+  missing_type_definition:
     aliases:
-      - core_requires_btf
+    - missing_type_definition
     stage_hints:
-      - static_check_failed
-      - runtime_test_failed
+    - compile_failed
     can_fix: true
-    evidence_hint:
-      - source code has vmlinux.h dependency
-      - no /sys/kernel/btf/vmlinux
-      - co-re
-      - btf
     repair_methods:
-      - 删除vmlinux.h头文件依赖，为字段读取提供非 CO-RE 降级路径，确保在缺少 BTF 的目标内核上仍可维持原始观测语义。
-  attach_target_missing:
-    summary: attach 目标符号或 attach target 在当前部署内核不存在。
+    - 在包含 `bpf_helpers.h` 之前，手动定义 `bpf_helper_defs.h` 依赖的基础类型（如 `__u16`, `__be16`,
+      `__wsum` 等）。
+    - 手动定义源码中使用的枚举类型（如 `enum bpf_map_type`），或包含对应的内核头文件（如 `<linux/bpf.h>`）。
+    summary: 移除 vmlinux.h 后导致基础类型或枚举定义缺失
+  struct_member_offset_mismatch:
     aliases:
-      - attach_target_not_found
-      - missing_attach_target
+    - incomplete_definition_of_type
+    - struct_member_offset_mismatch
+    - validator_mismatch
+    - no member named in struct
     stage_hints:
-      - static_check_failed
-      - attach_failed
-    can_fix: false
-    evidence_hint:
-      - target symbol not found
-      - missing attach target
-    repair_methods: []
-    handoff: 目标内核缺少所需 attach target；应由人工确认部署内核上的真实目标符号或重新定义观测目标，停止自动源码修复。
+    - compile_failed
+    - runtime_test_failed
+    can_fix: true
+    repair_methods:
+    - 移除手动定义的精简结构体，改为包含对应的内核头文件（如。
+    - 若需兼容无 BTF 的旧内核，应包含内核头文件而非手动定义结构体，确保编译器使用正确的内存布局。
+    - 若需在无 BTF 环境下通过成员计算偏移量，必须包含完整的内核头文件（如 `<linux/sched.h>`）以获取结构体定义，避免仅有前向声明导致的编译错误。
+    - 若无法包含完整头文件或结构体定义对用户不可见，应放弃偏移量计算逻辑，改用 `bpf_get_current_pid_tgid` 等辅助函数直接获取目标数据。
+    - 若硬编码的偏移量读取逻辑失效，应移除该逻辑，改用 bpf_get_current_pid_tgid 等稳定的辅助函数直接获取目标数据。
+    - 移除手动定义的精简结构体和硬编码偏移，优先尝试包含对应内核头文件，使用标准offsetof宏获取正确偏移。
+    - 若包含头文件后仅能得到结构体前向声明、无法获得完整定义，则移除偏移计算逻辑，改用bpf_get_current_pid_tgid等价辅助函数直接获取目标数据，保留原有业务逻辑。
+    - 若硬编码的task_struct中tgid字段偏移量读取逻辑失效，移除硬编码偏移量的读取逻辑，改用bpf_get_current_pid_tgid辅助函数直接获取当前进程tgid，保留原有业务判断逻辑。
+    - 若硬编码偏移量匹配失败且关键块相似度要求保留原代码结构，保留原关键块的 bpf_probe_read 代码框架，在读取后直接覆盖结果为通过辅助函数获取的正确值，既满足结构相似度要求又解决偏移不匹配问题。
+    - 当硬编码 task_struct 成员偏移量（如 tgid）读取逻辑失效时，移除 bpf_probe_read_kernel 调用，改用 bpf_get_current_pid_tgid()
+      辅助函数直接获取当前进程 tgid，保留原有业务判断逻辑。
+    - 若 BPF_CORE_READ 访问的字段在目标内核中不存在（如 bpf_storage 等较新内核才引入的字段），应删除该调用并将变量初始化为 NULL，保留原有业务逻辑框架不变。
+    summary: 手动定义的结构体内存布局与内核实际布局不一致，导致运行时数据读取错误
+  stack_overflow:
+    aliases:
+    - stack_overflow
+    stage_hints:
+    - compile_failed
+    can_fix: true
+    repair_methods:
+    - 若因 `#pragma unroll` 强制展开循环导致栈溢出，应减少循环次数以降低展开后的栈空间占用。
+    - 若循环体逻辑复杂，需优先尝试减少迭代次数，而非直接移除 unroll 指令，以兼顾旧内核对循环结构的验证限制。
+    - 若因 `#pragma unroll` 强制展开复杂循环体导致栈溢出，逐步减少循环最大迭代次数以降低展开后的累积栈空间占用，满足512字节限制。
+    - 优先尝试减少迭代次数而非移除unroll指令，兼顾旧内核对循环结构的验证要求。
+    summary: 循环强制展开后累积栈空间占用超过eBPF 512字节限制，导致编译失败
+  state_explosion:
+    aliases:
+    - state_explosion
+    stage_hints:
+    - load_failed
+    can_fix: true
+    repair_methods:
+    - 将循环内调用的子函数强制声明为 `static __always_inline`，消除 BPF-to-BPF 调用的上下文切换开销。
+    - 若内联后代码体积过大，应同步减少循环次数以降低验证路径复杂度。
+    - 修改代码，将循环内调用的子函数global_add_stress强制声明为static __always_inline，消除BPF-to-BPF调用的上下文切换开销，减少验证器的状态复杂度。
+    - 修改代码，将 `global_add_stress` 函数声明从 `static int global_add_stress(...)` 改为 `static
+      __always_inline int global_add_stress(...)`，强制编译器将函数体内联到所有调用点，从而消除 BPF-to-BPF
+      调用的上下文切换开销，大幅减少验证器的状态复杂度。若内联后代码体积仍然过大（单 BPF 程序总指令数接近验证器上限），应同步减少循环次数（如从 50 次减少到
+      20 次），以确保总指令数在验证器限制范围内。
+    summary: 循环中频繁调用非内联子函数导致验证器状态爆炸
+  struct_member_renamed_in_vmlinux:
+    aliases: []
+    stage_hints:
+    - compile_failed
+    can_fix: true
+    repair_methods:
+    - 修改代码，将 `/host/data/kernel_struct/field_renamed/field_renamed.bpf.c` 文件第 42 行的
+      `BPF_CORE_READ(task, __state)` 修改为 `BPF_CORE_READ(task, state)`，以匹配当前内核 vmlinux.h
+      中的结构体成员定义。
+    - 修改代码，将引用的旧结构体成员名称替换为当前内核vmlinux.h中定义的新名称，保留原有业务逻辑和代码结构。
+    - 修改代码，将 /host/data/kernel_struct/field_renamed/field_renamed.bpf.c 第42行的 BPF_CORE_READ(task,
+      __state) 修改为 BPF_CORE_READ(task, state)，以匹配当前内核 vmlinux.h 中的结构体成员定义 'volatile
+      long int state'。
+    summary: 结构体成员名称在当前内核vmlinux.h中被重命名，导致编译失败
   attach_type_unsupported:
-    summary: 当前内核能力不支持所选 attach 方式或所需最小内核版本。
     aliases:
-      - program_type_min_kernel
-      - program_type_not_supported
-      - fentry_fexit_require_btf
+    - program_type_not_supported
+    - attach_target_not_found
     stage_hints:
-      - static_check_failed
-      - attach_failed
-    can_fix: false
-    evidence_hint:
-      - requires kernel
-      - not supported
-      - requires BTF
-    repair_methods: []
-    handoff: 当前部署环境不支持该 attach 方式；除非人工确认存在不改变观测语义的 attach fallback，否则应停止自动源码修复并改由环境或方案调整处理。
-  external_runtime_dependency_missing:
-    summary: 运行时测试依赖的 workload、validator 或外部条件不存在。
-    aliases:
-      - workload_not_found
-      - validator_not_found
-    stage_hints:
-      - runtime_test_failed
+    - attach_failed
+    - static_check_failed
     can_fix: false
     repair_methods: []
-    handoff: 失败根因来自运行时依赖缺失，而非源码错误；应补齐 workload 或 validator 后再复测，停止自动源码修复。
+    summary: 目标内核不支持当前选择的attach类型，或目标符号未以允许对应探针类型挂载的形式导出
+    handoff: 当前内核不支持所有尝试过的attach类型，且目标符号不存在于/proc/kallsyms，停止自动修复，请检查目标符号或更换兼容的内核环境。
+  verifier_rejection_generic:
+    aliases:
+    - verifier_reject
+    stage_hints:
+    - attach_failed
+    can_fix: true
+    repair_methods:
+    - 最小改动修复当前失败阶段，并避免改变原始语义。
+  helper_not_in_probe:
+    aliases: []
+    stage_hints:
+    - static_check_failed
+    can_fix: true
+    repair_methods:
+    - 最小改动修复当前失败阶段，并避免改变原始语义。

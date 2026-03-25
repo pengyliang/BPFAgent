@@ -7,11 +7,12 @@ struct event {
     __u64 ts;
 };
 
+/* Crutial block */
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 12);
 } events SEC(".maps");
-
+/* Crutial block end */
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __uint(max_entries, 1);
@@ -43,6 +44,7 @@ int map_type_unsupported(struct trace_event_raw_sys_enter *ctx)
             return 0;
     }
 
+    /**/
     e.ts = bpf_ktime_get_ns();
     bpf_ringbuf_output(&events, &e, sizeof(e), 0);
     (*val)++;

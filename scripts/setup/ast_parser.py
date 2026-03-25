@@ -349,7 +349,7 @@ def parse_ebpf_source(
 
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(ast_summary, f, indent=2, ensure_ascii=True)
-        print(f"AST successfully parsed and saved to {output_path}")
+        # print(f"AST successfully parsed and saved to {output_path}")
         return ast_summary
     except json.JSONDecodeError:
         _write_parser_log(log_path, file_path, cmd, last_stderr, False)

@@ -1,0 +1,4 @@
+name: helper_bpf_snprintf
+feature: bpf_snprintf helper function
+min_kernel: 5.13
+description: Uses bpf_snprintf helper function, which is unavailable on older kernels.

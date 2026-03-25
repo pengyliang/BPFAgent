@@ -1,4 +1,0 @@
-name: helper_renamed
-feature: bpf_ktime_get_boot_ns
-min_kernel: 5.8
-description: Uses bpf_ktime_get_boot_ns, which is unavailable on older kernels.

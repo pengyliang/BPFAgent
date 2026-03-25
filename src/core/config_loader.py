@@ -75,6 +75,8 @@ class StaticCheckConfig:
 class AppConfig:
     max_retry: int = 1
     log_level: int = 2
+    max_repair_attempts: int = 3
+    concurrent_workers: int = 0
     agent: AgentConfig = field(default_factory=AgentConfig)
     static_check: StaticCheckConfig = field(default_factory=StaticCheckConfig)
     llm: LLMConfig = field(default_factory=LLMConfig)
@@ -86,6 +88,15 @@ def load_app_config(config_path: Optional[str] = None) -> AppConfig:
 
     max_retry = int(_get(data, "max_retry", default=1) or 1)
     log_level = int(_get(data, "log_level", default=2) or 2)
+    raw_mr = data.get("max_repair_attempts")
+    if raw_mr is None:
+        raw_mr = data.get("max_repair_attampts", 3)  # 兼容常见拼写
+    max_repair_attempts = int(raw_mr if raw_mr is not None else 3)
+    if max_repair_attempts < 0:
+        max_repair_attempts = 0
+    concurrent_workers = int(_get(data, "concurrent_workers", default=0) or 0)
+    if concurrent_workers < 0:
+        concurrent_workers = 0
 
     agent_mode = bool(_get(data, "agent_mode", default=True))
     analyzer_enabled = bool(_get(data, "analyzer", default=True))
@@ -121,6 +132,8 @@ def load_app_config(config_path: Optional[str] = None) -> AppConfig:
     return AppConfig(
         max_retry=max_retry,
         log_level=log_level,
+        max_repair_attempts=max_repair_attempts,
+        concurrent_workers=concurrent_workers,
         agent=AgentConfig(
             agent_mode=agent_mode,
             analyzer_enabled=analyzer_enabled,

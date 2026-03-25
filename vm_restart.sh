@@ -7,5 +7,5 @@ source "${VENV_DIR}/bin/activate"
 
 # python3 main.py "$@"
 # python3 main.py feature/isa_upgrade_incompatible "$@"
-# python3 main.py feature/map_type_unsupported "$@"
-python3 main.py helper_func/helper_absent "$@"
+# python3 main.py helper_func/helper_bpf_get_current_task_bpf "$@"
+python3 main.py helper_bpf_snprintf "$@"

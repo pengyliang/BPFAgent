@@ -23,8 +23,8 @@ int btf_unsupported(struct trace_event_raw_sys_enter *ctx)
     __u32 key = 0;
     __u64 *val = bpf_map_lookup_elem(&counter, &key);
     __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);
-    struct task_struct *task;
     __u32 tgid;
+    long syscall_id;
 
     if (!val)
         return 0;
@@ -32,14 +32,12 @@ int btf_unsupported(struct trace_event_raw_sys_enter *ctx)
     tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);
     if (target_tgid && *target_tgid && tgid != *target_tgid)
         return 0;
-
-    task = (struct task_struct *)bpf_get_current_task_btf();
-    if (!task)
-        return 0;
-
-    tgid = BPF_CORE_READ(task, tgid);
-    if (tgid > 0)
+    /* Crutial block */
+    syscall_id = BPF_CORE_READ(ctx, id);
+    /* Crutial block end */
+    if (syscall_id >= 0) {
         (*val)++;
+    }
 
     return 0;
 }

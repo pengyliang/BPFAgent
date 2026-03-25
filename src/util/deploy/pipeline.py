@@ -220,7 +220,7 @@ def _step_summary(step_result: Any) -> Dict[str, Any]:
 
     if step_result.get("skipped"):
         return {
-            "status": "unknown",
+            "status": "skipped",
             "success": None,
             "error_log": None,
             "reason": step_result.get("reason"),

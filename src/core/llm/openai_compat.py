@@ -70,12 +70,13 @@ class OpenAICompatClient:
             resp = self._client.chat.completions.create(**payload)
             return resp.model_dump()
         except Exception as exc:
-            if self.show_terminal_output:
-                _print_llm_error(
-                    model=self._cfg.model,
-                    error_type=exc.__class__.__name__,
-                    error_message=str(exc),
-                )
+            # 即使关闭实时终端输出，也要显式打印 LLM 错误，
+            # 避免出现“无反馈”而难以定位问题。
+            _print_llm_error(
+                model=self._cfg.model,
+                error_type=exc.__class__.__name__,
+                error_message=str(exc),
+            )
             return {
                 "error": True,
                 "error_type": exc.__class__.__name__,

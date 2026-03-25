@@ -35,11 +35,12 @@ int field_add_remove(struct trace_event_raw_sys_enter *ctx)
             return 0;
     }
 
-    task = (struct task_struct *)bpf_get_current_task_btf();
+    task = (struct task_struct *)bpf_get_current_task();
     if (!task)
         return 0;
-
+    /* Crutial block */
     storage = BPF_CORE_READ(task, bpf_storage);
+    /* Crutial block end */
     if (storage || !storage)
         (*val)++;
 

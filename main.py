@@ -11,11 +11,13 @@ Usage:
 - python main.py                        # run for all cases under data/
 - python main.py verifier               # run all cases under data/verifier
 - python main.py verifier/loop_support  # run only data/verifier/loop_support
+- python main.py loop_support          # run only the case whose directory name is `loop_support` under data/<category>/
 """
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
+import csv
 from collections import Counter, defaultdict, OrderedDict
 import shutil
 import platform
@@ -444,6 +446,218 @@ def _compute_agent_metrics_1_40(prepared_cases: list[dict]) -> list[dict]:
     return metrics
 
 
+def _generate_case_csv_reports(*, logs_base: Path, mode_name: str) -> None:
+    """
+    Generate:
+      - output/<version>/log/reports/case_summary.csv
+      - output/<version>/log/reports/case_stage_record.csv
+
+    Data is extracted from workflow_summary.json under:
+      output/<version>/log/<mode_name>/**/workflow_summary.json
+    """
+
+    mode_logs_root = logs_base / mode_name
+    if not mode_logs_root.exists():
+        return
+
+    reports_dir = logs_base / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    workflow_paths = sorted(mode_logs_root.rglob("workflow_summary.json"))
+    headers_case = [
+        "case_id",
+        "initial_deploy_state",
+        "final_deploy_state",
+        "total_time",
+        "final_failed_stage",
+        "final_error_type",
+        "total_repair_round",
+        "analyzer_round",
+        "repairer_round",
+        "inspector_round",
+        "refiner_round",
+        "analyzer_time_consumption",
+        "repairer_time_consumption",
+        "inspector_time_consumption",
+        "refiner_time_consumption",
+        "total_agent_calls",
+        "deploy_tool_round",
+        "first_analyzer_can_fix",
+        "last_analyzer_can_fix",
+    ]
+
+    headers_stage = ["case_id", "attempt_no", "deploy_success", "failed_stage", "error_type"]
+
+    def parse_iso(ts: str) -> datetime:
+        return datetime.fromisoformat(ts)
+
+    def fmt_bool(v: object) -> str:
+        if v is True:
+            return "true"
+        if v is False:
+            return "false"
+        return ""
+
+    def fmt_opt2(v: object) -> str:
+        if v is None:
+            return ""
+        try:
+            return f"{float(v):.2f}"
+        except Exception:
+            return ""
+
+    def last_analyzer_error_for_node_index(events_sorted: list[dict], node_index: object) -> str:
+        if node_index is None:
+            return ""
+        last = None
+        for e in reversed(events_sorted):
+            if e.get("node") == "Analyzer" and e.get("node_index") == node_index:
+                last = e
+                break
+        if not last:
+            return ""
+        return (last.get("key_results") or {}).get("error_type") or ""
+
+    case_rows: list[list[str]] = []
+    stage_rows: list[list[str]] = []
+
+    for wf_path in workflow_paths:
+        rel = wf_path.relative_to(mode_logs_root)
+        case_id = "/".join(rel.parts[:-1])  # drop workflow_summary.json
+
+        wf = json.loads(wf_path.read_text(encoding="utf-8"))
+        events = wf.get("events") or []
+        if not events:
+            continue
+
+        events_sorted = sorted(events, key=lambda x: x.get("seq", 0))
+
+        # durations per event (seconds): current_ts - previous_ts
+        durations: list[float | None] = [None] * len(events_sorted)
+        for i in range(1, len(events_sorted)):
+            ts_prev = events_sorted[i - 1].get("ts")
+            ts_cur = events_sorted[i].get("ts")
+            if not ts_prev or not ts_cur:
+                continue
+            try:
+                dt = parse_iso(ts_cur) - parse_iso(ts_prev)
+                durations[i] = round(max(0.0, dt.total_seconds()), 2)
+            except Exception:
+                continue
+
+        total_time_s: float | None = None
+        ts0 = events_sorted[0].get("ts")
+        tsN = events_sorted[-1].get("ts")
+        if ts0 and tsN:
+            try:
+                total_time_s = round(max(0.0, (parse_iso(tsN) - parse_iso(ts0)).total_seconds()), 2)
+            except Exception:
+                total_time_s = None
+
+        deploy_events = [e for e in events_sorted if e.get("node") == "deploy_tool"]
+
+        # initial deploy state: first deploy_tool attempt's deploy_state
+        initial_deploy_state = None
+        if deploy_events:
+            first_dep = deploy_events[0]
+            kr0 = first_dep.get("key_results") or {}
+            if "deploy_state" in kr0:
+                initial_deploy_state = kr0.get("deploy_state")
+
+        final_deploy_state = bool(wf.get("deploy_state"))
+        final_failed_stage = "" if final_deploy_state else (wf.get("failed_stage") or "")
+
+        total_agent_calls = sum(1 for e in events_sorted if e.get("node") in {"Analyzer", "Repairer", "Inspector", "Refiner"})
+        deploy_tool_round = len(deploy_events)
+
+        analyzer_round = sum(1 for e in events_sorted if e.get("node") == "Analyzer")
+        repairer_round = sum(1 for e in events_sorted if e.get("node") == "Repairer")
+        inspector_round = sum(1 for e in events_sorted if e.get("node") == "Inspector")
+        refiner_round = sum(1 for e in events_sorted if e.get("node") == "Refiner")
+
+        # time consumption per module
+        def sum_time_for_node(node_name: str) -> float:
+            s = 0.0
+            for e, d in zip(events_sorted, durations):
+                if e.get("node") == node_name and isinstance(d, (int, float)):
+                    s += float(d)
+            return round(s, 2)
+
+        analyzer_time = sum_time_for_node("Analyzer")
+        repairer_time = sum_time_for_node("Repairer")
+        inspector_time = sum_time_for_node("Inspector")
+        refiner_time = sum_time_for_node("Refiner")
+
+        # first/last analyzer can_fix
+        analyzers = [e for e in events_sorted if e.get("node") == "Analyzer"]
+        first_analyzer_can_fix = (analyzers[0].get("key_results") or {}).get("can_fix") if analyzers else None
+        last_analyzer_can_fix = (analyzers[-1].get("key_results") or {}).get("can_fix") if analyzers else None
+
+        # final_error_type from the last failed deploy_tool attempt's analyzer(node_index)
+        final_error_type = ""
+        if not final_deploy_state:
+            last_failed_dep = None
+            for dep in deploy_events:
+                dep_kr = dep.get("key_results") or {}
+                dep_success = bool(dep_kr.get("deploy_state")) if "deploy_state" in dep_kr else False
+                if not dep_success:
+                    last_failed_dep = dep
+            if last_failed_dep:
+                final_error_type = last_analyzer_error_for_node_index(events_sorted, last_failed_dep.get("node_index"))
+
+        case_rows.append(
+            [
+                case_id,
+                fmt_bool(initial_deploy_state),
+                fmt_bool(final_deploy_state),
+                fmt_opt2(total_time_s),
+                final_failed_stage,
+                final_error_type,
+                str(repairer_round),  # total_repair_round
+                str(analyzer_round),
+                str(repairer_round),
+                str(inspector_round),
+                str(refiner_round),
+                fmt_opt2(analyzer_time),
+                fmt_opt2(repairer_time),
+                fmt_opt2(inspector_time),
+                fmt_opt2(refiner_time),
+                str(total_agent_calls),
+                str(deploy_tool_round),
+                fmt_bool(first_analyzer_can_fix),
+                fmt_bool(last_analyzer_can_fix),
+            ]
+        )
+
+        # stage transitions: one row per deploy_tool attempt
+        analyzer_by_idx = {}
+        for e in events_sorted:
+            if e.get("node") == "Analyzer" and e.get("node_index") is not None:
+                analyzer_by_idx[e.get("node_index")] = e
+
+        for attempt_no, dep in enumerate(deploy_events, start=1):
+            dep_kr = dep.get("key_results") or {}
+            dep_success = bool(dep_kr.get("deploy_state")) if "deploy_state" in dep_kr else False
+            failed_stage = "" if dep_success else (dep_kr.get("failed_stage") or "")
+            error_type = ""
+            if not dep_success:
+                error_type = (analyzer_by_idx.get(dep.get("node_index")) or {}).get("key_results", {}).get("error_type") or ""
+            stage_rows.append([case_id, str(attempt_no), fmt_bool(dep_success), failed_stage, error_type])
+
+    # write csv files
+    case_summary_path = reports_dir / "case_summary.csv"
+    stage_record_path = reports_dir / "case_stage_record.csv"
+    with case_summary_path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(headers_case)
+        w.writerows(case_rows)
+
+    with stage_record_path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(headers_stage)
+        w.writerows(stage_rows)
+
+
 def run_pipeline(
     data_dir,
     logs_dir,
@@ -540,6 +754,7 @@ def run_pipeline(
         # Reflect depends on the same agent enable flag as resolve.
         enable_reflect_agent=bool(effective_reflect_agent),
         use_pipeline_dirs=bool(effective_resolve_agent),
+        max_repair_attempts=int(app_config.max_repair_attempts),
     )
 
     static_report_path = logs_path / "static_check.json"
@@ -582,6 +797,7 @@ def run_pipeline(
             use_pipeline_dirs=bool(effective_resolve_agent),
             write_repair_error_record=not agent_mode,
             write_reflect_record_artifacts=not agent_mode,
+            max_repair_attempts=int(app_config.max_repair_attempts),
         )
         final_state = case_graph.invoke(state)
 
@@ -825,7 +1041,24 @@ def _select_cases(data_root, selector, all_cases):
     if not selector:
         return all_cases
 
-    target = (data_root / selector).resolve()
+    # Backward compatible selector behavior:
+    # - If selector contains '/', keep old behavior: treat it as a subpath under data/.
+    # - If selector is just `case_name` (no '/'), search for cases whose case directory name matches.
+    selector_str = str(selector).strip()
+    if "/" not in selector_str and "\\" not in selector_str:
+        selected = [case for case in all_cases if Path(case["dir"]).name == selector_str]
+        if not selected:
+            raise RuntimeError(f"No data case found with case_name={selector_str!r} (expected under data/<category>/{selector_str})")
+        if len(selected) > 1:
+            # Ambiguous: ask user to specify category/case_name.
+            candidates = sorted([str(c.get("display") or f"{c.get('category')}/{c.get('case_rel')}") for c in selected])
+            raise RuntimeError(
+                f"case_name={selector_str!r} is ambiguous across categories; please use selector like <category>/{selector_str}.\n"
+                f"Candidates: {', '.join(candidates)}"
+            )
+        return selected
+
+    target = (data_root / selector_str).resolve()
     data_root_resolved = data_root.resolve()
     if not target.exists() or not target.is_dir():
         raise RuntimeError(f"Data path not found: {target}")
@@ -849,6 +1082,7 @@ def run_for_groups(
     enable_resolve_agent=True,
     enable_reflect_agent=True,
     config_path=None,
+    update_case=False,
 ):
     data_root = REPO_ROOT / "data"
     kernel_output_version = _current_kernel_output_version()
@@ -862,11 +1096,20 @@ def run_for_groups(
     mode_name = "agent_mode" if (effective_resolve_agent or effective_reflect_agent) else "no_agent_mode"
     mode_logs_root = logs_base / mode_name
 
+    # Default behavior: clear all logs before running.
+    # Update-case behavior: keep existing logs and only refresh selected case logs.
+    if not update_case:
+        if logs_base.exists():
+            shutil.rmtree(logs_base)
+    logs_base.mkdir(parents=True, exist_ok=True)
+
     all_cases = _discover_data_cases(data_root)
     if not all_cases:
         raise RuntimeError(f"No data test cases with .bpf.c files found under {data_root}")
 
     cases = _select_cases(data_root, group_name, all_cases)
+    if update_case and not group_name:
+        raise RuntimeError("--update-case 需要配合 selector 使用，例如 verifier/loop_support")
     mode_logs_root.mkdir(parents=True, exist_ok=True)
 
     global_bpftool_probe = logs_base / "bpftool_feature_probe.json"
@@ -880,9 +1123,11 @@ def run_for_groups(
     prepared_cases = []
     for case in cases:
         case_logs_dir_base = mode_logs_root / case["category"] / case["case_rel"]
-        # If the user restarts with agent_mode and previous pipeline results exist,
-        # clear them and rerun from scratch (pipeline_1).
-        if mode_name == "agent_mode" and case_logs_dir_base.exists():
+        # In update-case mode, always clear selected case logs only.
+        # In normal agent_mode runs, clear per-case logs to rerun from pipeline_1.
+        if update_case and case_logs_dir_base.exists():
+            shutil.rmtree(case_logs_dir_base)
+        elif mode_name == "agent_mode" and case_logs_dir_base.exists():
             shutil.rmtree(case_logs_dir_base)
         prepared_cases.append(
             {
@@ -916,7 +1161,12 @@ def run_for_groups(
         }
 
     all_reports = [None] * len(prepared_cases)
-    with ThreadPoolExecutor(max_workers=max(1, len(prepared_cases))) as executor:
+    configured_workers = int(getattr(app_config, "concurrent_workers", 0) or 0)
+    if configured_workers > 0:
+        max_workers = configured_workers
+    else:
+        max_workers = max(1, len(prepared_cases) // 2)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_index = {
             executor.submit(run_single_case, prepared_case): idx for idx, prepared_case in enumerate(prepared_cases)
         }
@@ -1032,6 +1282,10 @@ def run_for_groups(
 
     print(f"\nAll pipelines finished. Aggregate report: {aggregate_path}")
 
+    # Auto-generate CSV reports for downstream data processing/visualization.
+    if mode_name == "agent_mode":
+        _generate_case_csv_reports(logs_base=logs_base, mode_name=mode_name)
+
     # bpftool_feature_probe.json is a cache; delete it after successful run.
     try:
         if global_bpftool_probe.exists():
@@ -1047,7 +1301,9 @@ if __name__ == "__main__":
         "selector",
         nargs="?",
         default=None,
-        help="可选：data/ 下的子路径选择器，如 verifier 或 verifier/bpf_to_bpf_fault",
+        help="可选：选择 data/ 下的 case。\n"
+        "  - 支持子路径：如 verifier 或 verifier/bpf_to_bpf_fault\n"
+        "  - 也支持仅输入 case_name：如 loop_support（会在 data/<category>/ 下匹配目录名）",
     )
     parser.add_argument(
         "--no-agent",
@@ -1074,6 +1330,11 @@ if __name__ == "__main__":
         default=str(DEFAULT_CONFIG_PATH),
         help="配置文件路径（Python），默认使用仓库根目录的 app_config.py。",
     )
+    parser.add_argument(
+        "--update-case",
+        action="store_true",
+        help="只更新 selector 对应 case：不清空整体 log，仅清空该 case 的日志并重跑，然后重建 reports。",
+    )
     args = parser.parse_args()
     if args.no_agent:
         enable_resolve_agent = False
@@ -1086,4 +1347,5 @@ if __name__ == "__main__":
         enable_resolve_agent=enable_resolve_agent,
         enable_reflect_agent=enable_reflect_agent,
         config_path=args.config,
+        update_case=args.update_case,
     )

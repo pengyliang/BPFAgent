@@ -1,5 +1,5 @@
-#include <linux/types.h>
-#include <linux/bpf.h>
+#include "vmlinux.h"
+#include <bpf/bpf_core_read.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 
@@ -9,41 +9,36 @@ struct {
     __type(key, __u32);
     __type(value, __u64);
 } counter SEC(".maps");
-
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __uint(max_entries, 1);
     __type(key, __u32);
     __type(value, __u32); /* target tgid */
 } cfg SEC(".maps");
-
-const char fmt_str[] = "pid=%d";
-
 SEC("tracepoint/syscalls/sys_enter_openat")
-int helper_arg_increase(struct trace_event_raw_sys_enter *ctx)
+int helper_absent(struct trace_event_raw_sys_enter *ctx)
 {
     __u32 key = 0;
     __u64 *val = bpf_map_lookup_elem(&counter, &key);
     __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);
-    char out[32];
-    __u64 data[1];
-    long n;
-
+    struct task_struct *task;
+    __u32 cur_tgid;
+    __u32 task_tgid;
     if (!val)
         return 0;
-
-    if (target_tgid && *target_tgid) {
-        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);
-        if (tgid != *target_tgid)
-            return 0;
-    }
-
-    data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);
-    n = bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data));
-    if (n > 0)
-        (*val)++;
-
+    cur_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);
+    if (target_tgid && *target_tgid && cur_tgid != *target_tgid)
+        return 0;
+    /* Crutial block */
+    task = (struct task_struct *)bpf_get_current_task_btf();
+    if (!task)
+        return 0;
+    /* Crutial block end */
+    
+    task_tgid = BPF_CORE_READ(task, tgid);
+    if (task_tgid == 0 || task_tgid != cur_tgid)
+        return 0;
+    (*val)++;
     return 0;
 }
-
 char LICENSE[] SEC("license") = "GPL";

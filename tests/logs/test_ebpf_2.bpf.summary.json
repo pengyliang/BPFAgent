@@ -1,5 +1,6 @@
 {
   "source_file": "tests/data/test_ebpf_2.bpf.c",
+  "ast_fallback": false,
   "bpf_helper_calls": [
     {
       "helper": "bpf_ringbuf_reserve",

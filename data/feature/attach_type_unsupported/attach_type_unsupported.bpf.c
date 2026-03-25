@@ -16,7 +16,9 @@ struct {
     __type(value, __u32); /* target tgid */
 } cfg SEC(".maps");
 
+/* Crutial block */
 SEC("kprobe/do_sys_openat2")
+/* Crutial block end */
 int attach_type_unsupported(struct pt_regs *ctx)
 {
     __u32 key = 0;

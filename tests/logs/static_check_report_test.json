@@ -1,10 +1,66 @@
 {
-  "generated_at": "2026-03-16T19:27:49.382699+00:00",
-  "kernel_version": "5.4.0-test",
-  "summary": {
-    "error_count": 8,
-    "warning_count": 0
+  "success": false,
+  "error_warning_count": {
+    "error": 5,
+    "warning": 0
   },
+  "issues": [
+    {
+      "check": "map_type_availability",
+      "level": "error",
+      "code": "map_type_not_in_probe",
+      "message": "Map type BPF_MAP_TYPE_ARRAY is not present in bpftool map type support list.",
+      "suggestion": "Switch to supported map type or enable kernel feature.",
+      "evidence": {
+        "map_type": "BPF_MAP_TYPE_ARRAY"
+      },
+      "source_file": "tests/data/test_ebpf.bpf.c"
+    },
+    {
+      "check": "helper_availability",
+      "level": "error",
+      "code": "helper_not_in_probe",
+      "message": "Helper bpf_ringbuf_reserve is not present in bpftool helper whitelist.",
+      "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+      "evidence": {
+        "helper": "bpf_ringbuf_reserve"
+      },
+      "source_file": "tests/data/test_ebpf_2.bpf.c"
+    },
+    {
+      "check": "helper_availability",
+      "level": "error",
+      "code": "helper_not_in_probe",
+      "message": "Helper bpf_get_current_pid_tgid is not present in bpftool helper whitelist.",
+      "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+      "evidence": {
+        "helper": "bpf_get_current_pid_tgid"
+      },
+      "source_file": "tests/data/test_ebpf_2.bpf.c"
+    },
+    {
+      "check": "helper_availability",
+      "level": "error",
+      "code": "helper_not_in_probe",
+      "message": "Helper bpf_ringbuf_submit is not present in bpftool helper whitelist.",
+      "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+      "evidence": {
+        "helper": "bpf_ringbuf_submit"
+      },
+      "source_file": "tests/data/test_ebpf_2.bpf.c"
+    },
+    {
+      "check": "map_type_availability",
+      "level": "error",
+      "code": "map_type_not_in_probe",
+      "message": "Map type BPF_MAP_TYPE_RINGBUF is not present in bpftool map type support list.",
+      "suggestion": "Switch to supported map type or enable kernel feature.",
+      "evidence": {
+        "map_type": "BPF_MAP_TYPE_RINGBUF"
+      },
+      "source_file": "tests/data/test_ebpf_2.bpf.c"
+    }
+  ],
   "results": [
     {
       "source_file": "tests/data/test_ebpf.bpf.c",
@@ -55,17 +111,6 @@
         {
           "check": "helper_availability",
           "level": "error",
-          "code": "helper_min_kernel",
-          "message": "Helper bpf_ringbuf_reserve requires kernel >= 5.8.",
-          "suggestion": "Use fallback helper sequence from static rules or choose another helper.",
-          "evidence": {
-            "helper": "bpf_ringbuf_reserve",
-            "kernel": "5.4.0-test"
-          }
-        },
-        {
-          "check": "helper_availability",
-          "level": "error",
           "code": "helper_not_in_probe",
           "message": "Helper bpf_ringbuf_reserve is not present in bpftool helper whitelist.",
           "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
@@ -86,32 +131,11 @@
         {
           "check": "helper_availability",
           "level": "error",
-          "code": "helper_min_kernel",
-          "message": "Helper bpf_ringbuf_submit requires kernel >= 5.8.",
-          "suggestion": "Use fallback helper sequence from static rules or choose another helper.",
-          "evidence": {
-            "helper": "bpf_ringbuf_submit",
-            "kernel": "5.4.0-test"
-          }
-        },
-        {
-          "check": "helper_availability",
-          "level": "error",
           "code": "helper_not_in_probe",
           "message": "Helper bpf_ringbuf_submit is not present in bpftool helper whitelist.",
           "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
           "evidence": {
             "helper": "bpf_ringbuf_submit"
-          }
-        },
-        {
-          "check": "map_type_availability",
-          "level": "error",
-          "code": "map_type_min_kernel",
-          "message": "Map type BPF_MAP_TYPE_RINGBUF requires kernel >= 5.8.",
-          "suggestion": "Use downgrade rule to supported map type on target kernel.",
-          "evidence": {
-            "map_type": "BPF_MAP_TYPE_RINGBUF"
           }
         },
         {
@@ -126,5 +150,9 @@
         }
       ]
     }
-  ]
+  ],
+  "summary": {
+    "error_count": 5,
+    "warning_count": 0
+  }
 }

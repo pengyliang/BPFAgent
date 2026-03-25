@@ -17,32 +17,32 @@ struct {
     __type(value, __u32); /* target tgid */
 } cfg SEC(".maps");
 
-SEC("tracepoint/syscalls/sys_enter_execve")
-int ptr_to_btf_id(struct trace_event_raw_sys_enter *ctx)
+SEC("tracepoint/syscalls/sys_enter_openat")
+int helper_absent(struct trace_event_raw_sys_enter *ctx)
 {
     __u32 key = 0;
     __u64 *val = bpf_map_lookup_elem(&counter, &key);
     __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);
     struct task_struct *task;
-    __u32 tgid;
+    __u32 cur_tgid;
+    __u32 task_tgid;
 
     if (!val)
         return 0;
 
-    if (target_tgid && *target_tgid) {
-        __u32 cur = (__u32)(bpf_get_current_pid_tgid() >> 32);
-        if (cur != *target_tgid)
-            return 0;
-    }
+    cur_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);
+    if (target_tgid && *target_tgid && cur_tgid != *target_tgid)
+        return 0;
 
     task = (struct task_struct *)bpf_get_current_task_btf();
     if (!task)
         return 0;
 
-    tgid = BPF_CORE_READ(task, tgid);
-    if (tgid > 0)
+    /* 确认 BTF task 与当前上下文一致：task->tgid 应等于当前线程组 ID */
+    task_tgid = BPF_CORE_READ(task, tgid);
+    if (task_tgid != 0 && task_tgid == cur_tgid)
         (*val)++;
-
+    
     return 0;
 }
 

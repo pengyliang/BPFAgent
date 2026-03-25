@@ -1,5 +1,5 @@
-#include <linux/types.h>
-#include <linux/bpf.h>
+#include "vmlinux.h"
+#include <bpf/bpf_core_read.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 
@@ -18,12 +18,13 @@ struct {
 } cfg SEC(".maps");
 
 SEC("tracepoint/syscalls/sys_enter_openat")
-int helper_renamed(struct trace_event_raw_sys_enter *ctx)
+int struct_nesting_or_rename(struct trace_event_raw_sys_enter *ctx)
 {
     __u32 key = 0;
     __u64 *val = bpf_map_lookup_elem(&counter, &key);
     __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);
-    __u64 ts;
+    struct task_struct *task;
+    __u64 fsbase;
 
     if (!val)
         return 0;
@@ -34,10 +35,13 @@ int helper_renamed(struct trace_event_raw_sys_enter *ctx)
             return 0;
     }
 
-    /* Newer helper: ktime since boot (CLOCK_BOOTTIME). */
-    ts = bpf_ktime_get_boot_ns();
-    if (ts)
-        (*val)++;
+    task = (struct task_struct *)bpf_get_current_task();
+    if (!task)
+        return 0;
+
+    fsbase = BPF_CORE_READ(task, thread.fsbase);
+    
+    (*val)++;
 
     return 0;
 }

@@ -20,7 +20,7 @@ REPAIRER_PROMPT = PromptTemplate(
     name="RepairerAgent",
     parts={
         "role": r"""
-你是 eBPF workflow 中的 Repairer，负责在尽量不改变原始语义的前提下做最小必要修复。
+你是 BPFAgent（跨内核eBPF代码部署工具） workflow 中的 Repairer，负责在尽量不改变原始语义的前提下做最小必要修复。
 """,
         "context": r"""
 上一个节点: {previous_node}
@@ -46,10 +46,11 @@ REPAIRER_PROMPT = PromptTemplate(
         "rules": r"""
 修复要求：
 - 必须结合统一 history 理解前几轮修改是如何演进到当前状态的，避免重复引入已被 Inspector 否定的改法
-- 优先保留原始业务语义
+- 保留`/* Crutial block */` 和`/* Crutial block end */` 的代码注释。
 - 如果上一个节点是 Inspector，必须优先修复 Inspector 指出的语义偏差
 - 不要输出解释性文本，只输出规定的 JSON 代码块
 - `patched_code` 必须是完整源码，不是 diff
+- 特别注意，和(*val)++相关的条件判断逻辑要保留, 不可删除。可以部分修改，但不能完全偏移原有逻辑（如删除相关判断或改为其他类型的判断）。
 """,
         "output": _STRICT_OUTPUT,
     },

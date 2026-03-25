@@ -44,12 +44,13 @@ int field_offset_change(struct trace_event_raw_sys_enter *ctx)
     if (!task)
         return 0;
 
+    /* Crutial block */
     if (bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset),
                               (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)
         return 0;
-
+    /* Crutial block end */
     current_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);
-    if (tgid_from_offset == current_tgid)
+    if (tgid_from_offset == current_tgid)   // cannot be deleted
         (*val)++;
 
     return 0;

@@ -14,5 +14,10 @@
   ],
   "map_type_support": [
     "BPF_MAP_TYPE_HASH"
+  ],
+  "program_type_support": [
+    "kprobe",
+    "kretprobe",
+    "tracepoint"
   ]
 }

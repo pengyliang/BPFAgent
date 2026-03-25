@@ -1,0 +1,4 @@
+name: field_renamed
+feature: task_struct.state field renamed to __state
+min_kernel: 5.14 
+description: task_struct.state field is renamed to __state in newer kernels.

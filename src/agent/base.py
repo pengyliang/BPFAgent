@@ -749,12 +749,43 @@ class BaseAgent:
             "key_results": sanitized_key_results,
         }
         events.append(event)
+
+        # 为 workflow events 追加持续时间（单位：秒）：
+        # 由于 ts 是“事件发生时刻”，因此每次新增事件时，我们可以确定上一个事件
+        # 的持续时间 = 当前事件 ts - 上一个事件 ts。
+        if len(events) >= 2:
+            prev = events[-2]
+            try:
+                dt = datetime.fromisoformat(events[-1]["ts"]) - datetime.fromisoformat(prev["ts"])
+                # 保留小数精度，便于后续可视化；负数按 0 修正（理论上不应出现）
+                prev["duration_s"] = max(0.0, round(dt.total_seconds(), 3))
+            except Exception:
+                prev["duration_s"] = None
+
+        # 统计每个模块（node）的累计耗时（单位：秒）。
+        module_durations_s: Dict[str, float] = {e.get("node") or "unknown": 0.0 for e in events}
+        for e in events:
+            dur = e.get("duration_s")
+            if isinstance(dur, (int, float)) and dur is not None:
+                node = e.get("node") or "unknown"
+                module_durations_s[node] = float(module_durations_s.get(node) or 0.0) + float(dur)
+
+        total_duration_s: Optional[float] = None
+        if len(events) >= 2 and events[0].get("ts") and events[-1].get("ts"):
+            try:
+                dt_total = datetime.fromisoformat(events[-1]["ts"]) - datetime.fromisoformat(events[0]["ts"])
+                total_duration_s = max(0.0, round(dt_total.total_seconds(), 3))
+            except Exception:
+                total_duration_s = None
+
         summary = {
             "generated_at": events[0]["ts"] if events else utc_now(),
             "updated_at": utc_now(),
             "final_decision": state.get("final_decision"),
             "deploy_state": state.get("deploy_state"),
             "failed_stage": state.get("failed_stage"),
+            "total_duration_s": total_duration_s,
+            "module_durations_s": module_durations_s,
             "events": events,
         }
         write_json(Path(state["logs_dir"]) / "workflow_summary.json", summary)

@@ -22,8 +22,7 @@ from src.core.state import CasePaths, CaseState
 from src.util.static_check.ast_summary import build_static_check_summaries
 
 
-SAME_ERROR_THRESHOLD = 4
-MAX_REPAIR_ATTEMPTS = 3
+DEFAULT_MAX_REPAIR_ATTEMPTS = 3
 
 
 def _inc_signature(state: CaseState, sig: str) -> int:
@@ -36,7 +35,7 @@ def _inc_signature(state: CaseState, sig: str) -> int:
 
 def _attempt_progress(state: CaseState) -> str:
     current = int(state.get("fixed_time") or 0)
-    maximum = int(state.get("max_fix_time") or MAX_REPAIR_ATTEMPTS)
+    maximum = int(state.get("max_fix_time") or DEFAULT_MAX_REPAIR_ATTEMPTS)
     return f"[{current}/{maximum}]"
 
 
@@ -60,6 +59,7 @@ def build_case_graph(
     enable_inspector_agent: bool = True,
     enable_reflect_agent: bool = False,
     use_pipeline_dirs: bool = False,
+    max_repair_attempts: int = DEFAULT_MAX_REPAIR_ATTEMPTS,
 ):
     g: StateGraph = StateGraph(CaseState)
     llm = getattr(coordinator, "llm", None)
@@ -69,12 +69,31 @@ def build_case_graph(
     inspector = InspectorAgent(llm=llm)
     refiner = RefinerAgent(llm=llm)
 
+    def _case_short_name(state: CaseState) -> str:
+        # Prefer normalized 2-level name: <category>/<case_rel>.
+        # Fallback to first 2 segments from case_display: <category>/<case_rel>/<source_file>.
+        category = str(state.get("category") or "").strip()
+        case_rel = str(state.get("case_rel") or "").strip()
+        if category and case_rel:
+            return f"{category}/{case_rel}"
+        case_display = str(state.get("case_display") or "").strip()
+        if case_display:
+            parts = [p for p in case_display.split("/") if p]
+            if len(parts) >= 2:
+                return f"{parts[0]}/{parts[1]}"
+            return case_display
+        return ""
+
     def node_end(state: CaseState) -> CaseState:
         previous_node = str(state.get("last_node") or "")
         state["last_node"] = "End"
         if not state.get("final_decision"):
             state["final_decision"] = "success" if state.get("deploy_state") else "failed_refine"
-        print(f"结果: {_final_result_text(state)}")
+        case_name = _case_short_name(state)
+        if bool(state.get("deploy_state")):
+            print(f"[Success]: {case_name}")
+        else:
+            print(f"[Fail]: {case_name}")
         helper.append_workflow_event(
             state,
             node_name="End",
@@ -93,7 +112,8 @@ def build_case_graph(
         deploy_idx = helper.node_index(state, "deploy_tool")
         deploy_dir = helper.node_base_dir(state, "deploy_tool", deploy_idx)
         artifacts = artifact_paths(state)
-        print("deploy")
+        case_name = _case_short_name(state)
+        print(f"[Deploying]: {case_name}")
         state["last_node"] = "deploy_tool"
         state["candidate_source_file"] = None
         state["semantic_equivalent"] = None
@@ -215,6 +235,7 @@ def build_case_graph(
         state["deploy"] = {
             "success": bool(success),
             "stage": stage,
+            "static_check": state.get("static_check") or {},
             "compile": state.get("compile") or {},
             "load": state.get("load") or {},
             "attach": state.get("attach") or {},
@@ -233,7 +254,8 @@ def build_case_graph(
             _inc_signature(state, stable_error_signature(state["deploy"]))
 
         write_json(state["deploy_result_path"], deploy_summary_payload(state))
-        print(f"deploy结果 {_attempt_progress(state)}: {stage}")
+        # Keep deploy result details but follow the requested prefix format.
+        print(f"[Deploying]: {case_name} -> {_attempt_progress(state)}: {stage}")
         helper.append_workflow_event(
             state,
             node_name="deploy_tool",
@@ -249,19 +271,23 @@ def build_case_graph(
         return state
 
     def node_analyzer(state: CaseState) -> CaseState:
-        print("Analyzing")
+        case_name = _case_short_name(state)
+        print(f"[Analyzing]: {case_name}")
         return analyzer.run(state)
 
     def node_repairer(state: CaseState) -> CaseState:
-        print("Repairing")
+        case_name = _case_short_name(state)
+        print(f"[Repairing]: {case_name}")
         return repairer.run(state, use_pipeline_dirs=use_pipeline_dirs)
 
     def node_inspector(state: CaseState) -> CaseState:
-        print("Inspecting")
+        case_name = _case_short_name(state)
+        print(f"[Inspecting]: {case_name}")
         return inspector.run(state)
 
     def node_refiner(state: CaseState) -> CaseState:
-        print("Refining")
+        case_name = _case_short_name(state)
+        print(f"[Refining]: {case_name}")
         return refiner.run(state, enable_reflect_agent=enable_reflect_agent)
 
     def route_after_deploy_tool(state: CaseState) -> str:
@@ -272,20 +298,17 @@ def build_case_graph(
             return "end"
         if not enable_resolve_agent:
             return "refiner" if enable_reflect_agent else "end"
-        sig = state.get("last_error_signature") or ""
-        counts = state.get("error_signature_counts") or {}
-        if sig and int(counts.get(sig) or 0) >= SAME_ERROR_THRESHOLD:
-            _print_limit_redirect(f"相同错误签名重复 {int(counts.get(sig) or 0)} 次: {sig}")
-            return "refiner"
-        if int(state.get("fixed_time") or 0) >= int(state.get("max_fix_time") or MAX_REPAIR_ATTEMPTS):
+        cap = int(state.get("max_fix_time") or max_repair_attempts)
+        if int(state.get("fixed_time") or 0) >= cap:
             _print_limit_redirect(
-                f"修复次数达到上限 {int(state.get('fixed_time') or 0)}/{int(state.get('max_fix_time') or MAX_REPAIR_ATTEMPTS)}"
+                f"修复次数达到上限 {int(state.get('fixed_time') or 0)}/{cap}"
             )
             return "refiner"
         return "analyzer"
 
     def route_after_analyzer(state: CaseState) -> str:
-        if state.get("can_fix") and len(state.get("repair_attempts") or []) < MAX_REPAIR_ATTEMPTS:
+        cap = int(state.get("max_fix_time") or max_repair_attempts)
+        if state.get("can_fix") and len(state.get("repair_attempts") or []) < cap:
             return "repairer"
         return "refiner" if enable_reflect_agent else "end"
 
@@ -297,7 +320,7 @@ def build_case_graph(
     def route_after_inspector(state: CaseState) -> str:
         if state.get("semantic_equivalent"):
             return "deploy_tool"
-        max_attempts = min(MAX_REPAIR_ATTEMPTS, int(state.get("max_fix_time") or MAX_REPAIR_ATTEMPTS))
+        max_attempts = int(state.get("max_fix_time") or max_repair_attempts)
         if len(state.get("repair_attempts") or []) >= max_attempts:
             _print_limit_redirect(f"Inspector 后可继续修复次数耗尽 {len(state.get('repair_attempts') or [])}/{max_attempts}")
             return "refiner"
@@ -339,6 +362,7 @@ def init_case_state(
     use_pipeline_dirs: bool = False,
     write_repair_error_record: bool = True,
     write_reflect_record_artifacts: bool = True,
+    max_repair_attempts: int = DEFAULT_MAX_REPAIR_ATTEMPTS,
 ) -> CaseState:
     logs_dir = paths.logs_dir
     pipeline_index = 1
@@ -403,7 +427,7 @@ def init_case_state(
         "deploy_state": False,
         "has_repaired": False,
         "fixed_time": 0,
-        "max_fix_time": MAX_REPAIR_ATTEMPTS,
+        "max_fix_time": int(max_repair_attempts),
         "last_node": "",
         "can_fix": False,
         "semantic_equivalent": None,

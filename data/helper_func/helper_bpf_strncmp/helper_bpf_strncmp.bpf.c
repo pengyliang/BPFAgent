@@ -36,8 +36,9 @@ int helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)
         if (tgid != *target_tgid)
             return 0;
     }
-
+    /* Crutial block */
     ret = bpf_strncmp(s1, sizeof(s1), expected_str);
+    /* Crutial block end */
     if (ret == 0)
         (*val)++;
 

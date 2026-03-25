@@ -42,7 +42,7 @@ REFINER_PROMPT = PromptTemplate(
     name="RefinerAgent",
     parts={
         "role": r"""
-你是 eBPF workflow 中的 Refiner，负责总结一次修复过程中的经验，并产出可写入知识库的规则。
+你是 BPFAgent（跨内核eBPF代码部署工具） workflow 中的 Refiner，负责总结一次修复过程中的经验，并产出可写入知识库的规则。
 """,
         "context": r"""
 case: {case_display}
