@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T04:29:56.404231+00:00",
+  "updated_at": "2026-03-24T04:31:10.209292+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 73.805,
+  "module_durations_s": {
+    "deploy_tool": 33.781,
+    "Analyzer": 14.918,
+    "Repairer": 24.279,
+    "Inspector": 0.827,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T04:29:56.404231+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 22.89
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T04:30:19.294695+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码：(1) 将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY；(2) 为该地图补全 key_size=4 和 value_size=4 的定义（Ringbuf 无需指定这两个字段，但 PERF_EVENT_ARRAY 必须明确）；(3) 将所有 bpf_ringbuf_output 调用替换为 bpf_perf_event_output，传入参数顺序为：map指针、ctx上下文、待输出数据指针、数据长度、B...(truncated)",
+        "analysis_report": "静态检查阶段失败，发现两个不兼容问题：(1) 使用了 bpf_ringbuf_output 辅助函数，但目标环境的 bpftool helper whitelist 中不包含此函数；(2) 定义了 BPF_MAP_TYPE_RINGBUF 类型的地图，但目标环境不支持此地图类型。根据知识库规则，这两个问题都属于 helper_api_compatibility 类别，常见于 Linux 5.8 以下内核环境。RINGBUF 是 5.8+ 才引入的高性能环形缓冲区机制，旧版本内核需要回退到 PERF_EVENT_ARRAY 方案。源码位于 /host/data/feature/map_type_unsupported/map_type...(truncated)"
+      },
+      "duration_s": 14.918
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T04:30:34.212197+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "RINGBUF 和 bpf_ringbuf_output 是 Linux 5.8+ 才引入的 API，目标环境不支持。PERF_EVENT_ARRAY 是兼容的替代方案，bpf_perf_event_output 的语义类似，均用于从 BPF 向用户态传递事件数据，只需调整参数顺序和添加 CPU 标志即可保持原有输出功能。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 24.279
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T04:30:58.491083+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改完全符合 Analyzer 建议的修复方向：(1) 将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY；(2) 为 events 地图补充了 __uint(key_size, 4) 和 __uint(value_size, 4) 字段，因为 PERF_EVENT_ARRAY 必须明确这两个字段；(3) 将 bpf_ringbuf_output(&events, &e, sizeof(e), 0) 替换为 bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &e, sizeof(e))，参数顺序调整为 ctx、m...(truncated)"
+      },
+      "duration_s": 0.827
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T04:30:59.318298+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 10.891
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T04:31:10.209222+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 27
+      }
+    }
+  ]
+}

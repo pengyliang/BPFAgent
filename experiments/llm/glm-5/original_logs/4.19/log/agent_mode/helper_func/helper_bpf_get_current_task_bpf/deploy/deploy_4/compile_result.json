@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "stage": "compile",
+  "source_file": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_3/helper_bpf_get_current_task_btf_repair_3.bpf.c",
+  "object_file": "/host/output/4.19/build/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_3/helper_bpf_get_current_task_btf_repair_3.bpf.c",
+    "-o",
+    "/host/output/4.19/build/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "",
+  "returncode": 0,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": []
+}

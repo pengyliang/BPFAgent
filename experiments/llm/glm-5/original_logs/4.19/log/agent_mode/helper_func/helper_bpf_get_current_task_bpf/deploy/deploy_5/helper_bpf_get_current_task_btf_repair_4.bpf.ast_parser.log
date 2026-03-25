@@ -1,0 +1,11 @@
+status: FAILED
+source_file: /host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_4/helper_bpf_get_current_task_btf_repair_4.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_4 -I/usr/include/x86_64-linux-gnu /host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_4/helper_bpf_get_current_task_btf_repair_4.bpf.c
+stderr:
+/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_4/helper_bpf_get_current_task_btf_repair_4.bpf.c:35:60: error: incomplete definition of type 'struct task_struct'
+    if (bpf_probe_read(&task_tgid, sizeof(task_tgid), &task->tgid))
+                                                       ~~~~^
+/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'
+struct task_struct;
+       ^
+1 error generated.

@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "stage": "compile",
+  "source_file": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_4/state_explosion_repair_4.bpf.c",
+  "object_file": "/host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_4/state_explosion_repair_4.bpf.c",
+    "-o",
+    "/host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_4/state_explosion_repair_4.bpf.c:22:29: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n                            ^\n1 warning generated.\n",
+  "returncode": 0,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": [
+    "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_4/state_explosion_repair_4.bpf.c:22:29: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]",
+    "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+    "                            ^",
+    "1 warning generated."
+  ]
+}

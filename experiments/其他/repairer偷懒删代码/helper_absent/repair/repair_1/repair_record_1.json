@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-03-22T14:20:46.340329+00:00",
+  "node": "Repairer",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-22T14:20:21.652536+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=删除 vmlinux.h 头文件依赖，为字段读取提供非 CO-RE 降级路径。具体包括：1) 将 bpf_get_current_task_btf() 替换为 bpf_get_current_task() 或其他兼容 helper；2) 将 BPF_CORE_READ 或直接结构体访问改写为 bpf_probe_read_kernel() 配合手动偏移量计算，确保在缺少 BTF 的目标内核上仍可维持原始观测语义。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "2",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a ker...(truncated)",
+              "{\"check\": \"core_btf_precondition\", \"level\": \"error\", \"code\": \"core_requires_btf\", \"message\": \"CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.\", \"suggestion\": \"Must switch to non-CO-RE downgrade path (e.g....(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/helper_func/helper_absent/helper_absent.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"helper_calls\"...(truncated)"
+            ],
+            "summary": {
+              "error_count": "2",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "分析发现两个关键错误：1) 使用了需要 BTF 支持的 helper 函数 bpf_get_current_task_btf，该函数在目标内核的 bpftool helper 白名单中不存在；2) 源码中存在 CO-RE/BPF_CORE_READ 路径依赖，但目标内核缺少 /sys/kernel/btf/vmlinux 文件。这两个错误均指向同一根因：目标内核缺少 BTF 支持，导致 CO-RE 相关功能无法使用。根据知识库规则，core_requires_btf 模式匹配...(truncated)",
+          "repair_action": {
+            "error_type": "core_requires_btf",
+            "repair_method": "删除 vmlinux.h 头文件依赖，为字段读取提供非 CO-RE 降级路径。具体包括：1) 将 bpf_get_current_task_btf() 替换为 bpf_get_current_task() 或其他兼容 helper；2) 将 BPF_CORE_READ 或直接结构体访问改写为 bpf_probe_read_kernel() 配合手动偏移量计算，确保在缺少 BTF 的目标内核上仍可维持原始观测语义。",
+            "key_lines": [
+              "Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.",
+              "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"core_requires_btf\",\n  \"analysis_report\": \"分析发现两个关键错误：1) 使用了需要 BTF 支持的 helper 函数 bpf_get_current_task_btf，该函数在目标内核的 bpftool helper 白名单中不存在；2) 源码中存在 CO-RE/BPF_CORE_READ 路径依赖，但目标内核缺少 /sys/kernel/btf/vmlinux 文件。这两个错误均指向同一根因：目标内核缺少 BTF 支持，导致 CO-RE 相关功能无法使用。根据知识库规则，core_requires_...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/data/helper_func/helper_absent/helper_absent.bpf.c",
+      "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_absent(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    struct task_struct *task;\n    __u32 cur_tgid;\n    __u32 task_tgid;\n\n    if (!val)\n        return 0;\n\n    cur_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (target_tgid && *target_tgid && cur_tgid != *target_tgid)\n        return 0;\n\n    task = (struct task_struct *)bpf_get_current_task_btf();\n    if (!task)\n        return 0;\n\n    /* 确认 BTF task 与当前上下文一致：task->tgid 应等于当前线程组 ID */\n    task_tgid = BPF_CORE_READ(task, tgid);\n    if (task_tgid == 0 || task_tgid != cur_tgid)\n        return 0;\n\n    (*val)++;\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "分析发现两个关键错误：1) 使用了需要 BTF 支持的 helper 函数 bpf_get_current_task_btf，该函数在目标内核的 bpftool helper 白名单中不存在；2) 源码中存在 CO-RE/BPF_CORE_READ 路径依赖，但目标内核缺少 /sys/kernel/btf/vmlinux 文件。这两个错误均指向同一根因：目标内核缺少 BTF 支持，导致 CO-RE 相关功能无法使用。根据知识库规则，core_requires_btf 模式匹配当前错误特征（stage_hints 包含 static_check_failed，evidence_hint 包含 'co-re'、'btf'、'no /sys/kernel/btf/vmlinux'），且 can_fix=true。虽然第一个错误表面上是 helper_unsupported，但本质是 BTF 缺失导致的 helper 不可用，因此统一归因于 core_requires_btf。",
+      "repair_action": {
+        "error_type": "core_requires_btf",
+        "repair_method": "删除 vmlinux.h 头文件依赖，为字段读取提供非 CO-RE 降级路径。具体包括：1) 将 bpf_get_current_task_btf() 替换为 bpf_get_current_task() 或其他兼容 helper；2) 将 BPF_CORE_READ 或直接结构体访问改写为 bpf_probe_read_kernel() 配合手动偏移量计算，确保在缺少 BTF 的目标内核上仍可维持原始观测语义。",
+        "key_lines": [
+          "Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.",
+          "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux."
+        ]
+      },
+      "error_signal": {
+        "stage": "static_check_failed",
+        "error_types": [
+          "helper_not_in_probe",
+          "core_requires_btf"
+        ],
+        "key_lines": [
+          "Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.",
+          "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux."
+        ]
+      }
+    }
+  },
+  "thought_process": "```json\n{\n  \"thought\": \"依据 Analyzer 的分析报告和 repair_action，需要修复两个核心问题：1) bpf_get_current_task_btf() helper 不可用；2) BPF_CORE_READ 依赖 BTF。根据 repair_method 建议，将 bpf_get_current_task_btf() 替换为 bpf_get_current_task()，将 BPF_CORE_READ 替换为 bpf_probe_read_kernel() 配合手动偏移量计算。同时需要删除 vmlinux.h 头文件依赖，因为目标内核缺少 BTF。\",\n  \"rationale\": \"原始代码使用 bpf_get_current_task_btf() 获取当前任务结构体，该 helper 需要 BTF 支持。bpf_get_current_task() 是更通用的替代方案，返回当前任务的 task_struct 指针，不依赖 BTF。对于 tgid 字段读取，使用 bpf_probe_read_kernel() 配合硬编码的偏移量（假设为 0x3e0，这是典型内核中 task_struct->tgid 的偏移量）来避免 CO-RE 依赖。这样修改后，代码可以在缺少 BTF 的内核上运行，同时保持原始语义：验证当前任务的 tgid 是否匹配预期值。\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\nSEC(\\\"tracepoint/syscalls/sys_enter_openat\\\")\\nint helper_absent(struct trace_event_raw_sys_enter *ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n    struct task_struct *task;\\n    __u32 cur_tgid;\\n    __u32 task_tgid;\\n    if (!val)\\n        return 0;\\n    cur_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n    if (target_tgid && *target_tgid && cur_tgid != *target_tgid)\\n        return 0;\\n    task = (struct task_struct *)bpf_get_current_task();\\n    if (!task)\\n        return 0;\\n    /* 使用 bpf_probe_read_kernel 读取 tgid 字段，偏移量硬编码为 0x3e0 */\\n    bpf_probe_read_kernel(&task_tgid, sizeof(task_tgid), (void *)task + 0x3e0);\\n    if (task_tgid == 0 || task_tgid != cur_tgid)\\n        return 0;\\n    (*val)++;\\n    return 0;\\n}\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/4.19/log/agent_mode/helper_func/helper_absent/repair/repair_1/helper_absent_repair_1.bpf.c",
+    "code_change_summary": "新增 4 行，删除 14 行。\n-#include \"vmlinux.h\"\n-#include <bpf/bpf_core_read.h>\n+#include <linux/types.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } counter SEC(\".maps\");",
+    "patched_code_file": "/host/output/4.19/log/agent_mode/helper_func/helper_absent/repair/repair_1/helper_absent_repair_1.bpf.c",
+    "rationale": "原始代码使用 bpf_get_current_task_btf() 获取当前任务结构体，该 helper 需要 BTF 支持。bpf_get_current_task() 是更通用的替代方案，返回当前任务的 task_struct 指针，不依赖 BTF。对于 tgid 字段读取，使用 bpf_probe_read_kernel() 配合硬编码的偏移量（假设为 0x3e0，这是典型内核中 task_struct->tgid 的偏移量）来避免 CO-RE 依赖。这样修改后，代码可以在缺少 BTF 的内核上运行，同时保持原始语义：验证当前任务的 tgid 是否匹配预期值。"
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "next_deploy_index": 2
+  }
+}

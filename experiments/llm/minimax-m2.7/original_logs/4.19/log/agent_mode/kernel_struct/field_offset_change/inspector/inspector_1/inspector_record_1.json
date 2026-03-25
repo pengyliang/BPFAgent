@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-03-24T04:31:43.176097+00:00",
+  "node": "Inspector",
+  "node_index": 1,
+  "from_node": "Repairer",
+  "inputs": {
+    "source_before": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+    "source_after": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+    "analyzer_context": {
+      "analysis_report": "static_check 阶段报错 `Helper bpf_probe_read_kernel is not present in bpftool helper whitelist`，错误代码为 `helper_not_in_probe`。源文件 field_offset_change.bpf.c 在 tracepoint 程序中调用了 bpf_probe_read_kernel，但当前目标内核不支持此辅助函数（bpf_probe_read_kernel 需要 Linux 5.5+）。知识库规则 `helper_api_compatibility` 明确指出：bpf_probe_read_kernel 在旧版内核（< 5.5）中不可用，需要替换为 bpf_probe_read。这是一个可自动修复的兼容性问题。",
+      "repair_action": {
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码：在源文件 /host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c 中，将所有对 `bpf_probe_read_kernel()` 的调用替换为 `bpf_probe_read()`，包括函数调用参数保持不变。",
+        "key_lines": [
+          "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+        ]
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:31:21.614892+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码：在源文件 /host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c 中，将所有对 `bpf_probe_read_kernel()` 的调用替换为 `bpf_probe_read()`，包括函数调用参数保持不变。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], ...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "static_check 阶段报错 `Helper bpf_probe_read_kernel is not present in bpftool helper whitelist`，错误代码为 `helper_not_in_probe`。源文件 field_offset_change.bpf.c 在 tracepoint 程序中调用了 bpf_probe_read_kernel，但当前目标内核不支持此辅助函数（bpf_probe_read_kernel 需要 Linux 5...(truncated)",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码：在源文件 /host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c 中，将所有对 `bpf_probe_read_kernel()` 的调用替换为 `bpf_probe_read()`，包括函数调用参数保持不变。",
+            "key_lines": [
+              "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"static_check 阶段报错 `Helper bpf_probe_read_kernel is not present in bpftool helper whitelist`，错误代码为 `helper_not_in_probe`。源文件 field_offset_change.bpf.c 在 tracepoint 程序中调用了 bpf_probe_read_kernel，但当前目标内核不支持此辅助函数（bpf_probe_read_ke...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:31:35.035175+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries...(truncated)",
+            "analysis_report": "static_check 阶段报错 `Helper bpf_probe_read_kernel is not present in bpftool helper whitelist`，错误代码为 `helper_not_in_probe`。源文件 field_offset_change.bpf.c 在 tracepoint 程序中调用了 bpf_probe_read_kernel，但当前目标内核不支持此辅助函数（bpf_probe_read_kernel 需要 Linux 5...(truncated)",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码：在源文件 /host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c 中，将所有对 `bpf_probe_read_kernel()` 的调用替换为 `bpf_probe_read()`，包括函数调用参数保持不变。",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            },
+            "error_signal": {
+              "stage": "static_check_failed",
+              "error_types": "[\"helper_not_in_probe\"]",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "code_change_summary": "新增 1 行，删除 1 行。\n         return 0;\n \n     /* Crutial block */\n-    if (bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset),\n+    if (bpf_probe_read(&tgid_from_offset, sizeof(tgid_from_offset),\n                               (co...(truncated)",
+          "patched_code_file": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "rationale": "bpf_probe_read_kernel 是 Linux 5.5+ 才引入的辅助函数，当前目标内核不支持该 API。bpf_probe_read 是其前身，在旧版内核中可用，功能相同。只需将函数名替换，参数和业务逻辑完全保持不变。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"根据 Analyzer 的分析报告，static_check 阶段报错 `Helper bpf_probe_read_kernel is not present in bpftool helper whitelist`。这是因为目标内核版本低于 5.5，不支持 bpf_probe_read_kernel 辅助函数。根据知识库规则 `helper_api_compatibility`，需要将 bpf_probe_read_kernel 替换为 bpf_probe_read。修复操作仅限于函数名替换，不改变参数和语义。\",\n  \"rationale\": \"bpf_probe_read_ke...(truncated)"
+      }
+    ],
+    "before_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u32 tgid_from_offset = 0;\n    __u32 current_tgid;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    void *task;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 cur = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (cur != *target_tgid)\n            return 0;\n    }\n\n    task = (void *)bpf_get_current_task();\n    if (!task)\n        return 0;\n\n    /* Crutial block */\n    if (bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset),\n                              (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)\n        return 0;\n    /* Crutial block end */\n    current_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (tgid_from_offset == current_tgid)   // cannot be deleted\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "after_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u32 tgid_from_offset = 0;\n    __u32 current_tgid;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    void *task;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 cur = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (cur != *target_tgid)\n            return 0;\n    }\n\n    task = (void *)bpf_get_current_task();\n    if (!task)\n        return 0;\n\n    /* Crutial block */\n    if (bpf_probe_read(&tgid_from_offset, sizeof(tgid_from_offset),\n                              (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)\n        return 0;\n    /* Crutial block end */\n    current_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (tgid_from_offset == current_tgid)   // cannot be deleted\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "code_change_summary": "新增 1 行，删除 1 行。\n         return 0;\n \n     /* Crutial block */\n-    if (bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset),\n+    if (bpf_probe_read(&tgid_from_offset, sizeof(tgid_from_offset),\n                               (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)\n         return 0;\n     /* Crutial block end */"
+  },
+  "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改仅涉及函数名替换：将 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`。参数完全保持不变：`&tgid_from_offset`（目标缓冲区）、`sizeof(tgid_from_offset)`（读取大小）、`(const void *)((const char *)task + TASK_TGID_OFFSET)`（源地址）均未改动。返回值处理逻辑 `!= 0` 后的行为也完全一致。业务逻辑中的 `(*val)++` 相关判断（`tgid_from_offset == current_tgid`）完全保留，未被修改或删除。修改符合 Analyzer 建议的 `helper_api_compatibility` 修复方向，语义完全等价。\",\n  \"suggestion\": \"\"\n}\n```",
+  "outputs": {
+    "semantic_equivalent": true,
+    "inspector_report": "修改仅涉及函数名替换：将 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`。参数完全保持不变：`&tgid_from_offset`（目标缓冲区）、`sizeof(tgid_from_offset)`（读取大小）、`(const void *)((const char *)task + TASK_TGID_OFFSET)`（源地址）均未改动。返回值处理逻辑 `!= 0` 后的行为也完全一致。业务逻辑中的 `(*val)++` 相关判断（`tgid_from_offset == current_tgid`）完全保留，未被修改或删除。修改符合 Analyzer 建议的 `helper_api_compatibility` 修复方向，语义完全等价。"
+  },
+  "result_params": {
+    "will_next_go_to": "deploy_tool"
+  }
+}

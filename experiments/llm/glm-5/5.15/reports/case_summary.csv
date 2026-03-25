@@ -1,0 +1,14 @@
+case_id,initial_deploy_state,final_deploy_state,total_time,final_failed_stage,final_error_type,total_repair_round,analyzer_round,repairer_round,inspector_round,refiner_round,analyzer_time_consumption,repairer_time_consumption,inspector_time_consumption,refiner_time_consumption,total_agent_calls,deploy_tool_round,first_analyzer_can_fix,last_analyzer_can_fix
+feature/attach_type_unsupported,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+feature/btf_unsupported,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+feature/map_type_unsupported,true,true,0.02,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+feature/program_type_unsupported,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+helper_func/helper_bpf_get_current_task_bpf,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+helper_func/helper_bpf_ktime_get_boot_ns,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+helper_func/helper_bpf_snprintf,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+helper_func/helper_bpf_strncmp,false,true,78.05,,,2,1,2,2,1,15.36,35.64,23.60,2.60,6,2,true,true
+kernel_struct/field_add_remove,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+kernel_struct/field_offset_change,false,true,91.16,,,1,1,1,1,1,44.68,25.41,8.73,11.63,4,2,true,true
+kernel_struct/field_renamed,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+verifier/loop_support,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+verifier/state_explosion,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,

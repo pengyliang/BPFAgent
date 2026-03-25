@@ -1,0 +1,33 @@
+{
+  "success": true,
+  "error_warning_count": {
+    "error": 0,
+    "warning": 0
+  },
+  "issues": [],
+  "results": [
+    {
+      "source_file": "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c",
+      "program_sections": [
+        "fentry/__x64_sys_clock_nanosleep"
+      ],
+      "program_types": [
+        "fentry"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_map_lookup_elem",
+        "bpf_map_lookup_elem",
+        "bpf_get_current_pid_tgid"
+      ],
+      "issues": []
+    }
+  ],
+  "summary": {
+    "error_count": 0,
+    "warning_count": 0
+  }
+}

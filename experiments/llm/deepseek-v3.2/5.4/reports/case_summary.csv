@@ -1,0 +1,14 @@
+case_id,initial_deploy_state,final_deploy_state,total_time,final_failed_stage,final_error_type,total_repair_round,analyzer_round,repairer_round,inspector_round,refiner_round,analyzer_time_consumption,repairer_time_consumption,inspector_time_consumption,refiner_time_consumption,total_agent_calls,deploy_tool_round,first_analyzer_can_fix,last_analyzer_can_fix
+feature/attach_type_unsupported,false,false,236.62,runtime_test_failed,external_runtime_dependency_missing,4,3,4,4,1,35.05,140.70,40.69,8.44,12,3,true,true
+feature/btf_unsupported,false,false,255.47,static_check_failed,helper_unsupported,4,1,4,4,1,10.06,204.64,34.04,6.72,10,1,true,true
+feature/map_type_unsupported,false,false,264.95,static_check_failed,map_type_unsupported,4,1,4,4,1,28.96,166.72,61.99,7.26,10,1,true,true
+feature/program_type_unsupported,false,false,34.00,static_check_failed,attach_type_unsupported,0,1,0,0,1,28.72,0.00,0.00,5.28,2,1,false,false
+helper_func/helper_bpf_get_current_task_bpf,false,true,133.39,,,2,2,2,2,1,21.53,79.81,15.10,6.21,7,3,true,true
+helper_func/helper_bpf_ktime_get_boot_ns,false,true,65.02,,,1,1,1,1,1,28.73,22.89,6.72,5.74,4,2,true,true
+helper_func/helper_bpf_snprintf,false,true,233.07,,,4,2,4,4,1,28.11,147.24,45.61,10.43,11,3,true,true
+helper_func/helper_bpf_strncmp,false,true,54.53,,,1,1,1,1,1,11.31,27.52,7.60,7.13,4,2,true,true
+kernel_struct/field_add_remove,false,false,187.34,compile_failed,header_dependency_missing,4,2,4,4,1,24.91,98.29,53.14,8.73,11,2,true,true
+kernel_struct/field_offset_change,false,false,213.08,runtime_test_failed,,4,4,4,4,1,57.76,104.51,36.81,8.45,13,5,true,true
+kernel_struct/field_renamed,false,false,205.69,static_check_failed,helper_unsupported,4,2,4,4,1,23.02,134.06,34.54,9.28,11,2,true,true
+verifier/loop_support,true,true,0.01,,,0,0,0,0,0,0.00,0.00,0.00,0.00,0,1,,
+verifier/state_explosion,false,true,64.93,,,1,1,1,1,1,11.33,39.69,7.07,5.95,4,2,true,true

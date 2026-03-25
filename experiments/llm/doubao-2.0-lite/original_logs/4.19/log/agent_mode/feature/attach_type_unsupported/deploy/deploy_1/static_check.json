@@ -1,0 +1,78 @@
+{
+  "success": false,
+  "error_warning_count": {
+    "error": 1,
+    "warning": 1
+  },
+  "issues": [
+    {
+      "check": "program_type_attach_availability",
+      "level": "warning",
+      "code": "attach_target_not_found",
+      "message": "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+      "suggestion": "Verify target symbol on deployment kernel or adjust attach target.",
+      "evidence": {
+        "sec": "kprobe/do_sys_openat2",
+        "target": "do_sys_openat2"
+      },
+      "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c"
+    },
+    {
+      "check": "core_btf_precondition",
+      "level": "error",
+      "code": "core_requires_btf",
+      "message": "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.",
+      "suggestion": "Must switch to non-CO-RE downgrade path (e.g., bpf_probe_read_kernel with offsets).",
+      "evidence": {
+        "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c"
+      },
+      "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c"
+    }
+  ],
+  "results": [
+    {
+      "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+      "program_sections": [
+        "kprobe/do_sys_openat2"
+      ],
+      "program_types": [
+        "kprobe"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_get_current_pid_tgid",
+        "bpf_map_lookup_elem"
+      ],
+      "issues": [
+        {
+          "check": "program_type_attach_availability",
+          "level": "warning",
+          "code": "attach_target_not_found",
+          "message": "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+          "suggestion": "Verify target symbol on deployment kernel or adjust attach target.",
+          "evidence": {
+            "sec": "kprobe/do_sys_openat2",
+            "target": "do_sys_openat2"
+          }
+        },
+        {
+          "check": "core_btf_precondition",
+          "level": "error",
+          "code": "core_requires_btf",
+          "message": "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.",
+          "suggestion": "Must switch to non-CO-RE downgrade path (e.g., bpf_probe_read_kernel with offsets).",
+          "evidence": {
+            "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "error_count": 1,
+    "warning_count": 1
+  }
+}

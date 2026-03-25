@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T03:12:06.193164+00:00",
+  "updated_at": "2026-03-24T03:12:30.505814+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 24.312,
+  "module_durations_s": {
+    "deploy_tool": 5.885,
+    "Analyzer": 7.749,
+    "Repairer": 3.688,
+    "Inspector": 6.991,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T03:12:06.193164+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 3.897
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T03:12:10.090517+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容；将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。",
+        "analysis_report": "当前eBPF代码静态检查阶段检测到使用了两个不被当前环境白名单允许的BPF辅助函数：`bpf_get_current_task_btf`（仅Linux 5.7+内核支持）和`bpf_probe_read_kernel`（仅Linux 5.5+内核支持），属于辅助函数兼容性问题，符合可通过源码修改修复的场景。"
+      },
+      "duration_s": 7.749
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T03:12:17.839571+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "将bpf_get_current_task_btf替换为兼容旧内核的bpf_get_current_task，将BPF_CORE_READ替换为显式的bpf_probe_read调用，保持原有业务逻辑不变",
+        "next_deploy_index": 2
+      },
+      "duration_s": 3.688
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T03:12:21.527576+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改完全符合Analyzer的修复建议：1. 将不兼容的`bpf_get_current_task_btf`替换为兼容的`bpf_get_current_task`；2. 将会展开使用`bpf_probe_read_kernel`的`BPF_CORE_READ`宏替换为了显式的`bpf_probe_read`调用；3. 原有业务逻辑包括所有条件判断和`(*val)++`计数逻辑都完整保留，没有修改原有业务语义，符合修复要求。"
+      },
+      "duration_s": 6.991
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T03:12:28.518150+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 1.988
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T03:12:30.505662+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 16
+      }
+    }
+  ]
+}

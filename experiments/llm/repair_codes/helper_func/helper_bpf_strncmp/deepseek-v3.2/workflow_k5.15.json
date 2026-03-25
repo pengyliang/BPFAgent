@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-23T16:12:05.251716+00:00",
+  "updated_at": "2026-03-23T16:13:31.547567+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 86.296,
+  "module_durations_s": {
+    "deploy_tool": 46.616,
+    "Analyzer": 30.648,
+    "Repairer": 8.02,
+    "Inspector": 1.012,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T16:12:05.251716+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 39.357
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T16:12:44.608347+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：将不支持的字符串比较 helper（如 bpf_strncmp）替换为手动实现：使用 bpf_probe_read 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。将自定义的兼容实现函数重命名为不以 bpf_ 开头的名称（如 my_strncmp），以避免被静态检查器误识别为内核 helper。",
+        "analysis_report": "静态检查失败，错误签名 static_check_failed，具体原因为 helper_availability 检查未通过。关键报错信息显示：'Helper bpf_strncmp is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 bpf_strncmp 这个 helper 函数。根据知识库规则，此现象匹配 'helper_unsupported' 模式（aliases 包含 'helper_not_in_probe'），且该模式在 static_check_failed 阶段出现，can_fix 为 true。源码中使用了 bpf_strncmp 进行字符串比较...(truncated)"
+      },
+      "duration_s": 30.648
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T16:13:15.256512+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "1. 添加一个自定义的静态内联函数 my_strncmp，使用 bpf_probe_read 安全读取字符串到栈缓冲区，然后通过循环逐字节比较，遇到空字符或达到指定长度时停止，返回比较结果（0 表示相等）。\n2. 将原调用 ret = bpf_strncmp(s1, sizeof(s1), expected_str); 替换为 ret = my_strncmp(s1, sizeof(s1), ex...(truncated)",
+        "next_deploy_index": 2
+      },
+      "duration_s": 8.02
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-23T16:13:23.276566+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改符合 Analyzer 的修复建议。具体分析：1. 新增了自定义函数 my_strncmp，使用 bpf_probe_read 安全读取字符串到栈缓冲区，并通过循环逐字节比较，在遇到空字符或达到指定长度时停止，返回比较结果（0 表示相等）。2. 将原调用 bpf_strncmp(s1, sizeof(s1), expected_str) 替换为 my_strncmp(s1, sizeof(s1), expected_str)。3. 保留了所有原始逻辑，包括对 (*val)++ 的条件判断（if (ret == 0) (*val)++）。4. 函数重命名为不以 bpf_ 开头的名称（my_strncmp），避免了被静态检查器误识别...(truncated)"
+      },
+      "duration_s": 1.012
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-23T16:13:24.288066+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 7.259
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-23T16:13:31.547510+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

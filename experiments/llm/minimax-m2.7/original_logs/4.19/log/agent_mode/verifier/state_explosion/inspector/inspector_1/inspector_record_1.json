@@ -1,0 +1,138 @@
+{
+  "generated_at": "2026-03-24T04:38:45.341910+00:00",
+  "node": "Inspector",
+  "node_index": 1,
+  "from_node": "Repairer",
+  "inputs": {
+    "source_before": "/host/data/verifier/state_explosion/state_explosion.bpf.c",
+    "source_after": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+    "analyzer_context": {
+      "analysis_report": "程序 bpf_to_bpf_fault 在 tracepoint handler 内循环调用了 51 次 global_add_stress 函数。libbpf 加载日志明确显示：'added 73 insns from sub-prog global_add_stress'，说明 global_add_stress 被编译为独立的 BPF sub-program 而非内联展开。每次 BPF-to-BPF 调用都会触发验证器的状态切换开销，51 次重复调用导致验证路径指数级增长，最终触发内核验证器的 'Argument list too long' 错误。这是典型的 state_explosion 根因：循环中调用非内联子函数导致验证器状态爆炸。",
+      "repair_action": {
+        "error_type": "state_explosion",
+        "repair_method": "修改代码，将 global_add_stress 函数的声明从 'static int global_add_stress(...)' 改为 'static __always_inline int global_add_stress(...)'，强制编译器在编译时将函数体内联到所有调用点，消除所有 BPF-to-BPF 调用指令，从而彻底消除验证器的状态爆炸问题。",
+        "key_lines": [
+          "libbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1",
+          "libbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 bytes), code size 73 insns (584 bytes)",
+          "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 1800, link 0, flags 6, type=1",
+          "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'bpf_to_bpf_fault' at insn offset 0 (0 bytes), code size 225 insns (1800 bytes)",
+          "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 832, link 27, flags 40, type=9",
+          "libbpf: elf: section(5) .maps, size 64, link 0, flags 3, type=1",
+          "libbpf: elf: section(6) license, size 4, link 0, flags 3, type=1",
+          "libbpf: elf: section(17) .BTF, size 1615, link 0, flags 0, type=1",
+          "libbpf: elf: section(19) .BTF.ext, size 2440, link 0, flags 0, type=1",
+          "libbpf: elf: section(27) .symtab, size 744, link 1, flags 0, type=2"
+        ]
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:38:12.128296+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 load_failed，can_fix=True，建议=修改代码，将 global_add_stress 函数的声明从 'static int global_add_stress(...)' 改为 'static __always_inline int global_add_stress(...)'，强制编译器在编译时将函数体内联到所有调用点，消除所有 BPF-to-BPF 调用指令，从而彻底消除验证器的状态爆炸问题。",
+        "inputs": {
+          "failed_stage": "load_failed",
+          "failed_stage_result": {
+            "success": false,
+            "stage": "load",
+            "via_libbpf_loader_daemon": true,
+            "command": [
+              "sudo",
+              "/host/src/ebpf/utils/loader",
+              "--obj",
+              "/host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o",
+              "--pin-path",
+              "/sys/fs/bpf/ebpf_agent_state_explosion"
+            ],
+            "pid": 3162,
+            "ready_line": null,
+            "stdout": "",
+            "stderr": "libbpf: loading object from /host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o\nlibbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1\nlibbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 b...(truncated)",
+            "returncode": 10,
+            "error_message": "load failed: -7",
+            "load_success": false,
+            "attach_success": false,
+            "...": "trimmed 3 fields"
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "load_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "load": "{\"status\": \"failed\", \"success\": false, \"error_log\": \"load failed: -7\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_or_attach_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "程序 bpf_to_bpf_fault 在 tracepoint handler 内循环调用了 51 次 global_add_stress 函数。libbpf 加载日志明确显示：'added 73 insns from sub-prog global_add_stress'，说明 global_add_stress 被编译为独立的 BPF sub-program 而非内联展开。每次 BPF-to-BPF 调用都会触发验证器的状态切换开销，51 次重复调用导致验证路径指数级增...(truncated)",
+          "repair_action": {
+            "error_type": "state_explosion",
+            "repair_method": "修改代码，将 global_add_stress 函数的声明从 'static int global_add_stress(...)' 改为 'static __always_inline int global_add_stress(...)'，强制编译器在编译时将函数体内联到所有调用点，消除所有 BPF-to-BPF 调用指令，从而彻底消除验证器的状态爆炸问题。",
+            "key_lines": [
+              "libbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1",
+              "libbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 bytes), code size 73 insns (584 bytes)",
+              "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 1800, link 0, flags 6, type=1",
+              "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'bpf_to_bpf_fault' at insn offset 0 (0 bytes), code size 225 insns (1800 bytes)",
+              "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 832, link 27, flags 40, type=9",
+              "libbpf: elf: section(5) .maps, size 64, link 0, flags 3, type=1",
+              "libbpf: elf: section(6) license, size 4, link 0, flags 3, type=1",
+              "libbpf: elf: section(17) .BTF, size 1615, link 0, flags 0, type=1",
+              "... trimmed 2 items"
+            ]
+          }
+        },
+        "thought_process": "Looking at the error log carefully:\n\n1. `libbpf: prog 'bpf_to_bpf_fault': added 73 insns from sub-prog 'global_add_stress'` — the function is compiled as a separate sub-program, not inlined\n2. 51 relocation entries all pointing to the same subprog `global_add_stress` (at offset 225) — each call is a BPF-to-BPF call\n3. ...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:38:35.934054+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/verifier/state_explosion/state_explosion.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counte...(truncated)",
+            "analysis_report": "程序 bpf_to_bpf_fault 在 tracepoint handler 内循环调用了 51 次 global_add_stress 函数。libbpf 加载日志明确显示：'added 73 insns from sub-prog global_add_stress'，说明 global_add_stress 被编译为独立的 BPF sub-program 而非内联展开。每次 BPF-to-BPF 调用都会触发验证器的状态切换开销，51 次重复调用导致验证路径指数级增...(truncated)",
+            "repair_action": {
+              "error_type": "state_explosion",
+              "repair_method": "修改代码，将 global_add_stress 函数的声明从 'static int global_add_stress(...)' 改为 'static __always_inline int global_add_stress(...)'，强制编译器在编译时将函数体内联到所有调用点，消除所有 BPF-to-BPF 调用指令，从而彻底消除验证器的状态爆炸问题。",
+              "key_lines": "[\"libbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1\", \"libbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 bytes), code size 73 insns (584 bytes)\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter...(truncated)"
+            },
+            "error_signal": {
+              "stage": "load_failed",
+              "error_types": "[\"verifier_reject\"]",
+              "key_lines": "[\"libbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1\", \"libbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 bytes), code size 73 insns (584 bytes)\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter...(truncated)"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+          "code_change_summary": "新增 1 行，删除 1 行。\n     __type(value, __u32); /* target tgid */\n } cfg SEC(\".maps\");\n \n-__noinline int global_add_stress(__u64 *val, __u64 x)\n+static __always_inline int global_add_stress(__u64 *val, __u64 x)\n {\n     if (!val)\n         return 0...(truncated)",
+          "patched_code_file": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+          "rationale": "仅修改函数声明关键字，将 __noinline 替换为 __always_inline，函数签名、返回类型、参数类型及全部逻辑保持不变。此修改强制 clang 在编译时将 global_add_stress 函数体内联到所有调用点（循环内的 50 次调用），消除所有 BPF-to-BPF 调用指令，从而消除验证器的状态爆炸问题。保留 /* Crutial block */ 和 /* Crutial block end */ 注释，保留所有 bit 判断和 (*val) 修改逻...(truncated)"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"根据 Analyzer 的分析，问题根源是 global_add_stress 使用 __noinline 导致编译器将其编译为独立的 BPF sub-program（73 条指令），在循环中被调用 51 次（50 + 1），每次调用触发验证器状态切换，最终导致 state_explosion。最小必要修复：将函数声明从 '__noinline int global_add_stress(...)' 改为 'static __always_inline int global_add_stress(...)'，强制编译器内联，消除所有 BPF-to-BPF 调用。\",\n  \"ration...(truncated)"
+      }
+    ],
+    "before_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\n__noinline int global_add_stress(__u64 *val, __u64 x)\n{\n    if (!val)\n        return 0;\n\n    /*\n     * Multiple independent branches on unknown scalar 'x' to blow up states.\n     * Each bit check introduces a verifier split.\n     */\n    if (x & (1ull << 0))\n        (*val) += 1;\n    else\n        (*val) += 2;\n\n    if (x & (1ull << 1))\n        (*val) += 4;\n    else\n        (*val) += 8;\n\n    if (x & (1ull << 2))\n        (*val) += 16;\n    else\n        (*val) += 32;\n\n    if (x & (1ull << 3))\n        (*val) += 64;\n    else\n        (*val) += 128;\n\n    if (x & (1ull << 4))\n        (*val) += 256;\n    else\n        (*val) += 512;\n\n    if (x & (1ull << 5))\n        (*val) += 1024;\n    else\n        (*val) += 2048;\n\n    if (x & (1ull << 6))\n        (*val) += 4096;\n    else\n        (*val) += 8192;\n\n    if (x & (1ull << 7))\n        (*val) += 16384;\n    else\n        (*val) += 32768;\n\n    if (x & (1ull << 8))\n        (*val) += 65536;\n    else\n        (*val) += 131072;\n\n    if (x & (1ull << 9))\n        (*val) += 262144;\n    else\n        (*val) += 524288;\n\n    return 1;\n}\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u64 pid_tgid = bpf_get_current_pid_tgid();\n    __u64 x = pid_tgid;  // verifier cannot predict this unknown scalar\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    /* Crutial block */\n    __u32 max_time = 50;\n    __u32 i = 0;\n    for (i = 0; i < max_time; i++) {\n        global_add_stress(val, x + i);\n    }\n    /* Crutial block end */\n\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "after_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nstatic __always_inline int global_add_stress(__u64 *val, __u64 x)\n{\n    if (!val)\n        return 0;\n\n    /*\n     * Multiple independent branches on unknown scalar 'x' to blow up states.\n     * Each bit check introduces a verifier split.\n     */\n    if (x & (1ull << 0))\n        (*val) += 1;\n    else\n        (*val) += 2;\n\n    if (x & (1ull << 1))\n        (*val) += 4;\n    else\n        (*val) += 8;\n\n    if (x & (1ull << 2))\n        (*val) += 16;\n    else\n        (*val) += 32;\n\n    if (x & (1ull << 3))\n        (*val) += 64;\n    else\n        (*val) += 128;\n\n    if (x & (1ull << 4))\n        (*val) += 256;\n    else\n        (*val) += 512;\n\n    if (x & (1ull << 5))\n        (*val) += 1024;\n    else\n        (*val) += 2048;\n\n    if (x & (1ull << 6))\n        (*val) += 4096;\n    else\n        (*val) += 8192;\n\n    if (x & (1ull << 7))\n        (*val) += 16384;\n    else\n        (*val) += 32768;\n\n    if (x & (1ull << 8))\n        (*val) += 65536;\n    else\n        (*val) += 131072;\n\n    if (x & (1ull << 9))\n        (*val) += 262144;\n    else\n        (*val) += 524288;\n\n    return 1;\n}\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u64 pid_tgid = bpf_get_current_pid_tgid();\n    __u64 x = pid_tgid;  // verifier cannot predict this unknown scalar\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    /* Crutial block */\n    __u32 max_time = 50;\n    __u32 i = 0;\n    for (i = 0; i < max_time; i++) {\n        global_add_stress(val, x + i);\n    }\n    /* Crutial block end */\n\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "code_change_summary": "新增 1 行，删除 1 行。\n     __type(value, __u32); /* target tgid */\n } cfg SEC(\".maps\");\n \n-__noinline int global_add_stress(__u64 *val, __u64 x)\n+static __always_inline int global_add_stress(__u64 *val, __u64 x)\n {\n     if (!val)\n         return 0;"
+  },
+  "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改仅涉及一处：函数声明从 `__noinline int global_add_stress(__u64 *val, __u64 x)` 改为 `static __always_inline int global_add_stress(__u64 *val, __u64 x)`。函数签名（参数类型、返回类型）、全部业务逻辑（10 个位分支判断及对应的 (*val) += 增量累加逻辑）均完全保留，仅改变了编译期的内联行为。此修改正是 Analyzer 建议的修复方向：将 `__noinline` 替换为 `__always_inline`，强制 clang 在编译时将 global_add_stress 函数体内联到所有调用点（循环内的 50 次调用），从而消除所有 BPF-to-BPF 调用指令，彻底解决验证器的 state_explosion 问题。语义等价。\",\n  \"suggestion\": \"\"\n}\n```",
+  "outputs": {
+    "semantic_equivalent": true,
+    "inspector_report": "修改仅涉及一处：函数声明从 `__noinline int global_add_stress(__u64 *val, __u64 x)` 改为 `static __always_inline int global_add_stress(__u64 *val, __u64 x)`。函数签名（参数类型、返回类型）、全部业务逻辑（10 个位分支判断及对应的 (*val) += 增量累加逻辑）均完全保留，仅改变了编译期的内联行为。此修改正是 Analyzer 建议的修复方向：将 `__noinline` 替换为 `__always_inline`，强制 clang 在编译时将 global_add_stress 函数体内联到所有调用点（循环内的 50 次调用），从而消除所有 BPF-to-BPF 调用指令，彻底解决验证器的 state_explosion 问题。语义等价。"
+  },
+  "result_params": {
+    "will_next_go_to": "deploy_tool"
+  }
+}

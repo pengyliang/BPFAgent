@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "stage": "load",
+  "via_libbpf_loader_daemon": true,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/5.4/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_helper_bpf_snprintf"
+  ],
+  "pid": 3127,
+  "ready_line": "READY pid=3128 maps_dir=/sys/fs/bpf/ebpf_agent_helper_bpf_snprintf_maps attached=1",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_helper_bpf_snprintf_maps",
+  "phase_details": {},
+  "error_message": "",
+  "stdout_lines": [],
+  "stderr_lines": []
+}

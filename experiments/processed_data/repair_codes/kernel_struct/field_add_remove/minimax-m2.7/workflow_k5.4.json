@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T04:31:22.543170+00:00",
+  "updated_at": "2026-03-24T04:32:29.918769+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 67.376,
+  "module_durations_s": {
+    "deploy_tool": 35.406,
+    "Analyzer": 13.961,
+    "Repairer": 12.551,
+    "Inspector": 5.458,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T04:31:22.543170+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "compile_failed"
+      },
+      "duration_s": 14.683
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T04:31:37.226293+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "compile_failed",
+        "error_type": "struct_member_offset_mismatch",
+        "repair_method": "修改代码，移除第 42 行对 `BPF_CORE_READ(task, bpf_storage)` 的调用。由于 `bpf_storage` 在目标内核 5.4 中根本不存在，无法通过 CO-RE 偏移调整解决，也无等价辅助函数直接替代。建议直接删除该行或注释掉，同时将 `storage` 变量声明为 `void *` 并初始化为 `NULL`，保留原有业务逻辑框架不变。具体修改：`删除/注释 /host/data/kernel_struct/field_add_remove...(truncated)",
+        "analysis_report": "编译错误指向 `/host/data/kernel_struct/field_add_remove/field_add_remove.bpf.c:42` 行，代码尝试通过 `BPF_CORE_READ(task, bpf_storage)` 读取 `struct task_struct` 中的 `bpf_storage` 成员，但当前内核（5.4）的 vmlinux.h 中 `struct task_struct` 不存在此成员。`bpf_storage` 是 BPF local storage 相关的字段，在较新内核版本（Linux 5.19+）中才引入。当前目标内核为 5.4，不具备该字段定义。由于是 CO-RE compile...(truncated)"
+      },
+      "duration_s": 13.961
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T04:31:51.186989+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "最小必要修复：1) 将 void *storage; 改为 void *storage = NULL; 消除编译警告；2) 删除/注释掉 storage = BPF_CORE_READ(task, bpf_storage); 这行无法通过的代码；3) 保留 /* Crutial block */ 和 /* Crutial block end */ 注释边界；4) 保留 if (storage ||...(truncated)",
+        "next_deploy_index": 2
+      },
+      "duration_s": 12.551
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T04:32:03.737890+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改完全符合 Analyzer 建议：1) 将 `void *storage;` 改为 `void *storage = NULL;`，消除了未初始化变量警告；2) 删除了第 42 行 `storage = BPF_CORE_READ(task, bpf_storage);`，解决了目标内核 5.4 中 `bpf_storage` 字段不存在的编译错误；3) 保留了 `/* Crutial block */` 和 `/* Crutial block end */` 注释边界；4) 保留了关键条件判断 `if (storage || !storage) (*val)++;`。从语义角度看，原代码中 `storage = BPF_COR...(truncated)"
+      },
+      "duration_s": 5.458
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T04:32:09.195574+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 20.723
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T04:32:29.918722+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 11
+      }
+    }
+  ]
+}

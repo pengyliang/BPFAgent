@@ -1,0 +1,74 @@
+{
+  "success": true,
+  "stage": "load",
+  "via_libbpf_loader_daemon": true,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_attach_type_unsupported"
+  ],
+  "pid": 2895,
+  "ready_line": null,
+  "stdout": "loaded obj=/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o\npinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps\n",
+  "stderr": "",
+  "returncode": 20,
+  "error_message": "",
+  "load_success": true,
+  "attach_success": false,
+  "phase_details": {
+    "load": {
+      "phase": "load",
+      "ok": true,
+      "stdout": "loaded obj=/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o\npinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps\n",
+      "stderr": "libbpf: loading object from /host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o\nlibbpf: elf: section(3) kprobe/do_sys_openat2, size 216, link 0, flags 6, type=1\nlibbpf: sec 'kprobe/do_sys_openat2': found program 'attach_type_unsupported' at insn offset 0 (0 bytes), code size 27 insns (216 bytes)\nlibbpf: elf: section(4) .relkprobe/do_sys_openat2, size 32, link 26, flags 40, type=9\nlibbpf: elf: section(5) .maps, size 64, link 0, flags 3, type=1\nlibbpf: elf: section(6) license, size 4, link 0, flags 3, type=1\nlibbpf: license of /host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o is GPL\nlibbpf: elf: section(16) .BTF, size 1504, link 0, flags 0, type=1\nlibbpf: elf: section(18) .BTF.ext, size 288, link 0, flags 0, type=1\nlibbpf: elf: section(26) .symtab, size 408, link 1, flags 0, type=2\nlibbpf: looking for externs among 17 symbols...\nlibbpf: collected 0 externs total\nlibbpf: map 'counter': at sec_idx 5, offset 0.\nlibbpf: map 'counter': found type = 2.\nlibbpf: map 'counter': found key [8], sz = 4.\nlibbpf: map 'counter': found value [11], sz = 8.\nlibbpf: map 'counter': found max_entries = 1.\nlibbpf: map 'cfg': at sec_idx 5, offset 32.\nlibbpf: map 'cfg': found type = 2.\nlibbpf: map 'cfg': found key [8], sz = 4.\nlibbpf: map 'cfg': found value [8], sz = 4.\nlibbpf: map 'cfg': found max_entries = 1.\nlibbpf: sec '.relkprobe/do_sys_openat2': collecting relocation for section(3) 'kprobe/do_sys_openat2'\nlibbpf: sec '.relkprobe/do_sys_openat2': relo #0: insn #4 against 'counter'\nlibbpf: prog 'attach_type_unsupported': found map 0 (counter, sec 5, off 0) for insn #4\nlibbpf: sec '.relkprobe/do_sys_openat2': relo #1: insn #9 against 'cfg'\nlibbpf: prog 'attach_type_unsupported': found map 1 (cfg, sec 5, off 32) for insn #9\nlibbpf: map 'counter': created successfully, fd=4\nlibbpf: map 'cfg': created successfully, fd=5\nlibbpf: pinned map '/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps/counter'\nlibbpf: pinned map '/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps/cfg'\n",
+      "error_message": ""
+    },
+    "attach": {
+      "phase": "attach",
+      "ok": false,
+      "stdout": "",
+      "stderr": "libbpf: prog 'attach_type_unsupported': failed to create kprobe 'do_sys_openat2+0x0' perf event: No such file or directory\nattach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2\n",
+      "error_message": "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2"
+    }
+  },
+  "stdout_lines": [
+    "loaded obj=/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+    "pinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps"
+  ],
+  "stderr_lines": [
+    "libbpf: loading object from /host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+    "libbpf: elf: section(3) kprobe/do_sys_openat2, size 216, link 0, flags 6, type=1",
+    "libbpf: sec 'kprobe/do_sys_openat2': found program 'attach_type_unsupported' at insn offset 0 (0 bytes), code size 27 insns (216 bytes)",
+    "libbpf: elf: section(4) .relkprobe/do_sys_openat2, size 32, link 26, flags 40, type=9",
+    "libbpf: elf: section(5) .maps, size 64, link 0, flags 3, type=1",
+    "libbpf: elf: section(6) license, size 4, link 0, flags 3, type=1",
+    "libbpf: license of /host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o is GPL",
+    "libbpf: elf: section(16) .BTF, size 1504, link 0, flags 0, type=1",
+    "libbpf: elf: section(18) .BTF.ext, size 288, link 0, flags 0, type=1",
+    "libbpf: elf: section(26) .symtab, size 408, link 1, flags 0, type=2",
+    "libbpf: looking for externs among 17 symbols...",
+    "libbpf: collected 0 externs total",
+    "libbpf: map 'counter': at sec_idx 5, offset 0.",
+    "libbpf: map 'counter': found type = 2.",
+    "libbpf: map 'counter': found key [8], sz = 4.",
+    "libbpf: map 'counter': found value [11], sz = 8.",
+    "libbpf: map 'counter': found max_entries = 1.",
+    "libbpf: map 'cfg': at sec_idx 5, offset 32.",
+    "libbpf: map 'cfg': found type = 2.",
+    "libbpf: map 'cfg': found key [8], sz = 4.",
+    "libbpf: map 'cfg': found value [8], sz = 4.",
+    "libbpf: map 'cfg': found max_entries = 1.",
+    "libbpf: sec '.relkprobe/do_sys_openat2': collecting relocation for section(3) 'kprobe/do_sys_openat2'",
+    "libbpf: sec '.relkprobe/do_sys_openat2': relo #0: insn #4 against 'counter'",
+    "libbpf: prog 'attach_type_unsupported': found map 0 (counter, sec 5, off 0) for insn #4",
+    "libbpf: sec '.relkprobe/do_sys_openat2': relo #1: insn #9 against 'cfg'",
+    "libbpf: prog 'attach_type_unsupported': found map 1 (cfg, sec 5, off 32) for insn #9",
+    "libbpf: map 'counter': created successfully, fd=4",
+    "libbpf: map 'cfg': created successfully, fd=5",
+    "libbpf: pinned map '/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps/counter'",
+    "libbpf: pinned map '/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps/cfg'"
+  ]
+}

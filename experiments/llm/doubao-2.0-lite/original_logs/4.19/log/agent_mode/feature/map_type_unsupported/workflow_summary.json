@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T03:24:10.977059+00:00",
+  "updated_at": "2026-03-24T03:24:33.757707+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 22.781,
+  "module_durations_s": {
+    "deploy_tool": 7.5600000000000005,
+    "Analyzer": 8.773,
+    "Repairer": 5.549,
+    "Inspector": 0.898,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T03:24:10.977059+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 6.11
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T03:24:17.086658+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将BPF_MAP_TYPE_RINGBUF地图类型替换为BPF_MAP_TYPE_PERF_EVENT_ARRAY，并补全key_size和value_size定义（通常为4字节）；再将bpf_ringbuf_output替换为bpf_perf_event_output，传入上下文ctx、map指针以及BPF_F_CURRENT_CPU标志",
+        "analysis_report": "当前代码使用了目标内核不支持的 BPF_MAP_TYPE_RINGBUF 地图类型和对应的 bpf_ringbuf_output 辅助函数，这类不兼容属于辅助API和地图类型兼容性问题，符合helper_api_compatibility模式，可以通过替换为兼容旧内核的地图类型和辅助调用修复"
+      },
+      "duration_s": 8.773
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T03:24:25.859880+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "将BPF_MAP_TYPE_RINGBUF替换为BPF_MAP_TYPE_PERF_EVENT_ARRAY，补全key和value的类型定义，符合要求；将bpf_ringbuf_output替换为bpf_perf_event_output，正确传入ctx、map指针和BPF_F_CURRENT_CPU标志，保留原有所有条件判断和计数逻辑，不改变原始语义。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 5.549
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T03:24:31.408744+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "当前修改完全符合Analyzer给出的修复建议：将原代码的BPF_MAP_TYPE_RINGBUF地图类型替换为了BPF_MAP_TYPE_PERF_EVENT_ARRAY，并且补全了key_size和value_size对应的__type定义（均为4字节的u32）；同时将原代码的bpf_ringbuf_output替换为了bpf_perf_event_output，正确传入了上下文ctx、map指针&events以及BPF_F_CURRENT_CPU标志。原有所有条件判断逻辑、计数逻辑均完整保留，没有修改原始语义，符合修复要求。"
+      },
+      "duration_s": 0.898
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T03:24:32.307197+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 1.45
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T03:24:33.757663+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 20
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "success": false,
+  "stage": "runtime_test_failed",
+  "steps": {
+    "static_check": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null
+    },
+    "compile": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "load": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "attach": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "runtime": {
+      "status": "failed",
+      "success": false,
+      "error_log": "validator_mismatch"
+    }
+  }
+}

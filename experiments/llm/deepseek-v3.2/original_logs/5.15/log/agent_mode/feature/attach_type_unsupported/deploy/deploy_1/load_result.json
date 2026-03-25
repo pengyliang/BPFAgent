@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "stage": "load",
+  "via_libbpf_loader_daemon": true,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/5.15/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_attach_type_unsupported"
+  ],
+  "pid": 1422,
+  "ready_line": "READY pid=1423 maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps attached=1",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps",
+  "phase_details": {},
+  "error_message": "",
+  "stdout_lines": [],
+  "stderr_lines": []
+}

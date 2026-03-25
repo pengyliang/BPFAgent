@@ -1,0 +1,35 @@
+{
+  "success": false,
+  "stage": "static_check_failed",
+  "steps": {
+    "static_check": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null
+    },
+    "compile": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "static_check_failed"
+    },
+    "load": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "static_check_failed"
+    },
+    "attach": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "static_check_failed"
+    },
+    "runtime": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "static_check_failed"
+    }
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "generated_at": "2026-03-24T03:24:17.125589+00:00",
+  "node": "Analyzer",
+  "node_index": 1,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c",
+    "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\n/* Use clock_nanosleep as a low-noise syscall; Python time.sleep hits it. */\nSEC(\"fentry/__x64_sys_clock_nanosleep\")\nint BPF_PROG(program_type_unsupported)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    (*val)++;\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "static_check_failed",
+    "failed_stage_result_path": "/host/output/4.19/log/agent_mode/feature/program_type_unsupported/deploy/deploy_1/static_check.json",
+    "failed_stage_result": {
+      "success": false,
+      "error_warning_count": {
+        "error": 2,
+        "warning": 0
+      },
+      "issues": [
+        {
+          "check": "program_type_attach_availability",
+          "level": "error",
+          "code": "program_type_not_supported",
+          "message": "Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel.",
+          "suggestion": "Use a program type listed in kernel_profile program_type_support, or upgrade the kernel / bpftool probe environment.",
+          "evidence": {
+            "sec": "fentry/__x64_sys_clock_nanosleep",
+            "program_type": "fentry"
+          },
+          "source_file": "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c"
+        },
+        {
+          "check": "program_type_attach_availability",
+          "level": "error",
+          "code": "fentry_fexit_require_btf",
+          "message": "SEC(\"fentry/__x64_sys_clock_nanosleep\") requires BTF-enabled kernel.",
+          "suggestion": "Switch to kprobe/tracepoint fallback when BTF is unavailable.",
+          "evidence": {
+            "sec": "fentry/__x64_sys_clock_nanosleep"
+          },
+          "source_file": "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c"
+        }
+      ],
+      "results": [
+        {
+          "source_file": "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c",
+          "program_sections": [
+            "fentry/__x64_sys_clock_nanosleep"
+          ],
+          "program_types": [
+            "fentry"
+          ],
+          "license": "GPL",
+          "map_types": [
+            "BPF_MAP_TYPE_ARRAY"
+          ],
+          "helper_calls": [
+            "bpf_map_lookup_elem",
+            "bpf_map_lookup_elem",
+            "bpf_get_current_pid_tgid"
+          ],
+          "issues": [
+            {
+              "check": "program_type_attach_availability",
+              "level": "error",
+              "code": "program_type_not_supported",
+              "message": "Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel.",
+              "suggestion": "Use a program type listed in kernel_profile program_type_support, or upgrade the kernel / bpftool probe environment.",
+              "evidence": {
+                "sec": "fentry/__x64_sys_clock_nanosleep",
+                "program_type": "fentry"
+              }
+            },
+            {
+              "check": "program_type_attach_availability",
+              "level": "error",
+              "code": "fentry_fexit_require_btf",
+              "message": "SEC(\"fentry/__x64_sys_clock_nanosleep\") requires BTF-enabled kernel.",
+              "suggestion": "Switch to kprobe/tracepoint fallback when BTF is unavailable.",
+              "evidence": {
+                "sec": "fentry/__x64_sys_clock_nanosleep"
+              }
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "error_count": 2,
+        "warning_count": 0
+      }
+    },
+    "deploy_summary_path": "/host/output/4.19/log/agent_mode/feature/program_type_unsupported/deploy/deploy_1/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "static_check_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "load": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        }
+      }
+    },
+    "shared_history": [],
+    "error_signature": "static_check_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  attach_type_unsupported:\n    summary: 目标内核不支持当前选择的attach类型，或目标符号未以允许对应探针类型挂载的形式导出\n    aliases:\n    - program_type_not_supported\n    - attach_target_not_found\n    stage_hints:\n    - attach_failed\n    - static_check_failed\n    can_fix: false\n    evidence_hint: []\n    repair_methods: []\n    handoff: 当前内核不支持所有尝试过的attach类型，且目标符号不存在于/proc/kallsyms，停止自动修复，请检查目标符号或更换兼容的内核环境。\n  helper_api_compatibility:\n    summary: 使用的 BPF 辅助函数在当前内核版本或配置中不可用\n    aliases:\n    - helper_not_in_probe\n    - map_type_not_in_probe\n    - helper_bpf_probe_read_kernel_missing\n    - helper_bpf_strncmp_missing\n    - helper_bpf_get_current_task_btf_missing\n    - helper_bpf_snprintf_missing\n    stage_hints:\n    - static_check_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 将不可用的辅助函数替换为功能等价且兼容性更好的替代实现（如使用 bpf_probe_read_kernel_str 配合手动循环比较替代 bpf_strncmp）。\n    - 若存在功能等价的旧版辅助函数，优先直接替换。若无直接等价函数，则通过组合其他可用辅助函数实现原语逻辑。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义。\n    - 将 bpf_ringbuf_output 替换为 bpf_perf_event_output，传入上下文 ctx、map 指针以及 BPF_F_CURRENT_CPU\n      标志（或结合 bpf_get_smp_processor_id）。\n    - 若目标内核不支持 bpf_ktime_get_boot_ns（常见于 < 5.8 内核），将其替换为兼容性更好的 bpf_ktime_get_ns。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），使用 `#pragma unroll` 展开的手动循环逐字节比较字符串，以兼容旧版本内核。\n    - 修改代码，移除对 bpf_snprintf 的调用。由于 bpf_snprintf 常用于格式化输出字符串到 map 或 ringbuf，在低版本内核中，应改用\n      bpf_probe_read_kernel_str 等可用函数读取字符串，并手动逐字节拷贝到目标 buffer 中，或者直接输出原始数据而避免在内核态进行格式化处理。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将 `BPF_CORE_READ` 宏调用替换为显式的 `bpf_probe_read`\n      调用。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义（通常为 4 字节）。\n    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+），将其替换为 bpf_get_current_task，并检查后续成员访问逻辑是否兼容。\n    - 若目标内核不支持 bpf_snprintf (Linux 5.13+)，应将其替换为 bpf_probe_read_kernel_str (Linux\n      5.5+) 或 bpf_probe_read (Linux 4.7+)，并适配返回值逻辑（如将 bpf_probe_read 的 0 返回值映射为正数）以保留原有的条件判断结构。\n    - 修改代码，将bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，移除对bpf_snprintf的调用，改用bpf_probe_read_kernel_str读取字符串，手动逐字节拷贝到目标buffer中，或直接输出原始数据避免在内核态进行格式化处理。\n    - 修改代码，将不被支持的bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容。将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 修改代码，使用`#pragma unroll`展开的手动循环逐字节比较字符串，替代不可用的bpf_strncmp函数，兼容低版本内核。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），直接在调用点展开使用 `#pragma unroll` 的手动循环逐字节比较实现，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。",
+    "error_signal": {
+      "stage": "static_check_failed",
+      "error_types": [
+        "program_type_not_supported",
+        "fentry_fexit_require_btf"
+      ],
+      "key_lines": [
+        "Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel.",
+        "SEC(\"fentry/__x64_sys_clock_nanosleep\") requires BTF-enabled kernel."
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": false,\n  \"error_type\": \"attach_type_unsupported\",\n  \"analysis_report\": \"当前静态检查阶段检测到，当前内核不支持fentry类型的eBPF程序，同时当前内核没有启用BTF，而fentry/fexit必须依赖BTF支持，属于目标内核不支持当前选择的attach类型，无法通过修改源码完全解决该兼容性问题。\",\n  \"repair_method\": \"当前内核不支持所有尝试过的attach类型，停止自动修复，请检查目标符号或更换兼容的内核环境。\"\n}\n```",
+  "outputs": {
+    "can_fix": false,
+    "analysis_report": "当前静态检查阶段检测到，当前内核不支持fentry类型的eBPF程序，同时当前内核没有启用BTF，而fentry/fexit必须依赖BTF支持，属于目标内核不支持当前选择的attach类型，无法通过修改源码完全解决该兼容性问题。",
+    "repair_action": {
+      "error_type": "attach_type_unsupported",
+      "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+      "key_lines": [
+        "Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel.",
+        "SEC(\"fentry/__x64_sys_clock_nanosleep\") requires BTF-enabled kernel."
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 0,
+    "max_fix_time": 4
+  }
+}

@@ -1,0 +1,11 @@
+status: SUCCESS
+source_file: /host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/data/helper_func/helper_bpf_snprintf -I/usr/include/x86_64-linux-gnu /host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c
+stderr:
+/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c:23:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]
+int helper_arg_increase(struct trace_event_raw_sys_enter *ctx)
+                               ^
+/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c:43:28: warning: incompatible pointer to integer conversion passing 'char[32]' to parameter of type '__u32' (aka 'unsigned int') [-Wint-conversion]
+    bpf_trace_printk("%s", out);
+                           ^~~
+2 warnings generated.

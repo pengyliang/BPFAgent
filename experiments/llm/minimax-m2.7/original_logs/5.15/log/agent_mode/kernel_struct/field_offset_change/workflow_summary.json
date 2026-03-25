@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T04:30:33.466556+00:00",
+  "updated_at": "2026-03-24T04:31:58.521843+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 85.055,
+  "module_durations_s": {
+    "deploy_tool": 27.41,
+    "Analyzer": 35.698,
+    "Repairer": 20.663,
+    "Inspector": 1.285,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T04:30:33.466556+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "runtime_test_failed"
+      },
+      "duration_s": 12.249
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T04:30:45.715741+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "runtime_test_failed",
+        "error_type": "struct_member_offset_mismatch",
+        "repair_method": "修改代码：在需要获取当前进程pid/tgid的地方，移除手动结构体定义和硬编码偏移量的bpf_probe_read调用，改为使用bpf_get_current_pid_tgid()辅助函数直接从寄存器获取tgid值。保留原有的counter计数逻辑（和(*val)++相关的条件判断必须保留），仅替换数据获取方式。",
+        "analysis_report": "编译成功、加载成功、attach成功，但运行时测试中counter计数器值为0，期望>=3。这表明BPF程序虽然正常执行，但业务逻辑中的关键数据获取逻辑失效。结合case目录名'kernel_struct/field_offset_change'和validator_mismatch错误，根因是代码中手动定义的结构体或硬编码的偏移量与目标内核实际布局不一致，导致bpf_probe_read读取到错误的数据（如读取到0或错误进程的pid）。知识库中struct_member_offset_mismatch pattern已明确指出：当硬编码的偏移量读取逻辑失效时，应移除硬编码偏移，改用bpf_get_current_pid_tgid辅...(truncated)"
+      },
+      "duration_s": 35.698
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T04:31:21.413982+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "1. 移除手动结构体定义和硬编码偏移量的bpf_probe_read_kernel调用，避免内核版本差异导致读取失败；2. 保留原有的counter计数逻辑和target_tgid过滤逻辑不变；3. 利用已存在的current_tgid变量进行条件判断，保持语义一致。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 20.663
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T04:31:42.076779+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "Fallback 检查通过：SEC 段一致且改动规模可接受。"
+      },
+      "duration_s": 1.285
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T04:31:43.361290+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 15.161
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T04:31:58.521799+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 10
+      }
+    }
+  ]
+}

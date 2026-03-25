@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "stage": "load",
+  "via_libbpf_loader_daemon": true,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/5.15/build/kernel_struct/field_offset_change/field_offset_change.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_field_offset_change"
+  ],
+  "pid": 1607,
+  "ready_line": "READY pid=1608 maps_dir=/sys/fs/bpf/ebpf_agent_field_offset_change_maps attached=1",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps",
+  "phase_details": {},
+  "error_message": "",
+  "stdout_lines": [],
+  "stderr_lines": []
+}

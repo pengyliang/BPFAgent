@@ -1,0 +1,5 @@
+status: SUCCESS
+source_file: /host/data/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/data/helper_func/helper_bpf_get_current_task_bpf -I/usr/include/x86_64-linux-gnu -D__TARGET_ARCH_x86 -I/host/output/5.4/log /host/data/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.c
+stderr:
+<empty>

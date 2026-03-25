@@ -1,0 +1,87 @@
+status: FAILED
+source_file: /host/data/helper_func/helper_absent/helper_absent.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/data/helper_func/helper_absent -I/usr/include/x86_64-linux-gnu -D__TARGET_ARCH_x86 -I/host/output/4.19/log /host/data/helper_func/helper_absent/helper_absent.bpf.c
+stderr:
+In file included from /host/data/helper_func/helper_absent/helper_absent.bpf.c:3:
+In file included from /usr/include/bpf/bpf_helpers.h:11:
+/usr/include/bpf/bpf_helper_defs.h:444:57: error: unknown type name '__be16'
+static long (*bpf_skb_vlan_push)(struct __sk_buff *skb, __be16 vlan_proto, __u16 vlan_tci) = (void *) 18;
+                                                        ^
+/usr/include/bpf/bpf_helper_defs.h:794:31: error: unknown type name '__be32'
+static __s64 (*bpf_csum_diff)(__be32 *from, __u32 from_size, __be32 *to, __u32 to_size, __wsum seed) = (void *) 28;
+                              ^
+/usr/include/bpf/bpf_helper_defs.h:794:62: error: unknown type name '__be32'
+static __s64 (*bpf_csum_diff)(__be32 *from, __u32 from_size, __be32 *to, __u32 to_size, __wsum seed) = (void *) 28;
+                                                             ^
+/usr/include/bpf/bpf_helper_defs.h:794:89: error: unknown type name '__wsum'
+static __s64 (*bpf_csum_diff)(__be32 *from, __u32 from_size, __be32 *to, __u32 to_size, __wsum seed) = (void *) 28;
+                                                                                        ^
+/usr/include/bpf/bpf_helper_defs.h:861:60: error: unknown type name '__be16'
+static long (*bpf_skb_change_proto)(struct __sk_buff *skb, __be16 proto, __u64 flags) = (void *) 31;
+                                                           ^
+/usr/include/bpf/bpf_helper_defs.h:1061:56: error: unknown type name '__wsum'
+static __s64 (*bpf_csum_update)(struct __sk_buff *skb, __wsum csum) = (void *) 40;
+                                                       ^
+/host/data/helper_func/helper_absent/helper_absent.bpf.c:7:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+                 ^
+/host/data/helper_func/helper_absent/helper_absent.bpf.c:14:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+                 ^
+/host/data/helper_func/helper_absent/helper_absent.bpf.c:21:26: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]
+int helper_absent(struct trace_event_raw_sys_enter *ctx)
+                         ^
+/host/data/helper_func/helper_absent/helper_absent.bpf.c:42:17: error: incomplete definition of type 'struct task_struct'
+    task_tgid = BPF_CORE_READ(task, tgid);
+                ^~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/bpf/bpf_core_read.h:443:2: note: expanded from macro 'BPF_CORE_READ'
+        ___type((src), a, ##__VA_ARGS__) __r;                               \
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/bpf/bpf_core_read.h:314:29: note: expanded from macro '___type'
+#define ___type(...) typeof(___arrow(__VA_ARGS__))
+                            ^~~~~~~~~~~~~~~~~~~~~
+/usr/include/bpf/bpf_core_read.h:312:23: note: expanded from macro '___arrow'
+#define ___arrow(...) ___apply(___arrow, ___narg(__VA_ARGS__))(__VA_ARGS__)
+                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+note: (skipping 1 expansions in backtrace; use -fmacro-backtrace-limit=0 to see all)
+/usr/include/bpf/bpf_core_read.h:263:25: note: expanded from macro '___concat'
+#define ___concat(a, b) a ## b
+                        ^
+<scratch space>:20:1: note: expanded from here
+___arrow2
+^
+/usr/include/bpf/bpf_core_read.h:303:26: note: expanded from macro '___arrow2'
+#define ___arrow2(a, b) a->b
+                        ~^
+/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'
+struct task_struct;
+       ^
+/host/data/helper_func/helper_absent/helper_absent.bpf.c:42:17: error: incomplete definition of type 'struct task_struct'
+    task_tgid = BPF_CORE_READ(task, tgid);
+                ^~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/bpf/bpf_core_read.h:444:2: note: expanded from macro 'BPF_CORE_READ'
+        BPF_CORE_READ_INTO(&__r, (src), a, ##__VA_ARGS__);                  \
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/bpf/bpf_core_read.h:351:2: note: expanded from macro 'BPF_CORE_READ_INTO'
+        ___core_read(bpf_core_read, bpf_core_read,                          \
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/bpf/bpf_core_read.h:342:2: note: expanded from macro '___core_read'
+        ___apply(___core_read, ___empty(__VA_ARGS__))(fn, fn_ptr, dst,      \
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+note: (skipping 3 expansions in backtrace; use -fmacro-backtrace-limit=0 to see all)
+/usr/include/bpf/bpf_core_read.h:336:2: note: expanded from macro '___core_read0'
+        ___read(fn, dst, ___type(src), src, a);
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/bpf/bpf_core_read.h:317:59: note: expanded from macro '___read'
+        read_fn((void *)(dst), sizeof(*(dst)), &((src_type)(src))->accessor)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+/usr/include/bpf/bpf_core_read.h:246:79: note: expanded from macro 'bpf_core_read'
+        bpf_probe_read_kernel(dst, sz, (const void *)__builtin_preserve_access_index(src))
+                                                                                     ^~~
+/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'
+struct task_struct;
+       ^
+/host/data/helper_func/helper_absent/helper_absent.bpf.c:42:15: error: assigning to '__u32' (aka 'unsigned int') from incompatible type 'void'
+    task_tgid = BPF_CORE_READ(task, tgid);
+              ^ ~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning and 11 errors generated.

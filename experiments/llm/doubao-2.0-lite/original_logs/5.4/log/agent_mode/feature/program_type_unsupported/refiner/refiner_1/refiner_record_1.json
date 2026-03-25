@@ -1,0 +1,87 @@
+{
+  "generated_at": "2026-03-24T03:12:10.376171+00:00",
+  "node": "Refiner",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "deploy_state": false,
+    "failed_stage": "static_check_failed",
+    "deploy": {
+      "success": false,
+      "stage": "static_check_failed",
+      "compile": {
+        "success": true,
+        "stage": "compile",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "load": {
+        "success": true,
+        "stage": "load",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "attach": {
+        "success": true,
+        "stage": "attach",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "runtime": {
+        "success": true,
+        "stage": "runtime_test",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "detach": {
+        "success": true,
+        "stage": "detach",
+        "detached": true,
+        "skipped": false,
+        "reason": "loader_terminated",
+        "pin_path": "/sys/fs/bpf/ebpf_agent_program_type_unsupported",
+        "pid": null
+      }
+    },
+    "repair_attempts": [],
+    "workflow_events": [
+      {
+        "seq": 1,
+        "ts": "2026-03-24T03:11:45.821649+00:00",
+        "node": "deploy_tool",
+        "node_index": 1,
+        "key_results": {
+          "deploy_state": false,
+          "failed_stage": "static_check_failed"
+        },
+        "duration_s": 24.33
+      },
+      {
+        "seq": 2,
+        "ts": "2026-03-24T03:12:10.151524+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "key_results": {
+          "can_fix": false,
+          "failed_stage": "static_check_failed",
+          "error_type": "attach_type_unsupported",
+          "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+          "analysis_report": "当前内核不支持fentry类型的BPF程序，静态检查阶段检测到该程序类型不在内核支持列表中，该问题可以通过替换为兼容性更好的等价BPF程序类型解决"
+        }
+      }
+    ]
+  },
+  "thought_process": "```yaml\npatterns:\n  program_type_unsupported:\n    summary: 使用的BPF程序类型在当前内核版本不被支持\n    aliases:\n      - program_type_not_supported\n      - attach_type_unsupported\n    stage_hints:\n      - static_check_failed\n    can_fix: true\n    repair_methods:\n      - 将不支持的程序类型替换为功能等价、兼容性更好的旧版程序类型，同时修改SEC定义和适配入口参数逻辑。例如将fentry/fexit替换为kprobe/kretprobe。\n```",
+  "outputs": {
+    "final_decision": "failed_refine",
+    "reflect_record_path": null,
+    "repair_report_path": "/host/output/5.4/log/agent_mode/feature/program_type_unsupported/repair_report.json",
+    "knowledge_base_path": "/host/knowledge_base/repair/repair_method.yaml",
+    "applied_updates": {}
+  },
+  "result_params": {
+    "has_repaired": false,
+    "fixed_time": 0,
+    "last_error_signature": "static_check_failed"
+  }
+}

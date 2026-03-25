@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "stage": "compile",
+  "source_file": "/host/output/4.19/log/agent_mode/feature/map_type_unsupported/repair/repair_1/map_type_unsupported_repair_1.bpf.c",
+  "object_file": "/host/output/4.19/build/feature/map_type_unsupported/map_type_unsupported.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/output/4.19/log/agent_mode/feature/map_type_unsupported/repair/repair_1/map_type_unsupported_repair_1.bpf.c",
+    "-o",
+    "/host/output/4.19/build/feature/map_type_unsupported/map_type_unsupported.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "/host/output/4.19/log/agent_mode/feature/map_type_unsupported/repair/repair_1/map_type_unsupported_repair_1.bpf.c:33:33: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint map_type_unsupported(struct trace_event_raw_sys_enter *ctx)\n                                ^\n1 warning generated.\n",
+  "returncode": 0,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": [
+    "/host/output/4.19/log/agent_mode/feature/map_type_unsupported/repair/repair_1/map_type_unsupported_repair_1.bpf.c:33:33: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]",
+    "int map_type_unsupported(struct trace_event_raw_sys_enter *ctx)",
+    "                                ^",
+    "1 warning generated."
+  ]
+}

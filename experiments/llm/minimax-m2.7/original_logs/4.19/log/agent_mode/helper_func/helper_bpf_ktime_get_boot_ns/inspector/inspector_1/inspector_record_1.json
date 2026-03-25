@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-03-24T04:30:34.930954+00:00",
+  "node": "Inspector",
+  "node_index": 1,
+  "from_node": "Repairer",
+  "inputs": {
+    "source_before": "/host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c",
+    "source_after": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c",
+    "analyzer_context": {
+      "analysis_report": "静态检查阶段失败，错误原因为使用了目标内核不支持的 BPF 辅助函数 `bpf_ktime_get_boot_ns`。该函数需要 Linux 5.8+ 内核支持，而当前部署环境的内核版本低于此要求。根据知识库中的 helper_api_compatibility 规则，此类问题可通过将不兼容的辅助函数替换为功能等价且兼容性更好的替代实现来解决。`bpf_ktime_get_boot_ns` 的功能是获取自系统启动以来的纳秒数，`bpf_ktime_get_ns` 可以作为兼容性替代，在所有支持的 BPF 程序类型中均可使用。",
+      "repair_action": {
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将 `bpf_ktime_get_boot_ns` 替换为兼容性更好的 `bpf_ktime_get_ns`。具体修改：在源文件 /host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c 中，将所有对 `bpf_ktime_get_boot_ns()` 的调用替换为 `bpf_ktime_get_ns()`，并同步更新对应的头文件或函数声明。",
+        "key_lines": [
+          "Helper bpf_ktime_get_boot_ns is not present in bpftool helper whitelist."
+        ]
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:30:13.365383+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码，将 `bpf_ktime_get_boot_ns` 替换为兼容性更好的 `bpf_ktime_get_ns`。具体修改：在源文件 /host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c 中，将所有对 `bpf_ktime_get_boot_ns()` 的调用替换为 `bpf_ktime_get_ns()`，并同步更新对应的头文件或函数声明。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_ktime_get_boot_ns is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MA...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "静态检查阶段失败，错误原因为使用了目标内核不支持的 BPF 辅助函数 `bpf_ktime_get_boot_ns`。该函数需要 Linux 5.8+ 内核支持，而当前部署环境的内核版本低于此要求。根据知识库中的 helper_api_compatibility 规则，此类问题可通过将不兼容的辅助函数替换为功能等价且兼容性更好的替代实现来解决。`bpf_ktime_get_boot_ns` 的功能是获取自系统启动以来的纳秒数，`bpf_ktime_get_ns` 可以作为兼容...(truncated)",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，将 `bpf_ktime_get_boot_ns` 替换为兼容性更好的 `bpf_ktime_get_ns`。具体修改：在源文件 /host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c 中，将所有对 `bpf_ktime_get_boot_ns()` 的调用替换为 `bpf_ktime_get_ns()`，并同步更新对应的头文件或函数声明。",
+            "key_lines": [
+              "Helper bpf_ktime_get_boot_ns is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"静态检查阶段失败，错误原因为使用了目标内核不支持的 BPF 辅助函数 `bpf_ktime_get_boot_ns`。该函数需要 Linux 5.8+ 内核支持，而当前部署环境的内核版本低于此要求。根据知识库中的 helper_api_compatibility 规则，此类问题可通过将不兼容的辅助函数替换为功能等价且兼容性更好的替代实现来解决。`bpf_ktime_get_boot_ns` 的功能是获取自系统启动以来的纳秒数，`bpf_ktime...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:30:25.330842+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counte...(truncated)",
+            "analysis_report": "静态检查阶段失败，错误原因为使用了目标内核不支持的 BPF 辅助函数 `bpf_ktime_get_boot_ns`。该函数需要 Linux 5.8+ 内核支持，而当前部署环境的内核版本低于此要求。根据知识库中的 helper_api_compatibility 规则，此类问题可通过将不兼容的辅助函数替换为功能等价且兼容性更好的替代实现来解决。`bpf_ktime_get_boot_ns` 的功能是获取自系统启动以来的纳秒数，`bpf_ktime_get_ns` 可以作为兼容...(truncated)",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将 `bpf_ktime_get_boot_ns` 替换为兼容性更好的 `bpf_ktime_get_ns`。具体修改：在源文件 /host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c 中，将所有对 `bpf_ktime_get_boot_ns()` 的调用替换为 `bpf_ktime_get_ns()`，并同步更新对应的头文件或函数声明。",
+              "key_lines": "[\"Helper bpf_ktime_get_boot_ns is not present in bpftool helper whitelist.\"]"
+            },
+            "error_signal": {
+              "stage": "static_check_failed",
+              "error_types": "[\"helper_not_in_probe\"]",
+              "key_lines": "[\"Helper bpf_ktime_get_boot_ns is not present in bpftool helper whitelist.\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c",
+          "code_change_summary": "新增 1 行，删除 1 行。\n     }\n \n     /* Crutial block */\n-    ts = bpf_ktime_get_boot_ns();\n+    ts = bpf_ktime_get_ns();\n     /* Crutial block end */\n     if (ts)\n         (*val)++;",
+          "patched_code_file": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c",
+          "rationale": "`bpf_ktime_get_boot_ns` 需要 Linux 5.8+ 内核支持，而 `bpf_ktime_get_ns` 在所有支持的 BPF 程序类型中均可使用，功能等价（均返回纳秒级时间戳），可以解决当前部署环境内核版本不兼容的问题。修复方法严格遵循 analyzer 建议的替换策略。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"根据 Analyzer 的分析报告，需要将不兼容的 `bpf_ktime_get_boot_ns` 替换为兼容性更好的 `bpf_ktime_get_ns`。这是最小必要的修复，仅涉及第38行的函数调用替换，保留所有注释和逻辑。\",\n  \"rationale\": \"`bpf_ktime_get_boot_ns` 需要 Linux 5.8+ 内核支持，而 `bpf_ktime_get_ns` 在所有支持的 BPF 程序类型中均可使用，功能等价（均返回纳秒级时间戳），可以解决当前部署环境内核版本不兼容的问题。修复方法严格遵循 analyzer 建议的替换策略。\",\n  \"patched_c...(truncated)"
+      }
+    ],
+    "before_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_renamed(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u64 ts;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    /* Crutial block */\n    ts = bpf_ktime_get_boot_ns();\n    /* Crutial block end */\n    if (ts)\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "after_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_renamed(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u64 ts;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    /* Crutial block */\n    ts = bpf_ktime_get_ns();\n    /* Crutial block end */\n    if (ts)\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "code_change_summary": "新增 1 行，删除 1 行。\n     }\n \n     /* Crutial block */\n-    ts = bpf_ktime_get_boot_ns();\n+    ts = bpf_ktime_get_ns();\n     /* Crutial block end */\n     if (ts)\n         (*val)++;"
+  },
+  "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改完全符合 Analyzer 的修复建议。将 `bpf_ktime_get_boot_ns()` 替换为 `bpf_ktime_get_ns()`，这是功能等价的替换（均返回纳秒级时间戳），但后者具有更好的内核兼容性。修改仅涉及第38行的函数调用替换，保留了 `/* Crutial block */` 和 `/* Crutial block end */` 注释，以及 `if (ts)` 条件判断和 `(*val)++` 操作的完整逻辑。没有引入Analyzer建议之外的其他修改，保持了语义等价。\",\n  \"suggestion\": \"\"\n}\n```",
+  "outputs": {
+    "semantic_equivalent": true,
+    "inspector_report": "修改完全符合 Analyzer 的修复建议。将 `bpf_ktime_get_boot_ns()` 替换为 `bpf_ktime_get_ns()`，这是功能等价的替换（均返回纳秒级时间戳），但后者具有更好的内核兼容性。修改仅涉及第38行的函数调用替换，保留了 `/* Crutial block */` 和 `/* Crutial block end */` 注释，以及 `if (ts)` 条件判断和 `(*val)++` 操作的完整逻辑。没有引入Analyzer建议之外的其他修改，保持了语义等价。"
+  },
+  "result_params": {
+    "will_next_go_to": "deploy_tool"
+  }
+}

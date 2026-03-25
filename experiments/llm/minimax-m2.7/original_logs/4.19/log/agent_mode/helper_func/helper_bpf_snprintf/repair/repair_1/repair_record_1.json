@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T04:31:09.669921+00:00",
+  "node": "Repairer",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:30:50.627781+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码，移除对 bpf_snprintf 的调用。若原逻辑是将格式化后的字符串写入 buffer，改用 bpf_probe_read_kernel_str 读取字符串，然后手动逐字节拷贝到目标 buffer 中。若原逻辑仅用于输出原始数据，则直接输出原始数据，避免在内核态进行格式化处理。具体实现：使用 bpf_probe_read_kernel_str 从源地址读取字符串到临时 buffer，再用循环逐字节拷贝到目标 buffer，循环次数受限于目标 buffer 大小。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_snprintf is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel supporti...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"h...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "static_check 阶段失败，错误代码为 helper_not_in_probe，根本原因是代码调用了 bpf_snprintf 辅助函数，但目标内核环境（推测为 Linux 5.13 以下版本）不支持此函数。bpf_snprintf 是 Linux 5.13+ 才引入的 BPF 辅助函数，用于在内核态进行格式化字符串输出。在低版本内核中，该函数不存在于 bpftool helper whitelist 中，导致 static_check 失败。根据知识库规则，bpf_...(truncated)",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，移除对 bpf_snprintf 的调用。若原逻辑是将格式化后的字符串写入 buffer，改用 bpf_probe_read_kernel_str 读取字符串，然后手动逐字节拷贝到目标 buffer 中。若原逻辑仅用于输出原始数据，则直接输出原始数据，避免在内核态进行格式化处理。具体实现：使用 bpf_probe_read_kernel_str 从源地址读取字符串到临时 buffer，再用循环逐字节拷贝到目标 buffer，循环次数受限于目标 buffer 大小。",
+            "key_lines": [
+              "Helper bpf_snprintf is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"static_check 阶段失败，错误代码为 helper_not_in_probe，根本原因是代码调用了 bpf_snprintf 辅助函数，但目标内核环境（推测为 Linux 5.13 以下版本）不支持此函数。bpf_snprintf 是 Linux 5.13+ 才引入的 BPF 辅助函数，用于在内核态进行格式化字符串输出。在低版本内核中，该函数不存在于 bpftool helper whitelist 中，导致 static_check ...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+      "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nconst char fmt_str[] = \"pid=%d\";\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    char out[32];\n    __u64 data[1];\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    /* Crutial block */\n    bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data));\n    bpf_trace_printk(\"%s\", out);\n    /* Crutial block end */\n    (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "static_check 阶段失败，错误代码为 helper_not_in_probe，根本原因是代码调用了 bpf_snprintf 辅助函数，但目标内核环境（推测为 Linux 5.13 以下版本）不支持此函数。bpf_snprintf 是 Linux 5.13+ 才引入的 BPF 辅助函数，用于在内核态进行格式化字符串输出。在低版本内核中，该函数不存在于 bpftool helper whitelist 中，导致 static_check 失败。根据知识库规则，bpf_snprintf 属于 helper_api_compatibility 问题，属于可修复类错误。修复方案为移除对 bpf_snprintf 的调用，改用兼容的替代实现。",
+      "repair_action": {
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，移除对 bpf_snprintf 的调用。若原逻辑是将格式化后的字符串写入 buffer，改用 bpf_probe_read_kernel_str 读取字符串，然后手动逐字节拷贝到目标 buffer 中。若原逻辑仅用于输出原始数据，则直接输出原始数据，避免在内核态进行格式化处理。具体实现：使用 bpf_probe_read_kernel_str 从源地址读取字符串到临时 buffer，再用循环逐字节拷贝到目标 buffer，循环次数受限于目标 buffer 大小。",
+        "key_lines": [
+          "Helper bpf_snprintf is not present in bpftool helper whitelist."
+        ]
+      },
+      "error_signal": {
+        "stage": "static_check_failed",
+        "error_types": [
+          "helper_not_in_probe"
+        ],
+        "key_lines": [
+          "Helper bpf_snprintf is not present in bpftool helper whitelist."
+        ]
+      }
+    }
+  },
+  "thought_process": "```json\n{\n  \"thought\": \"分析原始代码逻辑：使用 bpf_snprintf 将格式化字符串写入 buffer，然后通过 bpf_trace_printk 输出。修复目标是移除不兼容的 bpf_snprintf 调用，同时保留输出 pid 的功能。方案是直接使用 bpf_trace_printk 的格式化能力输出 pid 值，这样可以避免使用不支持的辅助函数，同时保持原有功能。\",\n  \"rationale\": \"由于目标内核不支持 bpf_snprintf，需要用兼容的方式实现相同功能。bpf_trace_printk 支持基本格式化输出，可以直接用于输出 pid 值。这样既满足了输出 'pid=<value>' 的需求，又避免了使用不兼容的辅助函数。移除未使用的 fmt_str 常量和 data 数组，保留 (*val)++ 逻辑和 target_tgid 过滤逻辑。\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <linux/bpf.h>\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\n\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\n\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\n\\nSEC(\\\"tracepoint/syscalls/sys_enter_openat\\\")\\nint helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n\\n    if (!val)\\n        return 0;\\n\\n    if (target_tgid && *target_tgid) {\\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n        if (tgid != *target_tgid)\\n            return 0;\\n    }\\n\\n    /* Crutial block */\\n    bpf_trace_printk(\\\"pid=%d\\\", bpf_get_current_pid_tgid() >> 32);\\n    /* Crutial block end */\\n    (*val)++;\\n\\n    return 0;\\n}\\n\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+    "code_change_summary": "新增 1 行，删除 7 行。\n     __type(value, __u32); /* target tgid */\n } cfg SEC(\".maps\");\n \n-const char fmt_str[] = \"pid=%d\";\n-\n SEC(\"tracepoint/syscalls/sys_enter_openat\")\n int helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\n {\n     __u32 key = 0;\n     __u64 *val = bpf_map_lookup_elem(&counter, &key);\n     __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n-    char out[32];",
+    "patched_code_file": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+    "rationale": "由于目标内核不支持 bpf_snprintf，需要用兼容的方式实现相同功能。bpf_trace_printk 支持基本格式化输出，可以直接用于输出 pid 值。这样既满足了输出 'pid=<value>' 的需求，又避免了使用不兼容的辅助函数。移除未使用的 fmt_str 常量和 data 数组，保留 (*val)++ 逻辑和 target_tgid 过滤逻辑。"
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "next_deploy_index": 2
+  }
+}

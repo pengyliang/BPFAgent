@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-23T16:13:16.472247+00:00",
+  "node": "Repairer",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-23T16:12:49.922810+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码：将不支持的格式化 helper（如 bpf_snprintf）替换为目标内核支持的 helper（如 bpf_trace_printk），并确保格式字符串是 verifier 可验证的常量。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_snprintf is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel supporti...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"h...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "静态检查失败，错误签名 static_check_failed。具体错误为：Helper bpf_snprintf is not present in bpftool helper whitelist。这表明目标部署内核不支持 bpf_snprintf 这个 helper 函数。根据知识库规则，此错误匹配 helper_unsupported 模式（aliases 包含 helper_not_in_probe），且该模式 can_fix 为 true。失败阶段 static_...(truncated)",
+          "repair_action": {
+            "error_type": "helper_unsupported",
+            "repair_method": "修改代码：将不支持的格式化 helper（如 bpf_snprintf）替换为目标内核支持的 helper（如 bpf_trace_printk），并确保格式字符串是 verifier 可验证的常量。",
+            "key_lines": [
+              "Helper bpf_snprintf is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_unsupported\",\n  \"analysis_report\": \"静态检查失败，错误签名 static_check_failed。具体错误为：Helper bpf_snprintf is not present in bpftool helper whitelist。这表明目标部署内核不支持 bpf_snprintf 这个 helper 函数。根据知识库规则，此错误匹配 helper_unsupported 模式（aliases 包含 helper_not_in_probe），且该模式 can_fix 为 true。失败阶...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+      "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nconst char fmt_str[] = \"pid=%d\";\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    char out[32];\n    __u64 data[1];\n    long n;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    /* Crutial block */\n    n = bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data));\n    /* Crutial block end */\n    if (n > 0)\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "静态检查失败，错误签名 static_check_failed。具体错误为：Helper bpf_snprintf is not present in bpftool helper whitelist。这表明目标部署内核不支持 bpf_snprintf 这个 helper 函数。根据知识库规则，此错误匹配 helper_unsupported 模式（aliases 包含 helper_not_in_probe），且该模式 can_fix 为 true。失败阶段 static_check_failed 也符合该模式的 stage_hints。因此，根本原因是目标内核版本较低，不支持较新的 bpf_snprintf helper，需要通过修改源码，将其替换为兼容的实现。",
+      "repair_action": {
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：将不支持的格式化 helper（如 bpf_snprintf）替换为目标内核支持的 helper（如 bpf_trace_printk），并确保格式字符串是 verifier 可验证的常量。",
+        "key_lines": [
+          "Helper bpf_snprintf is not present in bpftool helper whitelist."
+        ]
+      },
+      "error_signal": {
+        "stage": "static_check_failed",
+        "error_types": [
+          "helper_not_in_probe"
+        ],
+        "key_lines": [
+          "Helper bpf_snprintf is not present in bpftool helper whitelist."
+        ]
+      }
+    }
+  },
+  "thought_process": "```json\n{\n  \"thought\": \"依据 Analyzer 的分析报告，目标内核不支持 bpf_snprintf helper，需要替换为兼容的 helper。根据 repair_action 建议，将 bpf_snprintf 替换为 bpf_trace_printk，并确保格式字符串是 verifier 可验证的常量。原始代码中 bpf_snprintf 用于格式化字符串并检查返回值 n>0 来增加计数器，bpf_trace_printk 同样返回写入的字节数，可以保持相同的条件判断逻辑。需要将格式字符串改为常量字符串字面量以满足 verifier 要求。\",\n  \"rationale\": \"将 bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data)) 替换为 bpf_trace_printk(out, sizeof(out), \\\"pid=%d\\\", data[0])，因为：1) bpf_trace_printk 是更广泛支持的 helper；2) 格式字符串改为字面量常量 \\\"pid=%d\\\" 确保 verifier 可验证；3) 保持 n>0 的条件判断逻辑不变；4) 使用 data[0] 作为参数而不是传递 data 数组指针，因为 bpf_trace_printk 参数格式不同。这样最小化修改，保留了原始的业务语义和逻辑结构。\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <linux/bpf.h>\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\nconst char fmt_str[] = \\\"pid=%d\\\";\\nSEC(\\\"tracepoint/syscalls/sys_enter_openat\\\")\\nint helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n    char out[32];\\n    __u64 data[1];\\n    long n;\\n    if (!val)\\n        return 0;\\n    if (target_tgid && *target_tgid) {\\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n        if (tgid != *target_tgid)\\n            return 0;\\n    }\\n    data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n    /* Crutial block */\\n    n = bpf_trace_printk(out, sizeof(out), \\\"pid=%d\\\", data[0]);\\n    /* Crutial block end */\\n    if (n > 0)\\n        (*val)++;\\n    return 0;\\n}\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+    "code_change_summary": "新增 1 行，删除 10 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } counter SEC(\".maps\");\n-\n struct {",
+    "patched_code_file": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+    "rationale": "将 bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data)) 替换为 bpf_trace_printk(out, sizeof(out), \"pid=%d\", data[0])，因为：1) bpf_trace_printk 是更广泛支持的 helper；2) 格式字符串改为字面量常量 \"pid=%d\" 确保 verifier 可验证；3) 保持 n>0 的条件判断逻辑不变；4) 使用 data[0] 作为参数而不是传递 data 数组指针，因为 bpf_trace_printk 参数格式不同。这样最小化修改，保留了原始的业务语义和逻辑结构。"
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "next_deploy_index": 2
+  }
+}

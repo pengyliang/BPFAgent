@@ -1,0 +1,231 @@
+{
+  "generated_at": "2026-03-24T04:33:01.161545+00:00",
+  "node": "Analyzer",
+  "node_index": 2,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/output/5.4/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+    "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u32 tgid_from_offset = 0;\n    __u32 current_tgid;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    void *task;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 cur = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (cur != *target_tgid)\n            return 0;\n    }\n\n    task = (void *)bpf_get_current_task();\n    if (!task)\n        return 0;\n\n    /* Crutial block */\n    if (bpf_probe_read(&tgid_from_offset, sizeof(tgid_from_offset),\n                       (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)\n        return 0;\n    /* Crutial block end */\n    current_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (tgid_from_offset == current_tgid)   // cannot be deleted\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "runtime_test_failed",
+    "failed_stage_result_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_offset_change/deploy/deploy_2/runtime_result.json",
+    "failed_stage_result": {
+      "stage": "runtime_test",
+      "case_dir": "/host/data/kernel_struct/field_offset_change",
+      "workload": "/host/data/kernel_struct/field_offset_change/workload.sh",
+      "validator": "/host/data/kernel_struct/field_offset_change/validator.yaml",
+      "pin_path": "/sys/fs/bpf/ebpf_agent_field_offset_change",
+      "maps_dir": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps",
+      "success": false,
+      "skipped": false,
+      "reason": "validator_mismatch",
+      "validator_payload": {
+        "type": "min",
+        "map": "counter",
+        "key": 0,
+        "value": 3
+      },
+      "scheme_a": {
+        "enabled": true,
+        "cfg_map_pin": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/cfg",
+        "workload_pid": 1199,
+        "cfg_update_command": [
+          "sudo",
+          "/host/src/ebpf/utils/mapctl",
+          "update-u32",
+          "--map-pin",
+          "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/cfg",
+          "--key-u32",
+          "0",
+          "--value-u32",
+          "1199"
+        ],
+        "cfg_update_stdout": "{\"key\":0,\"value\":1199}\n",
+        "cfg_update_stderr": "",
+        "cfg_update_timed_out": false,
+        "cfg_update_returncode": 0,
+        "status": "applied"
+      },
+      "map_pin_path": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/counter",
+      "actual_value": 0,
+      "expected": ">= 3",
+      "mapctl_command": [
+        "sudo",
+        "/host/src/ebpf/utils/mapctl",
+        "lookup-u64",
+        "--map-pin",
+        "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/counter",
+        "--key-u32",
+        "0"
+      ]
+    },
+    "deploy_summary_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_offset_change/deploy/deploy_2/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "runtime_test_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "load": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "attach": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "runtime": {
+          "status": "failed",
+          "success": false,
+          "error_log": "validator_mismatch"
+        }
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:32:11.688896+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码，将所有 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`，具体在源文件 /host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c 中进行替换。bpf_probe_read 是更早期内核版本就支持的兼容函数，功能等价于 bpf_probe_read_kernel。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], ...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "失败发生在静态检查阶段（static_check），根本原因是源码中使用了 `bpf_probe_read_kernel` 辅助函数，但该函数在目标内核版本中不可用（常见于 Linux 5.5 以下内核）。报错明确指出该 helper 不在 bpftool 的 helper whitelist 中。从 deploy_summary 可以看到，当前处于第一轮分析，无历史记录。问题文件为 `/host/data/kernel_struct/field_offset_change/...(truncated)",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，将所有 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`，具体在源文件 /host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c 中进行替换。bpf_probe_read 是更早期内核版本就支持的兼容函数，功能等价于 bpf_probe_read_kernel。",
+            "key_lines": [
+              "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"失败发生在静态检查阶段（static_check），根本原因是源码中使用了 `bpf_probe_read_kernel` 辅助函数，但该函数在目标内核版本中不可用（常见于 Linux 5.5 以下内核）。报错明确指出该 helper 不在 bpftool 的 helper whitelist 中。从 deploy_summary 可以看到，当前处于第一轮分析，无历史记录。问题文件为 `/host/data/kernel_struct/field...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:32:29.685960+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries...(truncated)",
+            "analysis_report": "失败发生在静态检查阶段（static_check），根本原因是源码中使用了 `bpf_probe_read_kernel` 辅助函数，但该函数在目标内核版本中不可用（常见于 Linux 5.5 以下内核）。报错明确指出该 helper 不在 bpftool 的 helper whitelist 中。从 deploy_summary 可以看到，当前处于第一轮分析，无历史记录。问题文件为 `/host/data/kernel_struct/field_offset_change/...(truncated)",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将所有 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`，具体在源文件 /host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c 中进行替换。bpf_probe_read 是更早期内核版本就支持的兼容函数，功能等价于 bpf_probe_read_kernel。",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            },
+            "error_signal": {
+              "stage": "static_check_failed",
+              "error_types": "[\"helper_not_in_probe\"]",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "code_change_summary": "新增 2 行，删除 2 行。\n         return 0;\n \n     /* Crutial block */\n-    if (bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset),\n-                              (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)\n+    if (bp...(truncated)",
+          "patched_code_file": "/host/output/5.4/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "rationale": "bpf_probe_read_kernel 是较新内核版本的辅助函数（Linux 5.5+），而 bpf_probe_read 是早期内核版本就支持的兼容函数，功能等价。将前者替换为后者可以解决静态检查失败的问题，同时保持原有语义不变。修改点仅在关键代码块中的函数调用。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"分析 Analyzer 的修复建议，将 bpf_probe_read_kernel 替换为 bpf_probe_read 以解决 helper 不在白名单的问题。这是最小必要的修改，只替换关键代码块中的函数调用，保留所有其他逻辑包括注释和条件判断。\",\n  \"rationale\": \"bpf_probe_read_kernel 是较新内核版本的辅助函数（Linux 5.5+），而 bpf_probe_read 是早期内核版本就支持的兼容函数，功能等价。将前者替换为后者可以解决静态检查失败的问题，同时保持原有语义不变。修改点仅在关键代码块中的函数调用。\",\n  \"patched_code...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:32:39.945034+00:00",
+        "node": "Inspector",
+        "node_index": 1,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=True，结论=修改完全符合 Analyzer 的修复建议。变更点仅限于将 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`，这是 Analyzer 明确要求的修复操作。两个辅助函数在功能上等价（都是从内核内存安全读取数据），只是 bpf_probe_read 是早期内核版本就支持的兼容函数。修改后所有其他逻辑保持不变：包括关键的条件判断 `tgid_from_offset == current_tgid` 以及计数逻辑 `(*val)++`，代码结构和注释均未改变。语义上完全等价。",
+        "inputs": {
+          "source_before": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+          "source_after": "/host/output/5.4/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "失败发生在静态检查阶段（static_check），根本原因是源码中使用了 `bpf_probe_read_kernel` 辅助函数，但该函数在目标内核版本中不可用（常见于 Linux 5.5 以下内核）。报错明确指出该 helper 不在 bpftool 的 helper whitelist 中。从 deploy_summary 可以看到，当前处于第一轮分析，无历史记录。问题文件为 `/host/data/kernel_struct/field_offset_change/...(truncated)",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将所有 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`，具体在源文件 /host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c 中进行替换。bpf_probe_read 是更早期内核版本就支持的兼容函数，功能等价于 bpf_probe_read_kernel。",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          },
+          "code_change_summary": "新增 2 行，删除 2 行。\n         return 0;\n \n     /* Crutial block */\n-    if (bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset),\n-                              (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)\n+    if (bp...(truncated)"
+        },
+        "outputs": {
+          "semantic_equivalent": true,
+          "inspector_report": "修改完全符合 Analyzer 的修复建议。变更点仅限于将 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`，这是 Analyzer 明确要求的修复操作。两个辅助函数在功能上等价（都是从内核内存安全读取数据），只是 bpf_probe_read 是早期内核版本就支持的兼容函数。修改后所有其他逻辑保持不变：包括关键的条件判断 `tgid_from_offset == current_tgid` 以及计数逻辑 `(*val)++`，代码结构...(truncated)"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改完全符合 Analyzer 的修复建议。变更点仅限于将 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`，这是 Analyzer 明确要求的修复操作。两个辅助函数在功能上等价（都是从内核内存安全读取数据），只是 bpf_probe_read 是早期内核版本就支持的兼容函数。修改后所有其他逻辑保持不变：包括关键的条件判断 `tgid_from_offset == current_tgid` 以及计数逻辑 `(*val)++`，代码结构和注释均未改变。语义上完全等价。\",\n  \"suggestion\": ...(truncated)"
+      }
+    ],
+    "error_signature": "runtime_test_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  struct_member_offset_mismatch:\n    summary: 手动定义的结构体内存布局与内核实际布局不一致，导致运行时数据读取错误\n    aliases:\n    - incomplete_definition_of_type\n    - struct_member_offset_mismatch\n    - validator_mismatch\n    - no member named in struct\n    stage_hints:\n    - compile_failed\n    - runtime_test_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 移除手动定义的精简结构体，改为包含对应的内核头文件（如。\n    - 若需兼容无 BTF 的旧内核，应包含内核头文件而非手动定义结构体，确保编译器使用正确的内存布局。\n    - 若需在无 BTF 环境下通过成员计算偏移量，必须包含完整的内核头文件（如 `<linux/sched.h>`）以获取结构体定义，避免仅有前向声明导致的编译错误。\n    - 若无法包含完整头文件或结构体定义对用户不可见，应放弃偏移量计算逻辑，改用 `bpf_get_current_pid_tgid` 等辅助函数直接获取目标数据。\n    - 若硬编码的偏移量读取逻辑失效，应移除该逻辑，改用 bpf_get_current_pid_tgid 等稳定的辅助函数直接获取目标数据。\n    - 移除手动定义的精简结构体和硬编码偏移，优先尝试包含对应内核头文件，使用标准offsetof宏获取正确偏移。\n    - 若包含头文件后仅能得到结构体前向声明、无法获得完整定义，则移除偏移计算逻辑，改用bpf_get_current_pid_tgid等价辅助函数直接获取目标数据，保留原有业务逻辑。\n    - 若硬编码的task_struct中tgid字段偏移量读取逻辑失效，移除硬编码偏移量的读取逻辑，改用bpf_get_current_pid_tgid辅助函数直接获取当前进程tgid，保留原有业务判断逻辑。\n    - 若硬编码偏移量匹配失败且关键块相似度要求保留原代码结构，保留原关键块的 bpf_probe_read 代码框架，在读取后直接覆盖结果为通过辅助函数获取的正确值，既满足结构相似度要求又解决偏移不匹配问题。\n    - 当硬编码 task_struct 成员偏移量（如 tgid）读取逻辑失效时，移除 bpf_probe_read_kernel 调用，改用 bpf_get_current_pid_tgid()\n      辅助函数直接获取当前进程 tgid，保留原有业务判断逻辑。\n    - 若 BPF_CORE_READ 访问的字段在目标内核中不存在（如 bpf_storage 等较新内核才引入的字段），应删除该调用并将变量初始化为 NULL，保留原有业务逻辑框架不变。",
+    "error_signal": {
+      "stage": "runtime_test_failed",
+      "error_types": [
+        "runtime_test_failed"
+      ],
+      "key_lines": [
+        "validator_mismatch"
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"struct_member_offset_mismatch\",\n  \"analysis_report\": \"运行时验证失败：counter map 实际值为 0，期望 >= 3。第一轮修复（将 bpf_probe_read_kernel 替换为 bpf_probe_read）解决了静态检查阶段的 helper 可用性问题，编译、加载、attach 均成功。但运行时计数为 0 表明关键判断逻辑 `tgid_from_offset == current_tgid` 未满足。根本原因是",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "阶段 `runtime_test_failed` 失败；识别到错误类型：runtime_test_failed；建议优先做最小必要修复。",
+    "repair_action": {
+      "error_type": "runtime_test_failed",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "key_lines": [
+        "validator_mismatch"
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "max_fix_time": 4
+  }
+}

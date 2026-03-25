@@ -1,0 +1,119 @@
+{
+  "generated_at": "2026-03-24T03:12:21.491674+00:00",
+  "node": "Inspector",
+  "node_index": 1,
+  "from_node": "Repairer",
+  "inputs": {
+    "source_before": "/host/data/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.c",
+    "source_after": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_1/helper_bpf_get_current_task_btf_repair_1.bpf.c",
+    "analyzer_context": {
+      "analysis_report": "当前eBPF代码静态检查阶段检测到使用了两个不被当前环境白名单允许的BPF辅助函数：`bpf_get_current_task_btf`（仅Linux 5.7+内核支持）和`bpf_probe_read_kernel`（仅Linux 5.5+内核支持），属于辅助函数兼容性问题，符合可通过源码修改修复的场景。",
+      "repair_action": {
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容；将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。",
+        "key_lines": [
+          "Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.",
+          "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+        ]
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T03:12:10.034366+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容；将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "2",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a ker...(truncated)",
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"...(truncated)"
+            ],
+            "summary": {
+              "error_count": "2",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "当前eBPF代码静态检查阶段检测到使用了两个不被当前环境白名单允许的BPF辅助函数：`bpf_get_current_task_btf`（仅Linux 5.7+内核支持）和`bpf_probe_read_kernel`（仅Linux 5.5+内核支持），属于辅助函数兼容性问题，符合可通过源码修改修复的场景。",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容；将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。",
+            "key_lines": [
+              "Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.",
+              "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"当前eBPF代码静态检查阶段检测到使用了两个不被当前环境白名单允许的BPF辅助函数：`bpf_get_current_task_btf`（仅Linux 5.7+内核支持）和`bpf_probe_read_kernel`（仅Linux 5.5+内核支持），属于辅助函数兼容性问题，符合可通过源码修改修复的场景。\",\n  \"repair_method\": \"修改代码，将bpf_get_current_task_btf替换为bpf_get_current...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T03:12:17.824675+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.c",
+            "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} co...(truncated)",
+            "analysis_report": "当前eBPF代码静态检查阶段检测到使用了两个不被当前环境白名单允许的BPF辅助函数：`bpf_get_current_task_btf`（仅Linux 5.7+内核支持）和`bpf_probe_read_kernel`（仅Linux 5.5+内核支持），属于辅助函数兼容性问题，符合可通过源码修改修复的场景。",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容；将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。",
+              "key_lines": "[\"Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.\", \"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            },
+            "error_signal": {
+              "stage": "static_check_failed",
+              "error_types": "[\"helper_not_in_probe\", \"helper_not_in_probe\"]",
+              "key_lines": "[\"Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.\", \"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_1/helper_bpf_get_current_task_btf_repair_1.bpf.c",
+          "code_change_summary": "新增 2 行，删除 5 行。\n #include \"vmlinux.h\"\n-#include <bpf/bpf_core_read.h>\n #include <bpf/bpf_helpers.h>\n-#include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     if (target_tgid && *target...(truncated)",
+          "patched_code_file": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_1/helper_bpf_get_current_task_btf_repair_1.bpf.c",
+          "rationale": "将bpf_get_current_task_btf替换为兼容旧内核的bpf_get_current_task，将BPF_CORE_READ替换为显式的bpf_probe_read调用，保持原有业务逻辑不变"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"根据分析报告，当前存在两个兼容性问题：bpf_get_current_task_btf不在白名单，BPF_CORE_READ会展开使用bpf_probe_read_kernel也不在白名单，按照修复要求进行替换\",\n  \"rationale\": \"将bpf_get_current_task_btf替换为兼容旧内核的bpf_get_current_task，将BPF_CORE_READ替换为显式的bpf_probe_read调用，保持原有业务逻辑不变\",\n  \"patched_code\": \"#include \\\"vmlinux.h\\\"\\n#include <bpf/bpf_helper...(truncated)"
+      }
+    ],
+    "before_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_absent(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    struct task_struct *task;\n    __u32 cur_tgid;\n    __u32 task_tgid;\n    if (!val)\n        return 0;\n    cur_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (target_tgid && *target_tgid && cur_tgid != *target_tgid)\n        return 0;\n    /* Crutial block */\n    task = (struct task_struct *)bpf_get_current_task_btf();\n    if (!task)\n        return 0;\n    /* Crutial block end */\n    \n    task_tgid = BPF_CORE_READ(task, tgid);\n    if (task_tgid == 0 || task_tgid != cur_tgid)\n        return 0;\n    (*val)++;\n    return 0;\n}\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "after_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_helpers.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_absent(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    struct task_struct *task;\n    __u32 cur_tgid;\n    __u32 task_tgid;\n    if (!val)\n        return 0;\n    cur_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (target_tgid && *target_tgid && cur_tgid != *target_tgid)\n        return 0;\n    /* Crutial block */\n    task = (struct task_struct *)bpf_get_current_task();\n    if (!task)\n        return 0;\n    /* Crutial block end */\n    \n    bpf_probe_read(&task_tgid, sizeof(task_tgid), &task->tgid);\n    if (task_tgid == 0 || task_tgid != cur_tgid)\n        return 0;\n    (*val)++;\n    return 0;\n}\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "code_change_summary": "新增 2 行，删除 5 行。\n #include \"vmlinux.h\"\n-#include <bpf/bpf_core_read.h>\n #include <bpf/bpf_helpers.h>\n-#include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     if (target_tgid && *target_tgid && cur_tgid != *target_tgid)\n         return 0;\n     /* Crutial block */\n-    task = (struct task_struct *)bpf_get_current_task_btf();"
+  },
+  "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改完全符合Analyzer的修复建议：1. 将不兼容的`bpf_get_current_task_btf`替换为兼容的`bpf_get_current_task`；2. 将会展开使用`bpf_probe_read_kernel`的`BPF_CORE_READ`宏替换为了显式的`bpf_probe_read`调用；3. 原有业务逻辑包括所有条件判断和`(*val)++`计数逻辑都完整保留，没有修改原有业务语义，符合修复要求。\",\n  \"suggestion\": \"\"\n}\n```",
+  "outputs": {
+    "semantic_equivalent": true,
+    "inspector_report": "修改完全符合Analyzer的修复建议：1. 将不兼容的`bpf_get_current_task_btf`替换为兼容的`bpf_get_current_task`；2. 将会展开使用`bpf_probe_read_kernel`的`BPF_CORE_READ`宏替换为了显式的`bpf_probe_read`调用；3. 原有业务逻辑包括所有条件判断和`(*val)++`计数逻辑都完整保留，没有修改原有业务语义，符合修复要求。"
+  },
+  "result_params": {
+    "will_next_go_to": "deploy_tool"
+  }
+}

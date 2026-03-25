@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T04:30:23.610923+00:00",
+  "updated_at": "2026-03-24T04:31:58.370501+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 94.759,
+  "module_durations_s": {
+    "deploy_tool": 30.931,
+    "Analyzer": 48.912,
+    "Repairer": 9.564,
+    "Inspector": 5.353,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T04:30:23.610923+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 15.816
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T04:30:39.427308+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将 `bpf_get_current_task_btf` 替换为 `bpf_get_current_task`；将 `bpf_probe_read_kernel` 替换为 `bpf_probe_read`。同时检查源码中是否存在 `BPF_CORE_READ` 宏调用，如有则替换为显式的 `bpf_probe_read` 调用。",
+        "analysis_report": "static_check 阶段失败，原因是目标内核环境的 bpftool helper whitelist 不支持两个 BPF 辅助函数：\n1. `bpf_get_current_task_btf` (Linux 5.7+) - 用于通过 BTF 获取当前 task_struct\n2. `bpf_probe_read_kernel` (Linux 5.5+) - 用于安全地读取内核内存\n\n这两个 helper 都在 `/host/data/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.c` 中被调用。目标内核环境较旧，不...(truncated)"
+      },
+      "duration_s": 48.912
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T04:31:28.339452+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "bpf_get_current_task() 是较旧的辅助函数，在不支持 BTF 的内核环境中可用；bpf_probe_read() 可以安全地读取内核内存来替代 CO-RE 读取。最小必要修改即可解决兼容性问题。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 9.564
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T04:31:37.903009+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修复完全符合 Analyzer 建议的修复方向。修改点包括：1) 将 `bpf_get_current_task_btf()` 替换为 `bpf_get_current_task()`，解决目标内核不支持较新 BTF 相关 helper 的问题；2) 将 `BPF_CORE_READ(task, tgid)` 替换为 `bpf_probe_read(&task_tgid, sizeof(task_tgid), &task->tgid)`，使用显式的 bpf_probe_read 调用替代 CO-RE 宏。修改后的代码保持了原有的条件判断逻辑（target_tgid 过滤、task_tgid 与 cur_tgid 比对）以及核心的 (...(truncated)"
+      },
+      "duration_s": 5.353
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T04:31:43.255869+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 15.115
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T04:31:58.370413+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 28
+      }
+    }
+  ]
+}

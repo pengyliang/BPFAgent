@@ -1,0 +1,338 @@
+{
+  "generated_at": "2026-03-24T04:31:41.046338+00:00",
+  "node": "Analyzer",
+  "node_index": 2,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+    "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nconst char fmt_str[] = \"pid=%d\";\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_arg_increase(void *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    char out[32];\n    __u64 data[1];\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    /* Crutial block */\n    bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data));\n    bpf_trace_printk(\"%s\", out);\n    /* Crutial block end */\n    (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "load_failed",
+    "failed_stage_result_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/deploy/deploy_2/load_result.json",
+    "failed_stage_result": {
+      "success": false,
+      "stage": "load",
+      "via_libbpf_loader_daemon": true,
+      "command": [
+        "sudo",
+        "/host/src/ebpf/utils/loader",
+        "--obj",
+        "/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+        "--pin-path",
+        "/sys/fs/bpf/ebpf_agent_helper_bpf_snprintf"
+      ],
+      "pid": 2190,
+      "ready_line": null,
+      "stdout": "",
+      "stderr": "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)\nlibbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9\nlibbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1\nlibbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1\nlibbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1\nlibbpf: elf: section(8) license, size 4, link 0, flags 3, type=1\nlibbpf: license of /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o is GPL\nlibbpf: elf: section(18) .BTF, size 1412, link 0, flags 0, type=1\nlibbpf: elf: section(20) .BTF.ext, size 384, link 0, flags 0, type=1\nlibbpf: elf: section(28) .symtab, size 456, link 1, flags 0, type=2\nlibbpf: looking for externs among 19 symbols...\nlibbpf: collected 0 externs total\nlibbpf: map 'counter': at sec_idx 6, offset 0.\nlibbpf: map 'counter': found type = 2.\nlibbpf: map 'counter': found key [8], sz = 4.\nlibbpf: map 'counter': found value [11], sz = 8.\nlibbpf: map 'counter': found max_entries = 1.\nlibbpf: map 'cfg': at sec_idx 6, offset 32.\nlibbpf: map 'cfg': found type = 2.\nlibbpf: map 'cfg': found key [8], sz = 4.\nlibbpf: map 'cfg': found value [8], sz = 4.\nlibbpf: map 'cfg': found max_entries = 1.\nlibbpf: map 'helper_b.rodata' (global data): at sec_idx 5, offset 0, flags 480.\nlibbpf: map 2 is \"helper_b.rodata\"\nlibbpf: map '.rodata.str1.1' (global data): at sec_idx 7, offset 0, flags 80.\nlibbpf: map 3 is \".rodata.str1.1\"\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': collecting relocation for section(3) 'tracepoint/syscalls/sys_enter_openat'\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'\nlibbpf: prog 'helper_arg_increase': found map 0 (counter, sec 6, off 0) for insn #4\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'\nlibbpf: prog 'helper_arg_increase': found map 1 (cfg, sec 6, off 32) for insn #9\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #2: insn #31 against 'fmt_str'\nlibbpf: prog 'helper_arg_increase': found data map 2 (helper_b.rodata, sec 5, off 0) for insn 31\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #3: insn #35 against '.rodata.str1.1'\nlibbpf: prog 'helper_arg_increase': found data map 3 (.rodata.str1.1, sec 7, off 0) for insn 35\nlibbpf: map 'counter': created successfully, fd=4\nlibbpf: map 'cfg': created successfully, fd=5\nlibbpf: map 'helper_b.rodata': created successfully, fd=6\nlibbpf: map '.rodata.str1.1': created successfully, fd=7\nlibbpf: prog 'helper_arg_increase': BPF program load failed: Permission denied\nlibbpf: prog 'helper_arg_increase': -- BEGIN PROG LOAD LOG --\narg#0 reference type('UNKNOWN ') size cannot be determined: -22\n; int helper_arg_increase(void *ctx)\n0: (b7) r1 = 0\n; __u32 key = 0;\n1: (63) *(u32 *)(r10 -4) = r1\nlast_idx 1 first_idx 0\nregs=2 stack=0 before 0: (b7) r1 = 0\n2: (bf) r7 = r10\n; \n3: (07) r7 += -4\n; __u64 *val = bpf_map_lookup_elem(&counter, &key);\n4: (18) r1 = 0xffff888103783600\n6: (bf) r2 = r7\n7: (85) call bpf_map_lookup_elem#1\n8: (bf) r6 = r0\n; __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n9: (18) r1 = 0xffff888103782c00\n11: (bf) r2 = r7\n12: (85) call bpf_map_lookup_elem#1\n13: (bf) r7 = r0\n; if (!val)\n14: (15) if r6 == 0x0 goto pc+27\n R0=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7_w=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R10=fp0 fp-8=mmmm????\n; if (target_tgid && *target_tgid) {\n15: (15) if r7 == 0x0 goto pc+6\n R0=map_value(id=0,off=0,ks=4,vs=4,imm=0) R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7_w=map_value(id=0,off=0,ks=4,libbpf: prog 'helper_arg_increase': failed to load: -13\nlibbpf: failed to load object '/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o'\nload failed: -13\n",
+      "returncode": 10,
+      "error_message": "load failed: -13",
+      "load_success": false,
+      "attach_success": false,
+      "phase_details": {
+        "load": {
+          "phase": "load",
+          "ok": false,
+          "stdout": "",
+          "stderr": "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)\nlibbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9\nlibbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1\nlibbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1\nlibbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1\nlibbpf: elf: section(8) license, size 4, link 0, flags 3, type=1\nlibbpf: license of /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o is GPL\nlibbpf: elf: section(18) .BTF, size 1412, link 0, flags 0, type=1\nlibbpf: elf: section(20) .BTF.ext, size 384, link 0, flags 0, type=1\nlibbpf: elf: section(28) .symtab, size 456, link 1, flags 0, type=2\nlibbpf: looking for externs among 19 symbols...\nlibbpf: collected 0 externs total\nlibbpf: map 'counter': at sec_idx 6, offset 0.\nlibbpf: map 'counter': found type = 2.\nlibbpf: map 'counter': found key [8], sz = 4.\nlibbpf: map 'counter': found value [11], sz = 8.\nlibbpf: map 'counter': found max_entries = 1.\nlibbpf: map 'cfg': at sec_idx 6, offset 32.\nlibbpf: map 'cfg': found type = 2.\nlibbpf: map 'cfg': found key [8], sz = 4.\nlibbpf: map 'cfg': found value [8], sz = 4.\nlibbpf: map 'cfg': found max_entries = 1.\nlibbpf: map 'helper_b.rodata' (global data): at sec_idx 5, offset 0, flags 480.\nlibbpf: map 2 is \"helper_b.rodata\"\nlibbpf: map '.rodata.str1.1' (global data): at sec_idx 7, offset 0, flags 80.\nlibbpf: map 3 is \".rodata.str1.1\"\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': collecting relocation for section(3) 'tracepoint/syscalls/sys_enter_openat'\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'\nlibbpf: prog 'helper_arg_increase': found map 0 (counter, sec 6, off 0) for insn #4\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'\nlibbpf: prog 'helper_arg_increase': found map 1 (cfg, sec 6, off 32) for insn #9\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #2: insn #31 against 'fmt_str'\nlibbpf: prog 'helper_arg_increase': found data map 2 (helper_b.rodata, sec 5, off 0) for insn 31\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #3: insn #35 against '.rodata.str1.1'\nlibbpf: prog 'helper_arg_increase': found data map 3 (.rodata.str1.1, sec 7, off 0) for insn 35\nlibbpf: map 'counter': created successfully, fd=4\nlibbpf: map 'cfg': created successfully, fd=5\nlibbpf: map 'helper_b.rodata': created successfully, fd=6\nlibbpf: map '.rodata.str1.1': created successfully, fd=7\nlibbpf: prog 'helper_arg_increase': BPF program load failed: Permission denied\nlibbpf: prog 'helper_arg_increase': -- BEGIN PROG LOAD LOG --\narg#0 reference type('UNKNOWN ') size cannot be determined: -22\n; int helper_arg_increase(void *ctx)\n0: (b7) r1 = 0\n; __u32 key = 0;\n1: (63) *(u32 *)(r10 -4) = r1\nlast_idx 1 first_idx 0\nregs=2 stack=0 before 0: (b7) r1 = 0\n2: (bf) r7 = r10\n; \n3: (07) r7 += -4\n; __u64 *val = bpf_map_lookup_elem(&counter, &key);\n4: (18) r1 = 0xffff888103783600\n6: (bf) r2 = r7\n7: (85) call bpf_map_lookup_elem#1\n8: (bf) r6 = r0\n; __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n9: (18) r1 = 0xffff888103782c00\n11: (bf) r2 = r7\n12: (85) call bpf_map_lookup_elem#1\n13: (bf) r7 = r0\n; if (!val)\n14: (15) if r6 == 0x0 goto pc+27\n R0=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7_w=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R10=fp0 fp-8=mmmm????\n; if (target_tgid && *target_tgid) {\n15: (15) if r7 == 0x0 goto pc+6\n R0=map_value(id=0,off=0,ks=4,vs=4,imm=0) R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7_w=map_value(id=0,off=0,ks=4,libbpf: prog 'helper_arg_increase': failed to load: -13\nlibbpf: failed to load object '/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o'\nload failed: -13\n",
+          "error_message": "load failed: -13"
+        }
+      },
+      "stdout_lines": [],
+      "stderr_lines": [
+        "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+        "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1",
+        "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)",
+        "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9",
+        "libbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1",
+        "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+        "libbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1",
+        "libbpf: elf: section(8) license, size 4, link 0, flags 3, type=1",
+        "libbpf: license of /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o is GPL",
+        "libbpf: elf: section(18) .BTF, size 1412, link 0, flags 0, type=1",
+        "libbpf: elf: section(20) .BTF.ext, size 384, link 0, flags 0, type=1",
+        "libbpf: elf: section(28) .symtab, size 456, link 1, flags 0, type=2",
+        "libbpf: looking for externs among 19 symbols...",
+        "libbpf: collected 0 externs total",
+        "libbpf: map 'counter': at sec_idx 6, offset 0.",
+        "libbpf: map 'counter': found type = 2.",
+        "libbpf: map 'counter': found key [8], sz = 4.",
+        "libbpf: map 'counter': found value [11], sz = 8.",
+        "libbpf: map 'counter': found max_entries = 1.",
+        "libbpf: map 'cfg': at sec_idx 6, offset 32.",
+        "libbpf: map 'cfg': found type = 2.",
+        "libbpf: map 'cfg': found key [8], sz = 4.",
+        "libbpf: map 'cfg': found value [8], sz = 4.",
+        "libbpf: map 'cfg': found max_entries = 1.",
+        "libbpf: map 'helper_b.rodata' (global data): at sec_idx 5, offset 0, flags 480.",
+        "libbpf: map 2 is \"helper_b.rodata\"",
+        "libbpf: map '.rodata.str1.1' (global data): at sec_idx 7, offset 0, flags 80.",
+        "libbpf: map 3 is \".rodata.str1.1\"",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': collecting relocation for section(3) 'tracepoint/syscalls/sys_enter_openat'",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'",
+        "libbpf: prog 'helper_arg_increase': found map 0 (counter, sec 6, off 0) for insn #4",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'",
+        "libbpf: prog 'helper_arg_increase': found map 1 (cfg, sec 6, off 32) for insn #9",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #2: insn #31 against 'fmt_str'",
+        "libbpf: prog 'helper_arg_increase': found data map 2 (helper_b.rodata, sec 5, off 0) for insn 31",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #3: insn #35 against '.rodata.str1.1'",
+        "libbpf: prog 'helper_arg_increase': found data map 3 (.rodata.str1.1, sec 7, off 0) for insn 35",
+        "libbpf: map 'counter': created successfully, fd=4",
+        "libbpf: map 'cfg': created successfully, fd=5",
+        "libbpf: map 'helper_b.rodata': created successfully, fd=6",
+        "libbpf: map '.rodata.str1.1': created successfully, fd=7",
+        "libbpf: prog 'helper_arg_increase': BPF program load failed: Permission denied",
+        "libbpf: prog 'helper_arg_increase': -- BEGIN PROG LOAD LOG --",
+        "arg#0 reference type('UNKNOWN ') size cannot be determined: -22",
+        "; int helper_arg_increase(void *ctx)",
+        "0: (b7) r1 = 0",
+        "; __u32 key = 0;",
+        "1: (63) *(u32 *)(r10 -4) = r1",
+        "last_idx 1 first_idx 0",
+        "regs=2 stack=0 before 0: (b7) r1 = 0",
+        "2: (bf) r7 = r10",
+        "; ",
+        "3: (07) r7 += -4",
+        "; __u64 *val = bpf_map_lookup_elem(&counter, &key);",
+        "4: (18) r1 = 0xffff888103783600",
+        "6: (bf) r2 = r7",
+        "7: (85) call bpf_map_lookup_elem#1",
+        "8: (bf) r6 = r0",
+        "; __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);",
+        "9: (18) r1 = 0xffff888103782c00",
+        "11: (bf) r2 = r7",
+        "12: (85) call bpf_map_lookup_elem#1",
+        "13: (bf) r7 = r0",
+        "; if (!val)",
+        "14: (15) if r6 == 0x0 goto pc+27",
+        " R0=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7_w=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R10=fp0 fp-8=mmmm????",
+        "; if (target_tgid && *target_tgid) {",
+        "15: (15) if r7 == 0x0 goto pc+6",
+        " R0=map_value(id=0,off=0,ks=4,vs=4,imm=0) R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7_w=map_value(id=0,off=0,ks=4,libbpf: prog 'helper_arg_increase': failed to load: -13",
+        "libbpf: failed to load object '/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o'",
+        "load failed: -13"
+      ]
+    },
+    "deploy_summary_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/deploy/deploy_2/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "load_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "load": {
+          "status": "failed",
+          "success": false,
+          "error_log": "load failed: -13"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "load_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "load_or_attach_failed"
+        }
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:30:32.559252+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 load_failed，can_fix=True，建议=修改代码，将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，然后使用 bpf_probe_read 配合固定偏移量手动读取 syscall 号和参数。例如：\n1. 读取 syscall 号：`bpf_probe_read(&syscall_nr, sizeof(int), (void *)ctx + offsetof_syscall('nr'))`\n2. 读取第一个参数 (filename)：`bpf_probe_read(filename, sizeof(filenam...(truncated)",
+        "inputs": {
+          "failed_stage": "load_failed",
+          "failed_stage_result": {
+            "success": false,
+            "stage": "load",
+            "via_libbpf_loader_daemon": true,
+            "command": [
+              "sudo",
+              "/host/src/ebpf/utils/loader",
+              "--obj",
+              "/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+              "--pin-path",
+              "/sys/fs/bpf/ebpf_agent_helper_bpf_snprintf"
+            ],
+            "pid": 1983,
+            "ready_line": null,
+            "stdout": "",
+            "stderr": "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/s...(truncated)",
+            "returncode": 10,
+            "error_message": "load failed: -13",
+            "load_success": false,
+            "attach_success": false,
+            "...": "trimmed 3 fields"
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "load_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "load": "{\"status\": \"failed\", \"success\": false, \"error_log\": \"load failed: -13\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_or_attach_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "BPF 程序加载失败，根因是 CO-RE (Compile Once - Run Everywhere) 无法正确解析 tracepoint 上下文类型 `trace_event_raw_sys_enter`。错误信息 `arg#0 reference type('FWD trace_event_raw_sys_enter') size cannot be determined: -22` 表明 BTF 信息中该结构体仅为前向声明(FWD)，没有完整定义，导致验证器无法确定上...(truncated)",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，然后使用 bpf_probe_read 配合固定偏移量手动读取 syscall 号和参数。例如：\n1. 读取 syscall 号：`bpf_probe_read(&syscall_nr, sizeof(int), (void *)ctx + offsetof_syscall('nr'))`\n2. 读取第一个参数 (fil...(truncated)",
+            "key_lines": [
+              "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+              "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1",
+              "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)",
+              "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9",
+              "libbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1",
+              "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+              "libbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1",
+              "libbpf: elf: section(8) license, size 4, link 0, flags 3, type=1",
+              "... trimmed 2 items"
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"BPF 程序加载失败，根因是 CO-RE (Compile Once - Run Everywhere) 无法正确解析 tracepoint 上下文类型 `trace_event_raw_sys_enter`。错误信息 `arg#0 reference type('FWD trace_event_raw_sys_enter') size cannot be determined: -22` 表明 BTF 信息中该结构体仅为前向声明(FWD)，没有...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:30:58.128903+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counte...(truncated)",
+            "analysis_report": "BPF 程序加载失败，根因是 CO-RE (Compile Once - Run Everywhere) 无法正确解析 tracepoint 上下文类型 `trace_event_raw_sys_enter`。错误信息 `arg#0 reference type('FWD trace_event_raw_sys_enter') size cannot be determined: -22` 表明 BTF 信息中该结构体仅为前向声明(FWD)，没有完整定义，导致验证器无法确定上...(truncated)",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，然后使用 bpf_probe_read 配合固定偏移量手动读取 syscall 号和参数。例如：\n1. 读取 syscall 号：`bpf_probe_read(&syscall_nr, sizeof(int), (void *)ctx + offsetof_syscall('nr'))`\n2. 读取第一个参数 (fil...(truncated)",
+              "key_lines": "[\"libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\", \"libbpf: sec 'tracepoint/sy...(truncated)"
+            },
+            "error_signal": {
+              "stage": "load_failed",
+              "error_types": "[\"verifier_reject\"]",
+              "key_lines": "[\"libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\", \"libbpf: sec 'tracepoint/sy...(truncated)"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+          "code_change_summary": "新增 1 行，删除 1 行。\n const char fmt_str[] = \"pid=%d\";\n \n SEC(\"tracepoint/syscalls/sys_enter_openat\")\n-int helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\n+int helper_arg_increase(void *ctx)\n {\n     __u32 key = 0;\n     __u64 *val = bpf...(truncated)",
+          "patched_code_file": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+          "rationale": "使用 void *ctx 绕过 CO-RE 对结构体定义的依赖，通过固定偏移量直接读取 tracepoint 上下文数据：syscall_nr 在 offset 0，args 在 offset 8。最小必要修改仅改变函数签名和添加必要的 bpf_probe_read 调用，核心业务逻辑（tgid 过滤、bpf_snprintf、trace_printk、计数器递增）完全保留。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"基于 Analyzer 的分析，问题是 CO-RE 无法解析 trace_event_raw_sys_enter 结构体（仅前向声明）。修复策略：将函数签名改为 void *ctx，使用 bpf_probe_read 配合固定偏移量读取 syscall_nr 和 args，保留原有的 tgid 过滤逻辑和 (*val)++ 逻辑，保留 Crutial block 注释。\",\n  \"rationale\": \"使用 void *ctx 绕过 CO-RE 对结构体定义的依赖，通过固定偏移量直接读取 tracepoint 上下文数据：syscall_nr 在 offset 0，args 在 o...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:31:17.615790+00:00",
+        "node": "Inspector",
+        "node_index": 1,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=True，结论=修改仅将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，其余代码逻辑完全未动。Analyzer 的修复建议是为解决 CO-RE 无法解析 trace_event_raw_sys_enter 结构体的问题，核心是改变 ctx 参数类型以绕过 CO-RE 验证；至于使用 bpf_probe_read 配合固定偏移读取 syscall 号和参数的建议，属于补充性增强，原代码本身并未通过 ctx 读取任何数据（全部使用 bpf_get_current_pid_tgid()），所以不需要补充。\n...(truncated)",
+        "inputs": {
+          "source_before": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+          "source_after": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "BPF 程序加载失败，根因是 CO-RE (Compile Once - Run Everywhere) 无法正确解析 tracepoint 上下文类型 `trace_event_raw_sys_enter`。错误信息 `arg#0 reference type('FWD trace_event_raw_sys_enter') size cannot be determined: -22` 表明 BTF 信息中该结构体仅为前向声明(FWD)，没有完整定义，导致验证器无法确定上...(truncated)",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，然后使用 bpf_probe_read 配合固定偏移量手动读取 syscall 号和参数。例如：\n1. 读取 syscall 号：`bpf_probe_read(&syscall_nr, sizeof(int), (void *)ctx + offsetof_syscall('nr'))`\n2. 读取第一个参数 (fil...(truncated)",
+              "key_lines": "[\"libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\", \"libbpf: sec 'tracepoint/sy...(truncated)"
+            }
+          },
+          "code_change_summary": "新增 1 行，删除 1 行。\n const char fmt_str[] = \"pid=%d\";\n \n SEC(\"tracepoint/syscalls/sys_enter_openat\")\n-int helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\n+int helper_arg_increase(void *ctx)\n {\n     __u32 key = 0;\n     __u64 *val = bpf...(truncated)"
+        },
+        "outputs": {
+          "semantic_equivalent": true,
+          "inspector_report": "修改仅将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，其余代码逻辑完全未动。Analyzer 的修复建议是为解决 CO-RE 无法解析 trace_event_raw_sys_enter 结构体的问题，核心是改变 ctx 参数类型以绕过 CO-RE 验证；至于使用 bpf_probe_read 配合固定偏移读取 syscall 号和参数的建议，属于补充性增强，原代码本身并未通过...(truncated)"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改仅将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，其余代码逻辑完全未动。Analyzer 的修复建议是为解决 CO-RE 无法解析 trace_event_raw_sys_enter 结构体的问题，核心是改变 ctx 参数类型以绕过 CO-RE 验证；至于使用 bpf_probe_read 配合固定偏移读取 syscall 号和参数的建议，属于补充性增强，原代码本身并未通过 ctx 读取任何数据（全部使用 bpf_get_current_pi...(truncated)"
+      }
+    ],
+    "error_signature": "load_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  helper_api_compatibility:\n    summary: 使用的 BPF 辅助函数在当前内核版本或配置中不可用\n    aliases:\n    - helper_not_in_probe\n    - map_type_not_in_probe\n    - helper_bpf_probe_read_kernel_missing\n    - helper_bpf_strncmp_missing\n    - helper_bpf_get_current_task_btf_missing\n    - helper_bpf_snprintf_missing\n    - bpf_snprintf_rodata_relocation_failed\n    - helper_api_compatibility\n    stage_hints:\n    - static_check_failed\n    - compile_failed\n    - load_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 将不可用的辅助函数替换为功能等价且兼容性更好的替代实现（如使用 bpf_probe_read_kernel_str 配合手动循环比较替代 bpf_strncmp）。\n    - 若存在功能等价的旧版辅助函数，优先直接替换。若无直接等价函数，则通过组合其他可用辅助函数实现原语逻辑。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义。\n    - 将 bpf_ringbuf_output 替换为 bpf_perf_event_output，传入上下文 ctx、map 指针以及 BPF_F_CURRENT_CPU\n      标志（或结合 bpf_get_smp_processor_id）。\n    - 若目标内核不支持 bpf_ktime_get_boot_ns（常见于 < 5.8 内核），将其替换为兼容性更好的 bpf_ktime_get_ns。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），使用 `#pragma unroll` 展开的手动循环逐字节比较字符串，以兼容旧版本内核。\n    - 修改代码，移除对 bpf_snprintf 的调用。由于 bpf_snprintf 常用于格式化输出字符串到 map 或 ringbuf，在低版本内核中，应改用\n      bpf_probe_read_kernel_str 等可用函数读取字符串，并手动逐字节拷贝到目标 buffer 中，或者直接输出原始数据而避免在内核态进行格式化处理。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将 `BPF_CORE_READ` 宏调用替换为显式的 `bpf_probe_read`\n      调用。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义（通常为 4 字节）。\n    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+），将其替换为 bpf_get_current_task，并检查后续成员访问逻辑是否兼容。\n    - 若目标内核不支持 bpf_snprintf (Linux 5.13+)，应将其替换为 bpf_probe_read_kernel_str (Linux\n      5.5+) 或 bpf_probe_read (Linux 4.7+)，并适配返回值逻辑（如将 bpf_probe_read 的 0 返回值映射为正数）以保留原有的条件判断结构。\n    - 修改代码，将bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，移除对bpf_snprintf的调用，改用bpf_probe_read_kernel_str读取字符串，手动逐字节拷贝到目标buffer中，或直接输出原始数据避免在内核态进行格式化处理。\n    - 修改代码，将不被支持的bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容。将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 修改代码，使用`#pragma unroll`展开的手动循环逐字节比较字符串，替代不可用的bpf_strncmp函数，兼容低版本内核。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），直接在调用点展开使用 `#pragma unroll` 的手动循环逐字节比较实现，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。\n    - 修改代码，将BPF_MAP_TYPE_RINGBUF地图类型替换为BPF_MAP_TYPE_PERF_EVENT_ARRAY，并补全key_size和value_size定义（通常为4字节）。再将bpf_ringbuf_output替换为bpf_perf_event_output，传入上下文ctx、map指针以及BPF_F_CURRENT_CPU标志。\n    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+）且不支持CO-RE BTF，将其替换为 bpf_get_current_task，移除vmlinux.h引入并前向声明不完整struct\n      task_struct，使用对应架构内核版本的固定偏移量结合bpf_probe_read读取成员，彻底消除对CO-RE BTF的依赖。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），在调用点直接展开使用 `#pragma unroll` 的手动循环逐字节比较实现，显式保留最大比较长度参数，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。\n    - 在Linux 5.13以下内核使用bpf_snprintf时，需直接移除对bpf_snprintf的调用，若存在字符串常量输出仍导致.rodata.str1.1重定位失败，需彻底移除包含静态字符串常量的输出调用，保留原有核心业务逻辑。\n    - 修改代码，将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在 BPF_CORE_READ\n      宏调用则将其替换为显式的 bpf_probe_read 调用。\n    - 修改代码，将 `bpf_ktime_get_boot_ns` 替换为兼容性更好的 `bpf_ktime_get_ns`。具体修改：在源文件 /host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c\n      中，将所有对 `bpf_ktime_get_boot_ns()` 的调用替换为 `bpf_ktime_get_ns()`，并同步更新对应的头文件或函数声明。\n    - 修改代码，将所有 bpf_ktime_get_boot_ns 替换为 bpf_ktime_get_ns。bpf_ktime_get_ns 是更早期内核版本就支持的兼容函数，返回墙上时间（wall\n      clock time）纳秒数，功能等价且覆盖更广的内核版本。\n  state_explosion:\n    summary: 循环中频繁调用非内联子函数导致验证器状态爆炸\n    aliases:\n    - state_explosion\n    stage_hints:\n    - load_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 将循环内调用的子函数强制声明为 `static __always_inline`，消除 BPF-to-BPF 调用的上下文切换开销。\n    - 若内联后代码体积过大，应同步减少循环次数以降低验证路径复杂度。\n    - 修改代码，将循环内调用的子函数global_add_stress强制声明为static __always_inline，消除BPF-to-BPF调用的上下文切换开销，减少验证器的状态复杂度。\n  unbounded_loop:\n    summary: 循环逻辑上虽有界但验证器无法证明，导致加载失败\n    aliases:\n    - unbounded_loop\n    stage_hints:\n    - load_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。\n    - 若编译器不支持 unroll 或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。\n    - 修改代码，在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。若编译器不支持unroll或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。\n    - 在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令，解决验证器无法证明循环有界的问题。",
+    "error_signal": {
+      "stage": "load_failed",
+      "error_types": [
+        "verifier_reject"
+      ],
+      "key_lines": [
+        "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+        "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1",
+        "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)",
+        "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9",
+        "libbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1",
+        "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+        "libbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1",
+        "libbpf: elf: section(8) license, size 4, link 0, flags 3, type=1",
+        "libbpf: license of /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o is GPL",
+        "libbpf: elf: section(18) .BTF, size 1412, link 0, flags 0, type=1",
+        "libbpf: elf: section(20) .BTF.ext, size 384, link 0, flags 0, type=1",
+        "libbpf: elf: section(28) .symtab, size 456, link 1, flags 0, type=2",
+        "libbpf: map 'counter': at sec_idx 6, offset 0.",
+        "libbpf: map 'counter': found type = 2.",
+        "libbpf: map 'counter': found key [8], sz = 4.",
+        "libbpf: map 'counter': found value [11], sz = 8.",
+        "libbpf: map 'counter': found max_entries = 1.",
+        "libbpf: map 'cfg': at sec_idx 6, offset 32.",
+        "libbpf: map 'cfg': found type = 2.",
+        "libbpf: map 'cfg': found key [8], sz = 4.",
+        "libbpf: map 'cfg': found value [8], sz = 4.",
+        "libbpf: map 'cfg': found max_entries = 1.",
+        "libbpf: map 'helper_b.rodata' (global data): at sec_idx 5, offset 0, flags 480.",
+        "libbpf: map 2 is \"helper_b.rodata\"",
+        "libbpf: map '.rodata.str1.1' (global data): at sec_idx 7, offset 0, flags 80.",
+        "libbpf: map 3 is \".rodata.str1.1\"",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'",
+        "libbpf: prog 'helper_arg_increase': found map 0 (counter, sec 6, off 0) for insn #4",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'",
+        "libbpf: prog 'helper_arg_increase': found map 1 (cfg, sec 6, off 32) for insn #9"
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"tracepoint_ctx_type_incompatible\",\n  \"analysis_report\": \"BPF 程序第二轮加载仍失败，错误信息从 `FWD trace_event_raw_sys_enter` 变为 `UNKNOWN`。根因分析：第一轮修复将函数签名改为 `void *ctx` 虽绕过了 CO-RE 对结构体定义的依赖，但验证器仍需确定 ctx 参数的类型大小才能加载。tracepoint/syscalls/sys_enter_openat 程序的标准上下文是 `struct trace_event_raw_sys_enter`，包含 `__u64 args[6]`（共 48 字节）。当使用裸 `void *` 时，验证器无法推断参数大小，导致 `arg#0 reference type('UNKNOWN ') size cannot be determined: -22`。正确的修复方案是使用 `unsigned long *ctx`（或 `__u64 *ctx`），因为 tracepoint args 是 64 位数组，验证器能据此确定参数大小。\",\n  \"repair_method\": \"修改代码，将 tracepoint 程序签名从 `void *ctx` 改为 `unsigned long *ctx`。具体修改 /host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c 中的函数声明：`int helper_arg_increase(unsigned long *ctx)`。unsigned long 在",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "阶段 `load_failed` 失败；识别到错误类型：verifier_reject；建议优先做最小必要修复。",
+    "repair_action": {
+      "error_type": "verifier_reject",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "key_lines": [
+        "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+        "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1",
+        "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)",
+        "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9",
+        "libbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1",
+        "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+        "libbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1",
+        "libbpf: elf: section(8) license, size 4, link 0, flags 3, type=1",
+        "libbpf: license of /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o is GPL",
+        "libbpf: elf: section(18) .BTF, size 1412, link 0, flags 0, type=1"
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "max_fix_time": 4
+  }
+}

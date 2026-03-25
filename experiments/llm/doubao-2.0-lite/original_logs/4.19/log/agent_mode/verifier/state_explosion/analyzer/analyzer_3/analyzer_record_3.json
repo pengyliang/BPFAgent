@@ -1,0 +1,457 @@
+{
+  "generated_at": "2026-03-24T03:26:07.292947+00:00",
+  "node": "Analyzer",
+  "node_index": 3,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c",
+    "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\nstatic __always_inline int global_add_stress(__u64 *val, __u64 x)\n{\n    if (!val)\n        return 0;\n    /*\n     * Multiple independent branches on unknown scalar 'x' to blow up states.\n     * Each bit check introduces a verifier split.\n     */\n    if (x & (1ull << 0))\n        (*val) += 1;\n    else\n        (*val) += 2;\n    if (x & (1ull << 1))\n        (*val) += 4;\n    else\n        (*val) += 8;\n    if (x & (1ull << 2))\n        (*val) += 16;\n    else\n        (*val) += 32;\n    if (x & (1ull << 3))\n        (*val) += 64;\n    else\n        (*val) += 128;\n    if (x & (1ull << 4))\n        (*val) += 256;\n    else\n        (*val) += 512;\n    if (x & (1ull << 5))\n        (*val) += 1024;\n    else\n        (*val) += 2048;\n    if (x & (1ull << 6))\n        (*val) += 4096;\n    else\n        (*val) += 8192;\n    if (x & (1ull << 7))\n        (*val) += 16384;\n    else\n        (*val) += 32768;\n    if (x & (1ull << 8))\n        (*val) += 65536;\n    else\n        (*val) += 131072;\n    if (x & (1ull << 9))\n        (*val) += 262144;\n    else\n        (*val) += 524288;\n    return 1;\n}\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u64 pid_tgid = bpf_get_current_pid_tgid();\n    __u64 x = pid_tgid;  // verifier cannot predict this unknown scalar\n    if (!val)\n        return 0;\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n    /* Crutial block */\n    __u32 max_time = 50;\n    __u32 i = 0;\n#pragma unroll\n    for (i = 0; i < max_time; i++) {\n        global_add_stress(val, x + i);\n    }\n    /* Crutial block end */\n    return 0;\n}\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "compile_failed",
+    "failed_stage_result_path": "/host/output/4.19/log/agent_mode/verifier/state_explosion/deploy/deploy_3/compile_result.json",
+    "failed_stage_result": {
+      "success": false,
+      "stage": "compile",
+      "source_file": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c",
+      "object_file": "/host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o",
+      "compile_mode": "non-core",
+      "vmlinux_header": null,
+      "vmlinux_generation": null,
+      "command": [
+        "clang",
+        "-O3",
+        "-g",
+        "-target",
+        "bpf",
+        "-I/usr/include/x86_64-linux-gnu",
+        "-c",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c",
+        "-o",
+        "/host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o"
+      ],
+      "stdout": "",
+      "stderr": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:29: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n                            ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\n    if (x & (1ull << 0))\n        ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\n    if (x & (1ull << 0))\n        ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\n    if (x & (1ull << 0))\n        ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\n    if (x & (1ull << 0))\n        ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\noutput/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\nfatal error: too many errors emitted, stopping now [-ferror-limit=]\n1 warning and 20 errors generated.\n",
+      "returncode": 1,
+      "timed_out": false,
+      "stdout_lines": [],
+      "stderr_lines": [
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:29: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "                            ^",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "    if (x & (1ull << 0))",
+        "        ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "    if (x & (1ull << 0))",
+        "        ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "    if (x & (1ull << 0))",
+        "        ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "    if (x & (1ull << 0))",
+        "        ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+        "    ^",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0",
+        "fatal error: too many errors emitted, stopping now [-ferror-limit=]",
+        "1 warning and 20 errors generated."
+      ]
+    },
+    "deploy_summary_path": "/host/output/4.19/log/agent_mode/verifier/state_explosion/deploy/deploy_3/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "compile_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "failed",
+          "success": false,
+          "error_log": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:29: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n                            ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct tra\n...<truncated>"
+        },
+        "load": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "compile_failed"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "compile_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "compile_failed"
+        }
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T03:25:28.011875+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 load_failed，can_fix=True，建议=修改代码，将循环内调用的子函数global_add_stress强制声明为static __always_inline，消除BPF-to-BPF调用的上下文切换开销，减少验证器的状态复杂度。",
+        "inputs": {
+          "failed_stage": "load_failed",
+          "failed_stage_result": {
+            "success": false,
+            "stage": "load",
+            "via_libbpf_loader_daemon": true,
+            "command": [
+              "sudo",
+              "/host/src/ebpf/utils/loader",
+              "--obj",
+              "/host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o",
+              "--pin-path",
+              "/sys/fs/bpf/ebpf_agent_state_explosion"
+            ],
+            "pid": 2296,
+            "ready_line": null,
+            "stdout": "",
+            "stderr": "libbpf: loading object from /host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o\nlibbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1\nlibbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 b...(truncated)",
+            "returncode": 10,
+            "error_message": "load failed: -7",
+            "load_success": false,
+            "attach_success": false,
+            "...": "trimmed 3 fields"
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "load_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "load": "{\"status\": \"failed\", \"success\": false, \"error_log\": \"load failed: -7\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_or_attach_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "本次eBPF程序加载失败是因为循环中频繁调用非内联子函数global_add_stress，产生了大量BPF-to-BPF调用，导致验证器状态爆炸，验证路径复杂度超出内核限制，最终加载失败。从错误日志可以看到主程序bpf_to_bpf_fault在循环中多次重定位调用global_add_stress子函数，符合状态爆炸的特征。",
+          "repair_action": {
+            "error_type": "state_explosion",
+            "repair_method": "修改代码，将循环内调用的子函数global_add_stress强制声明为static __always_inline，消除BPF-to-BPF调用的上下文切换开销，减少验证器的状态复杂度。",
+            "key_lines": [
+              "libbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1",
+              "libbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 bytes), code size 73 insns (584 bytes)",
+              "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 1800, link 0, flags 6, type=1",
+              "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'bpf_to_bpf_fault' at insn offset 0 (0 bytes), code size 225 insns (1800 bytes)",
+              "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 832, link 27, flags 40, type=9",
+              "libbpf: elf: section(5) .maps, size 64, link 0, flags 3, type=1",
+              "libbpf: elf: section(6) license, size 4, link 0, flags 3, type=1",
+              "libbpf: elf: section(17) .BTF, size 1615, link 0, flags 0, type=1",
+              "... trimmed 2 items"
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"state_explosion\",\n  \"analysis_report\": \"本次eBPF程序加载失败是因为循环中频繁调用非内联子函数global_add_stress，产生了大量BPF-to-BPF调用，导致验证器状态爆炸，验证路径复杂度超出内核限制，最终加载失败。从错误日志可以看到主程序bpf_to_bpf_fault在循环中多次重定位调用global_add_stress子函数，符合状态爆炸的特征。\",\n  \"repair_method\": \"修改代码，将循环内调用的子函数global_add_stress强制声明为static __...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T03:25:39.431596+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/verifier/state_explosion/state_explosion.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counte...(truncated)",
+            "analysis_report": "本次eBPF程序加载失败是因为循环中频繁调用非内联子函数global_add_stress，产生了大量BPF-to-BPF调用，导致验证器状态爆炸，验证路径复杂度超出内核限制，最终加载失败。从错误日志可以看到主程序bpf_to_bpf_fault在循环中多次重定位调用global_add_stress子函数，符合状态爆炸的特征。",
+            "repair_action": {
+              "error_type": "state_explosion",
+              "repair_method": "修改代码，将循环内调用的子函数global_add_stress强制声明为static __always_inline，消除BPF-to-BPF调用的上下文切换开销，减少验证器的状态复杂度。",
+              "key_lines": "[\"libbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1\", \"libbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 bytes), code size 73 insns (584 bytes)\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter...(truncated)"
+            },
+            "error_signal": {
+              "stage": "load_failed",
+              "error_types": "[\"verifier_reject\"]",
+              "key_lines": "[\"libbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1\", \"libbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 bytes), code size 73 insns (584 bytes)\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter...(truncated)"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+          "code_change_summary": "新增 1 行，删除 22 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } count...(truncated)",
+          "patched_code_file": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+          "rationale": "将global_add_stress从__noinline全局函数改为static __always_inline，强制编译器内联该函数，消除BPF-to-BPF调用，减少验证器状态复杂度，同时保留原有所有业务逻辑"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"根据Analyzer分析结果，本次加载失败是由于循环内调用非内联子函数global_add_stress导致BPF验证器状态爆炸，需要将其修改为static __always_inline消除BPF-to-BPF调用\",\n  \"rationale\": \"将global_add_stress从__noinline全局函数改为static __always_inline，强制编译器内联该函数，消除BPF-to-BPF调用，减少验证器状态复杂度，同时保留原有所有业务逻辑\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <linu...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T03:25:42.311712+00:00",
+        "node": "Inspector",
+        "node_index": 1,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=True，结论=修改将原非内联的global_add_stress函数从__noinline全局函数改为static __always_inline，符合Analyzer提出的修复要求，保留了所有原有的业务逻辑和所有条件分支判断逻辑，没有修改原有功能逻辑，符合修复方向要求。",
+        "inputs": {
+          "source_before": "/host/data/verifier/state_explosion/state_explosion.bpf.c",
+          "source_after": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "本次eBPF程序加载失败是因为循环中频繁调用非内联子函数global_add_stress，产生了大量BPF-to-BPF调用，导致验证器状态爆炸，验证路径复杂度超出内核限制，最终加载失败。从错误日志可以看到主程序bpf_to_bpf_fault在循环中多次重定位调用global_add_stress子函数，符合状态爆炸的特征。",
+            "repair_action": {
+              "error_type": "state_explosion",
+              "repair_method": "修改代码，将循环内调用的子函数global_add_stress强制声明为static __always_inline，消除BPF-to-BPF调用的上下文切换开销，减少验证器的状态复杂度。",
+              "key_lines": "[\"libbpf: elf: section(2) .text, size 584, link 0, flags 6, type=1\", \"libbpf: sec '.text': found program 'global_add_stress' at insn offset 0 (0 bytes), code size 73 insns (584 bytes)\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter...(truncated)"
+            }
+          },
+          "code_change_summary": "新增 1 行，删除 22 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } count...(truncated)"
+        },
+        "outputs": {
+          "semantic_equivalent": true,
+          "inspector_report": "修改将原非内联的global_add_stress函数从__noinline全局函数改为static __always_inline，符合Analyzer提出的修复要求，保留了所有原有的业务逻辑和所有条件分支判断逻辑，没有修改原有功能逻辑，符合修复方向要求。"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改将原非内联的global_add_stress函数从__noinline全局函数改为static __always_inline，符合Analyzer提出的修复要求，保留了所有原有的业务逻辑和所有条件分支判断逻辑，没有修改原有功能逻辑，符合修复方向要求。\",\n  \"suggestion\": \"\"\n}\n```"
+      },
+      {
+        "ts": "2026-03-24T03:25:46.615142+00:00",
+        "node": "Analyzer",
+        "node_index": 2,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 load_failed，can_fix=True，建议=修改代码，在该循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。若编译器不支持unroll或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。",
+        "inputs": {
+          "failed_stage": "load_failed",
+          "failed_stage_result": {
+            "success": false,
+            "stage": "load",
+            "via_libbpf_loader_daemon": true,
+            "command": [
+              "sudo",
+              "/host/src/ebpf/utils/loader",
+              "--obj",
+              "/host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o",
+              "--pin-path",
+              "/sys/fs/bpf/ebpf_agent_state_explosion"
+            ],
+            "pid": 2384,
+            "ready_line": null,
+            "stdout": "",
+            "stderr": "libbpf: loading object from /host/output/4.19/build/verifier/state_explosion/state_explosion.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 840, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/sys_enter_op...(truncated)",
+            "returncode": 10,
+            "error_message": "load failed: -22",
+            "load_success": false,
+            "attach_success": false,
+            "...": "trimmed 3 fields"
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "load_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "load": "{\"status\": \"failed\", \"success\": false, \"error_log\": \"load failed: -22\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_or_attach_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "本次eBPF程序加载失败是因为验证器发现了未处理的反向回边（back-edge），循环存在回跳指令但验证器无法证明该循环是有界的，符合`unbounded_loop`模式的特征，最终验证失败导致加载失败。从错误日志可以明确看到验证器输出`back-edge from insn 44 to 48`，确认是无界循环导致的加载失败。",
+          "repair_action": {
+            "error_type": "unbounded_loop",
+            "repair_method": "修改代码，在该循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。若编译器不支持unroll或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。",
+            "key_lines": [
+              "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 840, link 0, flags 6, type=1",
+              "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'bpf_to_bpf_fault' at insn offset 0 (0 bytes), code size 105 insns (840 bytes)",
+              "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 32, link 27, flags 40, type=9",
+              "libbpf: elf: section(5) .maps, size 64, link 0, flags 3, type=1",
+              "libbpf: elf: section(6) license, size 4, link 0, flags 3, type=1",
+              "libbpf: elf: section(17) .BTF, size 1575, link 0, flags 0, type=1",
+              "libbpf: elf: section(19) .BTF.ext, size 832, link 0, flags 0, type=1",
+              "libbpf: elf: section(27) .symtab, size 696, link 1, flags 0, type=2",
+              "... trimmed 2 items"
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"unbounded_loop\",\n  \"analysis_report\": \"本次eBPF程序加载失败是因为验证器发现了未处理的反向回边（back-edge），循环存在回跳指令但验证器无法证明该循环是有界的，符合`unbounded_loop`模式的特征，最终验证失败导致加载失败。从错误日志可以明确看到验证器输出`back-edge from insn 44 to 48`，确认是无界循环导致的加载失败。\",\n  \"repair_method\": \"修改代码，在该循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T03:25:58.941525+00:00",
+        "node": "Repairer",
+        "node_index": 2,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=3",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter...(truncated)",
+            "analysis_report": "本次eBPF程序加载失败是因为验证器发现了未处理的反向回边（back-edge），循环存在回跳指令但验证器无法证明该循环是有界的，符合`unbounded_loop`模式的特征，最终验证失败导致加载失败。从错误日志可以明确看到验证器输出`back-edge from insn 44 to 48`，确认是无界循环导致的加载失败。",
+            "repair_action": {
+              "error_type": "unbounded_loop",
+              "repair_method": "修改代码，在该循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。若编译器不支持unroll或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。",
+              "key_lines": "[\"libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 840, link 0, flags 6, type=1\", \"libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'bpf_to_bpf_fault' at insn offset 0 (0 bytes), code size 105 insns (840 b...(truncated)"
+            },
+            "error_signal": {
+              "stage": "load_failed",
+              "error_types": "[\"verifier_reject\"]",
+              "key_lines": "[\"libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 840, link 0, flags 6, type=1\", \"libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'bpf_to_bpf_fault' at insn offset 0 (0 bytes), code size 105 insns (840 b...(truncated)"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c",
+          "code_change_summary": "新增 1 行，删除 0 行。\n     /* Crutial block */\n     __u32 max_time = 50;\n     __u32 i = 0;\n+#pragma unroll\n     for (i = 0; i < max_time; i++) {\n         global_add_stress(val, x + i);\n     }",
+          "patched_code_file": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c",
+          "rationale": "在循环前添加#pragma unroll指令，指示编译器展开循环，消除回跳指令，解决验证器无法证明循环有界的问题，同时保留了所有原有业务逻辑和判断分支，符合最小修改要求"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"根据Analyzer分析结果，当前加载失败是由于存在未处理的反向回边，循环存在回跳指令但验证器无法证明循环有界，需要按照修复建议在循环前添加#pragma unroll指令来展开循环，消除回跳指令，之前已经完成了子函数内联修改，本次仅添加循环展开指令，不改变原有业务语义\",\n  \"rationale\": \"在循环前添加#pragma unroll指令，指示编译器展开循环，消除回跳指令，解决验证器无法证明循环有界的问题，同时保留了所有原有业务逻辑和判断分支，符合最小修改要求\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T03:26:01.873309+00:00",
+        "node": "Inspector",
+        "node_index": 2,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=True，结论=当前修改严格遵循Analyzer提出的修复建议，在导致无界循环问题的for循环前添加了`#pragma unroll`指令，没有修改原有业务逻辑，所有条件分支判断、全局加法压力逻辑都完整保留，同时之前完成的将global_add_stress修改为static __always_inline的修复也被保留，完全符合修复方向要求。",
+        "inputs": {
+          "source_before": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+          "source_after": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "本次eBPF程序加载失败是因为验证器发现了未处理的反向回边（back-edge），循环存在回跳指令但验证器无法证明该循环是有界的，符合`unbounded_loop`模式的特征，最终验证失败导致加载失败。从错误日志可以明确看到验证器输出`back-edge from insn 44 to 48`，确认是无界循环导致的加载失败。",
+            "repair_action": {
+              "error_type": "unbounded_loop",
+              "repair_method": "修改代码，在该循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。若编译器不支持unroll或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。",
+              "key_lines": "[\"libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 840, link 0, flags 6, type=1\", \"libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'bpf_to_bpf_fault' at insn offset 0 (0 bytes), code size 105 insns (840 b...(truncated)"
+            }
+          },
+          "code_change_summary": "新增 1 行，删除 0 行。\n     /* Crutial block */\n     __u32 max_time = 50;\n     __u32 i = 0;\n+#pragma unroll\n     for (i = 0; i < max_time; i++) {\n         global_add_stress(val, x + i);\n     }"
+        },
+        "outputs": {
+          "semantic_equivalent": true,
+          "inspector_report": "当前修改严格遵循Analyzer提出的修复建议，在导致无界循环问题的for循环前添加了`#pragma unroll`指令，没有修改原有业务逻辑，所有条件分支判断、全局加法压力逻辑都完整保留，同时之前完成的将global_add_stress修改为static __always_inline的修复也被保留，完全符合修复方向要求。"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"当前修改严格遵循Analyzer提出的修复建议，在导致无界循环问题的for循环前添加了`#pragma unroll`指令，没有修改原有业务逻辑，所有条件分支判断、全局加法压力逻辑都完整保留，同时之前完成的将global_add_stress修改为static __always_inline的修复也被保留，完全符合修复方向要求。\",\n  \"suggestion\": \"\"\n}\n```"
+      }
+    ],
+    "error_signature": "compile_failed:/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 byte",
+    "knowledge_rules": "version: 2\npatterns:\n  missing_type_definition:\n    summary: 移除 vmlinux.h 后导致基础类型或枚举定义缺失\n    aliases:\n    - missing_type_definition\n    stage_hints:\n    - compile_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 在包含 `bpf_helpers.h` 之前，手动定义 `bpf_helper_defs.h` 依赖的基础类型（如 `__u16`, `__be16`,\n      `__wsum` 等）。\n    - 手动定义源码中使用的枚举类型（如 `enum bpf_map_type`），或包含对应的内核头文件（如 `<linux/bpf.h>`）。\n  stack_overflow:\n    summary: 循环强制展开后累积栈空间占用超过eBPF 512字节限制，导致编译失败\n    aliases:\n    - stack_overflow\n    stage_hints:\n    - compile_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 若因 `#pragma unroll` 强制展开循环导致栈溢出，应减少循环次数以降低展开后的栈空间占用。\n    - 若循环体逻辑复杂，需优先尝试减少迭代次数，而非直接移除 unroll 指令，以兼顾旧内核对循环结构的验证限制。\n    - 若因 `#pragma unroll` 强制展开复杂循环体导致栈溢出，逐步减少循环最大迭代次数以降低展开后的累积栈空间占用，满足512字节限制。\n    - 优先尝试减少迭代次数而非移除unroll指令，兼顾旧内核对循环结构的验证要求。\n  struct_member_offset_mismatch:\n    summary: 手动定义的结构体内存布局与内核实际布局不一致，导致运行时数据读取错误\n    aliases:\n    - incomplete_definition_of_type\n    - struct_member_offset_mismatch\n    - validator_mismatch\n    stage_hints:\n    - compile_failed\n    - runtime_test_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 移除手动定义的精简结构体，改为包含对应的内核头文件（如。\n    - 若需兼容无 BTF 的旧内核，应包含内核头文件而非手动定义结构体，确保编译器使用正确的内存布局。\n    - 若需在无 BTF 环境下通过成员计算偏移量，必须包含完整的内核头文件（如 `<linux/sched.h>`）以获取结构体定义，避免仅有前向声明导致的编译错误。\n    - 若无法包含完整头文件或结构体定义对用户不可见，应放弃偏移量计算逻辑，改用 `bpf_get_current_pid_tgid` 等辅助函数直接获取目标数据。\n    - 若硬编码的偏移量读取逻辑失效，应移除该逻辑，改用 bpf_get_current_pid_tgid 等稳定的辅助函数直接获取目标数据。\n    - 移除手动定义的精简结构体和硬编码偏移，优先尝试包含对应内核头文件，使用标准offsetof宏获取正确偏移。\n    - 若包含头文件后仅能得到结构体前向声明、无法获得完整定义，则移除偏移计算逻辑，改用bpf_get_current_pid_tgid等价辅助函数直接获取目标数据，保留原有业务逻辑。\n    - 若硬编码的task_struct中tgid字段偏移量读取逻辑失效，移除硬编码偏移量的读取逻辑，改用bpf_get_current_pid_tgid辅助函数直接获取当前进程tgid，保留原有业务判断逻辑。\n  struct_member_renamed_in_vmlinux:\n    summary: 结构体成员名称在当前内核vmlinux.h中被重命名，导致编译失败\n    aliases: []\n    stage_hints:\n    - compile_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 修改代码，将 `/host/data/kernel_struct/field_renamed/field_renamed.bpf.c` 文件第 42 行的\n      `BPF_CORE_READ(task, __state)` 修改为 `BPF_CORE_READ(task, state)`，以匹配当前内核 vmlinux.h\n      中的结构体成员定义。\n    - 修改代码，将引用的旧结构体成员名称替换为当前内核vmlinux.h中定义的新名称，保留原有业务逻辑和代码结构。",
+    "error_signal": {
+      "stage": "compile_failed",
+      "error_types": [
+        "compile_error"
+      ],
+      "key_lines": [
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "fatal error: too many errors emitted, stopping now [-ferror-limit=]"
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"stack_overflow\",\n  \"analysis_report\": \"前两轮修复已经依次将global_add_stress子函数修改为static __always_inline消除BPF-to-BPF调用，并在for循环前添加#pragma unroll解决无界循环验证问题。但由于#pragma unroll强制展开了50次循环，每次循环内联展开global_add_stress函数后，累积栈空间占用超过了eBPF的512字节栈限制，最终导致编译失败，完全符合stack_overflow模式的特征。\",\n  \"repair_method\": \"修改代码，将循环的最大迭代次数从50逐步减少，降低循环展开后的累积栈空间占用，满足eBPF 512字节栈限制，同时保留#pragma unroll指令和global_add_stress的static __always_inline声明，兼顾旧内核对循环结构的验证要求。\"\n}\n```",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "前两轮修复已经依次将global_add_stress子函数修改为static __always_inline消除BPF-to-BPF调用，并在for循环前添加#pragma unroll解决无界循环验证问题。但由于#pragma unroll强制展开了50次循环，每次循环内联展开global_add_stress函数后，累积栈空间占用超过了eBPF的512字节栈限制，最终导致编译失败，完全符合stack_overflow模式的特征。",
+    "repair_action": {
+      "error_type": "stack_overflow",
+      "repair_method": "修改代码，将循环的最大迭代次数从50逐步减少，降低循环展开后的累积栈空间占用，满足eBPF 512字节栈限制，同时保留#pragma unroll指令和global_add_stress的static __always_inline声明，兼顾旧内核对循环结构的验证要求。",
+      "key_lines": [
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:25:9: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.",
+        "output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map."
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 2,
+    "max_fix_time": 4
+  }
+}

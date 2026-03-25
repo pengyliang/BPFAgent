@@ -1,0 +1,265 @@
+{
+  "generated_at": "2026-03-24T04:32:06.129138+00:00",
+  "node": "Repairer",
+  "node_index": 2,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:30:32.559252+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 load_failed，can_fix=True，建议=修改代码，将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，然后使用 bpf_probe_read 配合固定偏移量手动读取 syscall 号和参数。例如：\n1. 读取 syscall 号：`bpf_probe_read(&syscall_nr, sizeof(int), (void *)ctx + offsetof_syscall('nr'))`\n2. 读取第一个参数 (filename)：`bpf_probe_read(filename, sizeof(filenam...(truncated)",
+        "inputs": {
+          "failed_stage": "load_failed",
+          "failed_stage_result": {
+            "success": false,
+            "stage": "load",
+            "via_libbpf_loader_daemon": true,
+            "command": [
+              "sudo",
+              "/host/src/ebpf/utils/loader",
+              "--obj",
+              "/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+              "--pin-path",
+              "/sys/fs/bpf/ebpf_agent_helper_bpf_snprintf"
+            ],
+            "pid": 1983,
+            "ready_line": null,
+            "stdout": "",
+            "stderr": "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/s...(truncated)",
+            "returncode": 10,
+            "error_message": "load failed: -13",
+            "load_success": false,
+            "attach_success": false,
+            "...": "trimmed 3 fields"
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "load_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "load": "{\"status\": \"failed\", \"success\": false, \"error_log\": \"load failed: -13\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_or_attach_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "BPF 程序加载失败，根因是 CO-RE (Compile Once - Run Everywhere) 无法正确解析 tracepoint 上下文类型 `trace_event_raw_sys_enter`。错误信息 `arg#0 reference type('FWD trace_event_raw_sys_enter') size cannot be determined: -22` 表明 BTF 信息中该结构体仅为前向声明(FWD)，没有完整定义，导致验证器无法确定上...(truncated)",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，然后使用 bpf_probe_read 配合固定偏移量手动读取 syscall 号和参数。例如：\n1. 读取 syscall 号：`bpf_probe_read(&syscall_nr, sizeof(int), (void *)ctx + offsetof_syscall('nr'))`\n2. 读取第一个参数 (fil...(truncated)",
+            "key_lines": [
+              "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+              "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1",
+              "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)",
+              "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9",
+              "libbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1",
+              "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+              "libbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1",
+              "libbpf: elf: section(8) license, size 4, link 0, flags 3, type=1",
+              "... trimmed 2 items"
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"BPF 程序加载失败，根因是 CO-RE (Compile Once - Run Everywhere) 无法正确解析 tracepoint 上下文类型 `trace_event_raw_sys_enter`。错误信息 `arg#0 reference type('FWD trace_event_raw_sys_enter') size cannot be determined: -22` 表明 BTF 信息中该结构体仅为前向声明(FWD)，没有...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:30:58.128903+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counte...(truncated)",
+            "analysis_report": "BPF 程序加载失败，根因是 CO-RE (Compile Once - Run Everywhere) 无法正确解析 tracepoint 上下文类型 `trace_event_raw_sys_enter`。错误信息 `arg#0 reference type('FWD trace_event_raw_sys_enter') size cannot be determined: -22` 表明 BTF 信息中该结构体仅为前向声明(FWD)，没有完整定义，导致验证器无法确定上...(truncated)",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，然后使用 bpf_probe_read 配合固定偏移量手动读取 syscall 号和参数。例如：\n1. 读取 syscall 号：`bpf_probe_read(&syscall_nr, sizeof(int), (void *)ctx + offsetof_syscall('nr'))`\n2. 读取第一个参数 (fil...(truncated)",
+              "key_lines": "[\"libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\", \"libbpf: sec 'tracepoint/sy...(truncated)"
+            },
+            "error_signal": {
+              "stage": "load_failed",
+              "error_types": "[\"verifier_reject\"]",
+              "key_lines": "[\"libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\", \"libbpf: sec 'tracepoint/sy...(truncated)"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+          "code_change_summary": "新增 1 行，删除 1 行。\n const char fmt_str[] = \"pid=%d\";\n \n SEC(\"tracepoint/syscalls/sys_enter_openat\")\n-int helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\n+int helper_arg_increase(void *ctx)\n {\n     __u32 key = 0;\n     __u64 *val = bpf...(truncated)",
+          "patched_code_file": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+          "rationale": "使用 void *ctx 绕过 CO-RE 对结构体定义的依赖，通过固定偏移量直接读取 tracepoint 上下文数据：syscall_nr 在 offset 0，args 在 offset 8。最小必要修改仅改变函数签名和添加必要的 bpf_probe_read 调用，核心业务逻辑（tgid 过滤、bpf_snprintf、trace_printk、计数器递增）完全保留。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"基于 Analyzer 的分析，问题是 CO-RE 无法解析 trace_event_raw_sys_enter 结构体（仅前向声明）。修复策略：将函数签名改为 void *ctx，使用 bpf_probe_read 配合固定偏移量读取 syscall_nr 和 args，保留原有的 tgid 过滤逻辑和 (*val)++ 逻辑，保留 Crutial block 注释。\",\n  \"rationale\": \"使用 void *ctx 绕过 CO-RE 对结构体定义的依赖，通过固定偏移量直接读取 tracepoint 上下文数据：syscall_nr 在 offset 0，args 在 o...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:31:17.615790+00:00",
+        "node": "Inspector",
+        "node_index": 1,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=True，结论=修改仅将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，其余代码逻辑完全未动。Analyzer 的修复建议是为解决 CO-RE 无法解析 trace_event_raw_sys_enter 结构体的问题，核心是改变 ctx 参数类型以绕过 CO-RE 验证；至于使用 bpf_probe_read 配合固定偏移读取 syscall 号和参数的建议，属于补充性增强，原代码本身并未通过 ctx 读取任何数据（全部使用 bpf_get_current_pid_tgid()），所以不需要补充。\n...(truncated)",
+        "inputs": {
+          "source_before": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+          "source_after": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "BPF 程序加载失败，根因是 CO-RE (Compile Once - Run Everywhere) 无法正确解析 tracepoint 上下文类型 `trace_event_raw_sys_enter`。错误信息 `arg#0 reference type('FWD trace_event_raw_sys_enter') size cannot be determined: -22` 表明 BTF 信息中该结构体仅为前向声明(FWD)，没有完整定义，导致验证器无法确定上...(truncated)",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，然后使用 bpf_probe_read 配合固定偏移量手动读取 syscall 号和参数。例如：\n1. 读取 syscall 号：`bpf_probe_read(&syscall_nr, sizeof(int), (void *)ctx + offsetof_syscall('nr'))`\n2. 读取第一个参数 (fil...(truncated)",
+              "key_lines": "[\"libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\", \"libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\", \"libbpf: sec 'tracepoint/sy...(truncated)"
+            }
+          },
+          "code_change_summary": "新增 1 行，删除 1 行。\n const char fmt_str[] = \"pid=%d\";\n \n SEC(\"tracepoint/syscalls/sys_enter_openat\")\n-int helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\n+int helper_arg_increase(void *ctx)\n {\n     __u32 key = 0;\n     __u64 *val = bpf...(truncated)"
+        },
+        "outputs": {
+          "semantic_equivalent": true,
+          "inspector_report": "修改仅将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，其余代码逻辑完全未动。Analyzer 的修复建议是为解决 CO-RE 无法解析 trace_event_raw_sys_enter 结构体的问题，核心是改变 ctx 参数类型以绕过 CO-RE 验证；至于使用 bpf_probe_read 配合固定偏移读取 syscall 号和参数的建议，属于补充性增强，原代码本身并未通过...(truncated)"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改仅将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，其余代码逻辑完全未动。Analyzer 的修复建议是为解决 CO-RE 无法解析 trace_event_raw_sys_enter 结构体的问题，核心是改变 ctx 参数类型以绕过 CO-RE 验证；至于使用 bpf_probe_read 配合固定偏移读取 syscall 号和参数的建议，属于补充性增强，原代码本身并未通过 ctx 读取任何数据（全部使用 bpf_get_current_pi...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:31:41.105118+00:00",
+        "node": "Analyzer",
+        "node_index": 2,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 load_failed，can_fix=True，建议=最小改动修复当前失败阶段，并避免改变原始语义。",
+        "inputs": {
+          "failed_stage": "load_failed",
+          "failed_stage_result": {
+            "success": false,
+            "stage": "load",
+            "via_libbpf_loader_daemon": true,
+            "command": [
+              "sudo",
+              "/host/src/ebpf/utils/loader",
+              "--obj",
+              "/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+              "--pin-path",
+              "/sys/fs/bpf/ebpf_agent_helper_bpf_snprintf"
+            ],
+            "pid": 2190,
+            "ready_line": null,
+            "stdout": "",
+            "stderr": "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/s...(truncated)",
+            "returncode": 10,
+            "error_message": "load failed: -13",
+            "load_success": false,
+            "attach_success": false,
+            "...": "trimmed 3 fields"
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "load_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "load": "{\"status\": \"failed\", \"success\": false, \"error_log\": \"load failed: -13\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_or_attach_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "阶段 `load_failed` 失败；识别到错误类型：verifier_reject；建议优先做最小必要修复。",
+          "repair_action": {
+            "error_type": "verifier_reject",
+            "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+            "key_lines": [
+              "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+              "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1",
+              "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)",
+              "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9",
+              "libbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1",
+              "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+              "libbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1",
+              "libbpf: elf: section(8) license, size 4, link 0, flags 3, type=1",
+              "... trimmed 2 items"
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"tracepoint_ctx_type_incompatible\",\n  \"analysis_report\": \"BPF 程序第二轮加载仍失败，错误信息从 `FWD trace_event_raw_sys_enter` 变为 `UNKNOWN`。根因分析：第一轮修复将函数签名改为 `void *ctx` 虽绕过了 CO-RE 对结构体定义的依赖，但验证器仍需确定 ctx 参数的类型大小才能加载。tracepoint/syscalls/sys_enter_openat 程序的标准上下文是 `struct trace_event_raw_sys_...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+      "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nconst char fmt_str[] = \"pid=%d\";\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_arg_increase(void *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    char out[32];\n    __u64 data[1];\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    /* Crutial block */\n    bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data));\n    bpf_trace_printk(\"%s\", out);\n    /* Crutial block end */\n    (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "阶段 `load_failed` 失败；识别到错误类型：verifier_reject；建议优先做最小必要修复。",
+      "repair_action": {
+        "error_type": "verifier_reject",
+        "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+        "key_lines": [
+          "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+          "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1",
+          "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)",
+          "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9",
+          "libbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1",
+          "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+          "libbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1",
+          "libbpf: elf: section(8) license, size 4, link 0, flags 3, type=1",
+          "libbpf: license of /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o is GPL",
+          "libbpf: elf: section(18) .BTF, size 1412, link 0, flags 0, type=1"
+        ]
+      },
+      "error_signal": {
+        "stage": "load_failed",
+        "error_types": [
+          "verifier_reject"
+        ],
+        "key_lines": [
+          "libbpf: loading object from /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+          "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 352, link 0, flags 6, type=1",
+          "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_increase' at insn offset 0 (0 bytes), code size 44 insns (352 bytes)",
+          "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 64, link 28, flags 40, type=9",
+          "libbpf: elf: section(5) .rodata, size 7, link 0, flags 2, type=1",
+          "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+          "libbpf: elf: section(7) .rodata.str1.1, size 3, link 0, flags 32, type=1",
+          "libbpf: elf: section(8) license, size 4, link 0, flags 3, type=1",
+          "libbpf: license of /host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o is GPL",
+          "libbpf: elf: section(18) .BTF, size 1412, link 0, flags 0, type=1",
+          "libbpf: elf: section(20) .BTF.ext, size 384, link 0, flags 0, type=1",
+          "libbpf: elf: section(28) .symtab, size 456, link 1, flags 0, type=2",
+          "libbpf: map 'counter': at sec_idx 6, offset 0.",
+          "libbpf: map 'counter': found type = 2.",
+          "libbpf: map 'counter': found key [8], sz = 4.",
+          "libbpf: map 'counter': found value [11], sz = 8.",
+          "libbpf: map 'counter': found max_entries = 1.",
+          "libbpf: map 'cfg': at sec_idx 6, offset 32.",
+          "libbpf: map 'cfg': found type = 2.",
+          "libbpf: map 'cfg': found key [8], sz = 4.",
+          "libbpf: map 'cfg': found value [8], sz = 4.",
+          "libbpf: map 'cfg': found max_entries = 1.",
+          "libbpf: map 'helper_b.rodata' (global data): at sec_idx 5, offset 0, flags 480.",
+          "libbpf: map 2 is \"helper_b.rodata\"",
+          "libbpf: map '.rodata.str1.1' (global data): at sec_idx 7, offset 0, flags 80.",
+          "libbpf: map 3 is \".rodata.str1.1\"",
+          "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'",
+          "libbpf: prog 'helper_arg_increase': found map 0 (counter, sec 6, off 0) for insn #4",
+          "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'",
+          "libbpf: prog 'helper_arg_increase': found map 1 (cfg, sec 6, off 32) for insn #9"
+        ]
+      }
+    }
+  },
+  "thought_process": "\n```json\n{\n  \"thought\": \"基于 history 分析，第二轮失败原因是将 ctx 改为 void* 后，验证器仍无法确定参数类型大小。解决方案是使用一个固定大小的标量类型 __u64 作为 ctx 参数类型，这既满足验证器要求（固定大小），又避免了 CO-RE 对结构体定义的依赖。由于源码中完全未使用 ctx 参数，所有数据都来自 bpf_get_current_pid_tgid()，因此此修改不影响任何业务逻辑。\",\n  \"rationale\": \"将 void *ctx 改为 __u64 ctx，__u64 是固定大小的标量类型，验证器可以确定其大小，从而避免 'UNKNOWN' 类型错误。同时 __u64 能够接收 ctx 指针值（在 64 位系统中指针为 64 位）。最小必要修改，仅改变 ctx 参数类型声明，不涉及其他任何逻辑。\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <linux/bpf.h>\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\n\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\n\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\n\\nconst char fmt_str[] = \\\"pid=%d\\\";\\n\\nSEC(\\\"tracepoint/syscalls/sys_enter_openat\\\")\\nint helper_arg_increase(__u64 ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n    char out[32];\\n    __u64 data[1];\\n\\n    if (!val)\\n        return 0;\\n\\n    if (target_tgid && *target_tgid) {\\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n        if (tgid != *target_tgid)\\n            return 0;\\n    }\\n\\n    data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n    /* Crutial block */\\n    bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data));\\n    bpf_trace_printk(\\\"%s\\\", out);\\n    /* Crutial block end */\\n    (*val)++;\\n\\n    return 0;\\n}\\n\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_2/helper_bpf_snprintf_repair_2.bpf.c",
+    "code_change_summary": "新增 1 行，删除 1 行。\n const char fmt_str[] = \"pid=%d\";\n \n SEC(\"tracepoint/syscalls/sys_enter_openat\")\n-int helper_arg_increase(void *ctx)\n+int helper_arg_increase(__u64 ctx)\n {\n     __u32 key = 0;\n     __u64 *val = bpf_map_lookup_elem(&counter, &key);",
+    "patched_code_file": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_2/helper_bpf_snprintf_repair_2.bpf.c",
+    "rationale": "将 void *ctx 改为 __u64 ctx，__u64 是固定大小的标量类型，验证器可以确定其大小，从而避免 'UNKNOWN' 类型错误。同时 __u64 能够接收 ctx 指针值（在 64 位系统中指针为 64 位）。最小必要修改，仅改变 ctx 参数类型声明，不涉及其他任何逻辑。"
+  },
+  "result_params": {
+    "fixed_time": 2,
+    "next_deploy_index": 3
+  }
+}

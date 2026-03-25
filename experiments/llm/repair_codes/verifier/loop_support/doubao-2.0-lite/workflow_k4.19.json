@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T03:25:04.753570+00:00",
+  "updated_at": "2026-03-24T03:25:26.679276+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 21.926,
+  "module_durations_s": {
+    "deploy_tool": 4.836,
+    "Analyzer": 7.177,
+    "Repairer": 2.976,
+    "Inspector": 6.937,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T03:25:04.753570+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "load_failed"
+      },
+      "duration_s": 3.175
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T03:25:07.928889+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "load_failed",
+        "error_type": "unbounded_loop",
+        "repair_method": "修改代码，在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。若编译器不支持unroll或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。",
+        "analysis_report": "本次加载失败是因为eBPF验证器检测到程序中存在回跳指令（back-edge），循环逻辑虽然实际有界，但旧版内核验证器无法证明其有界，因此拒绝加载BPF程序，符合unbounded_loop模式的特征。"
+      },
+      "duration_s": 7.177
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T03:25:15.105730+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "在循环前添加#pragma unroll可以让编译器在编译阶段展开循环，消除回跳指令，让旧版eBPF验证器能够通过验证，同时完全保留原始业务语义，属于最小必要修改。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 2.976
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T03:25:18.081261+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "本次修改严格遵循了Analyzer给出的修复建议，在有界循环前添加了`#pragma unroll`指令，用于指示编译器展开循环消除回跳指令；原始业务逻辑完全保留，包括计数判断`if (pid > pid_threshold) (*val)++`等关键代码未做修改，仅删除了多余的空行，没有修改业务语义，符合修复要求。"
+      },
+      "duration_s": 6.937
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T03:25:25.018546+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 1.661
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T03:25:26.679211+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 3
+      }
+    }
+  ]
+}

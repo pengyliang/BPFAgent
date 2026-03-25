@@ -1,0 +1,67 @@
+status: FAILED
+source_file: /host/data/feature/btf_unsupported/btf_unsupported.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/data/feature/btf_unsupported -I/usr/include/x86_64-linux-gnu -D__TARGET_ARCH_x86 -I/host/output/5.4/log /host/data/feature/btf_unsupported/btf_unsupported.bpf.c
+stderr:
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace, preprocessed source, and associated run script.
+Stack dump:
+0.	Program arguments: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/data/feature/btf_unsupported -I/usr/include/x86_64-linux-gnu -D__TARGET_ARCH_x86 -I/host/output/5.4/log /host/data/feature/btf_unsupported/btf_unsupported.bpf.c
+1.	 #0 0x00007feb4f2b1291 llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) (/lib/x86_64-linux-gnu/libLLVM-14.so.1+0xea5291)
+ #1 0x00007feb4f2aefbe llvm::sys::RunSignalHandlers() (/lib/x86_64-linux-gnu/libLLVM-14.so.1+0xea2fbe)
+ #2 0x00007feb4f2b17c6 (/lib/x86_64-linux-gnu/libLLVM-14.so.1+0xea57c6)
+ #3 0x00007feb4df4a050 (/lib/x86_64-linux-gnu/libc.so.6+0x3c050)
+ #4 0x00007feb556b72e0 clang::SrcMgr::LineOffsetMapping::get(llvm::MemoryBufferRef, llvm::BumpPtrAllocatorImpl<llvm::MallocAllocator, 4096ul, 4096ul, 128ul>&) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x9512e0)
+ #5 0x00007feb556b7610 clang::SourceManager::getLineNumber(clang::FileID, unsigned int, bool*) const (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x951610)
+ #6 0x00007feb556b70e6 clang::SourceManager::getPresumedLoc(clang::SourceLocation, bool) const (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x9510e6)
+ #7 0x00007feb556b0d15 clang::SourceLocation::print(llvm::raw_ostream&, clang::SourceManager const&) const (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x94ad15)
+ #8 0x00007feb5579ab52 (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xa34b52)
+ #9 0x00007feb4f225ff3 (/lib/x86_64-linux-gnu/libLLVM-14.so.1+0xe19ff3)
+#10 0x00007feb4f2aef8c llvm::sys::RunSignalHandlers() (/lib/x86_64-linux-gnu/libLLVM-14.so.1+0xea2f8c)
+#11 0x00007feb4f2b064b llvm::sys::CleanupOnSignal(unsigned long) (/lib/x86_64-linux-gnu/libLLVM-14.so.1+0xea464b)
+#12 0x00007feb4f1d783f (/lib/x86_64-linux-gnu/libLLVM-14.so.1+0xdcb83f)
+#13 0x00007feb4df4a050 (/lib/x86_64-linux-gnu/libc.so.6+0x3c050)
+#14 0x00007feb556b72e0 clang::SrcMgr::LineOffsetMapping::get(llvm::MemoryBufferRef, llvm::BumpPtrAllocatorImpl<llvm::MallocAllocator, 4096ul, 4096ul, 128ul>&) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x9512e0)
+#15 0x00007feb556b7610 clang::SourceManager::getLineNumber(clang::FileID, unsigned int, bool*) const (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x951610)
+#16 0x00007feb556b70e6 clang::SourceManager::getPresumedLoc(clang::SourceLocation, bool) const (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x9510e6)
+#17 0x00007feb557a39ef clang::Parser::ParseGNUAttributes(clang::ParsedAttributesWithRange&, clang::SourceLocation*, clang::Parser::LateParsedAttrList*, clang::Declarator*) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xa3d9ef)
+#18 0x00007feb557bd33f (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xa5733f)
+#19 0x00007feb557bb26e (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xa5526e)
+#20 0x00007feb557bb001 clang::Parser::ParseStructUnionBody(clang::SourceLocation, clang::TypeSpecifierType, clang::RecordDecl*) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xa55001)
+#21 0x00007feb557ced45 clang::Parser::ParseClassSpecifier(clang::tok::TokenKind, clang::SourceLocation, clang::DeclSpec&, clang::Parser::ParsedTemplateInfo const&, clang::AccessSpecifier, bool, clang::Parser::DeclSpecContext, clang::ParsedAttributesWithRange&) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xa68d45)
+#22 0x00007feb557ae934 clang::Parser::ParseDeclarationSpecifiers(clang::DeclSpec&, clang::Parser::ParsedTemplateInfo const&, clang::AccessSpecifier, clang::Parser::DeclSpecContext, clang::Parser::LateParsedAttrList*) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xa48934)
+#23 0x00007feb5585a2f8 clang::Parser::ParseDeclOrFunctionDefInternal(clang::ParsedAttributesWithRange&, clang::ParsingDeclSpec&, clang::AccessSpecifier) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xaf42f8)
+#24 0x00007feb5585a090 clang::Parser::ParseDeclarationOrFunctionDefinition(clang::ParsedAttributesWithRange&, clang::ParsingDeclSpec*, clang::AccessSpecifier) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xaf4090)
+#25 0x00007feb5585950a clang::Parser::ParseExternalDeclaration(clang::ParsedAttributesWithRange&, clang::ParsingDeclSpec*) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xaf350a)
+#26 0x00007feb55857b4d clang::Parser::ParseTopLevelDecl(clang::OpaquePtr<clang::DeclGroupRef>&, bool) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xaf1b4d)
+#27 0x00007feb5579a9cd clang::ParseAST(clang::Sema&, bool, bool) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0xa349cd)
+#28 0x00007feb572b1b87 clang::FrontendAction::Execute() (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x254bb87)
+#29 0x00007feb572074f6 clang::CompilerInstance::ExecuteAction(clang::FrontendAction&) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x24a14f6)
+#30 0x00007feb5732b93b clang::ExecuteCompilerInvocation(clang::CompilerInstance*) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x25c593b)
+#31 0x0000000000413e93 cc1_main(llvm::ArrayRef<char const*>, char const*, void*) (/usr/lib/llvm-14/bin/clang+0x413e93)
+#32 0x00000000004120cc (/usr/lib/llvm-14/bin/clang+0x4120cc)
+#33 0x00007feb56e83052 (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x211d052)
+#34 0x00007feb4f1d75ad llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>) (/lib/x86_64-linux-gnu/libLLVM-14.so.1+0xdcb5ad)
+#35 0x00007feb56e82b50 clang::driver::CC1Command::Execute(llvm::ArrayRef<llvm::Optional<llvm::StringRef> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, bool*) const (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x211cb50)
+#36 0x00007feb56e4d0f3 clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&) const (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x20e70f3)
+#37 0x00007feb56e4d37a clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*> >&) const (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x20e737a)
+#38 0x00007feb56e67677 clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*> >&) (/lib/x86_64-linux-gnu/libclang-cpp.so.14+0x2101677)
+#39 0x0000000000411b36 main (/usr/lib/llvm-14/bin/clang+0x411b36)
+#40 0x00007feb4df3524a (/lib/x86_64-linux-gnu/libc.so.6+0x2724a)
+#41 0x00007feb4df35305 __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x27305)
+#42 0x000000000040efb1 _start (/usr/lib/llvm-14/bin/clang+0x40efb1)
+/host/output/5.4/log/vmlinux.h:1055:26: current parser token ';'
+2.	/host/output/5.4/log/vmlinux.h:1018:1: parsing struct/union body 'screen_info'
+clang: error: clang frontend command failed with exit code 135 (use -v to see invocation)
+Debian clang version 14.0.6
+Target: bpf
+Thread model: posix
+InstalledDir: /usr/bin
+clang: note: diagnostic msg: 
+********************
+
+PLEASE ATTACH THE FOLLOWING FILES TO THE BUG REPORT:
+Preprocessed source(s) and associated run script(s) are located at:
+clang: note: diagnostic msg: /tmp/btf_unsupported-e5b242.c
+clang: note: diagnostic msg: /tmp/btf_unsupported-e5b242.sh
+clang: note: diagnostic msg: 
+
+********************

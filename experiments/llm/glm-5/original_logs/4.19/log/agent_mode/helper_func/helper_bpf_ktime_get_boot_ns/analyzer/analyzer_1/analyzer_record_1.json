@@ -1,0 +1,133 @@
+{
+  "generated_at": "2026-03-23T16:47:21.816902+00:00",
+  "node": "Analyzer",
+  "node_index": 1,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c",
+    "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_renamed(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u64 ts;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    /* Crutial block */\n    ts = bpf_ktime_get_boot_ns();\n    /* Crutial block end */\n    if (ts)\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "static_check_failed",
+    "failed_stage_result_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/deploy/deploy_1/static_check.json",
+    "failed_stage_result": {
+      "success": false,
+      "error_warning_count": {
+        "error": 1,
+        "warning": 0
+      },
+      "issues": [
+        {
+          "check": "helper_availability",
+          "level": "error",
+          "code": "helper_not_in_probe",
+          "message": "Helper bpf_ktime_get_boot_ns is not present in bpftool helper whitelist.",
+          "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+          "evidence": {
+            "helper": "bpf_ktime_get_boot_ns"
+          },
+          "source_file": "/host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c"
+        }
+      ],
+      "results": [
+        {
+          "source_file": "/host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c",
+          "program_sections": [
+            "tracepoint/syscalls/sys_enter_openat"
+          ],
+          "program_types": [
+            "tracepoint"
+          ],
+          "license": "GPL",
+          "map_types": [
+            "BPF_MAP_TYPE_ARRAY"
+          ],
+          "helper_calls": [
+            "bpf_map_lookup_elem",
+            "bpf_map_lookup_elem",
+            "bpf_get_current_pid_tgid",
+            "bpf_ktime_get_boot_ns"
+          ],
+          "issues": [
+            {
+              "check": "helper_availability",
+              "level": "error",
+              "code": "helper_not_in_probe",
+              "message": "Helper bpf_ktime_get_boot_ns is not present in bpftool helper whitelist.",
+              "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+              "evidence": {
+                "helper": "bpf_ktime_get_boot_ns"
+              }
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0
+      }
+    },
+    "deploy_summary_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/deploy/deploy_1/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "static_check_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "load": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        }
+      }
+    },
+    "shared_history": [],
+    "error_signature": "static_check_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  helper_api_compatibility:\n    summary: 使用的 BPF 辅助函数在当前内核版本或配置中不可用\n    aliases:\n    - helper_not_in_probe\n    - map_type_not_in_probe\n    stage_hints:\n    - static_check_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 将不可用的辅助函数替换为功能等价且兼容性更好的替代实现（如使用 bpf_probe_read_kernel_str 配合手动循环比较替代 bpf_strncmp）。\n    - 若存在功能等价的旧版辅助函数，优先直接替换。若无直接等价函数，则通过组合其他可用辅助函数实现原语逻辑。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义。\n    - 将 bpf_ringbuf_output 替换为 bpf_perf_event_output，传入上下文 ctx、map 指针以及 BPF_F_CURRENT_CPU\n      标志（或结合 bpf_get_smp_processor_id）。",
+    "error_signal": {
+      "stage": "static_check_failed",
+      "error_types": [
+        "helper_not_in_probe"
+      ],
+      "key_lines": [
+        "Helper bpf_ktime_get_boot_ns is not present in bpftool helper whitelist."
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"静态检查阶段失败，错误代码为 'helper_not_in_probe'。根本原因是源码中使用了 BPF 辅助函数 'bpf_ktime_get_boot_ns'，该函数在当前目标内核的 bpftool 白名单中不存在，导致兼容性检查未通过。根据知识库规则，这属于 helper API 兼容性问题，可以通过替换为功能等价且兼容性更好的旧版辅助函数解决。\",\n  \"repair_method\": \"修改代码，将不可用的 'bpf_ktime_get_boot_ns' 函数替换为 'bpf_ktime_get_ns'。后者是更基础的获取时间戳函数，在更广泛的内核版本中可用。\"\n}\n```",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "静态检查阶段失败，错误代码为 'helper_not_in_probe'。根本原因是源码中使用了 BPF 辅助函数 'bpf_ktime_get_boot_ns'，该函数在当前目标内核的 bpftool 白名单中不存在，导致兼容性检查未通过。根据知识库规则，这属于 helper API 兼容性问题，可以通过替换为功能等价且兼容性更好的旧版辅助函数解决。",
+    "repair_action": {
+      "error_type": "helper_api_compatibility",
+      "repair_method": "修改代码，将不可用的 'bpf_ktime_get_boot_ns' 函数替换为 'bpf_ktime_get_ns'。后者是更基础的获取时间戳函数，在更广泛的内核版本中可用。",
+      "key_lines": [
+        "Helper bpf_ktime_get_boot_ns is not present in bpftool helper whitelist."
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 0,
+    "max_fix_time": 4
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "stage": "runtime_test",
+  "case_dir": "/host/data/feature/attach_type_unsupported",
+  "workload": "/host/data/feature/attach_type_unsupported/workload.sh",
+  "validator": "/host/data/feature/attach_type_unsupported/validator.yaml",
+  "pin_path": "/sys/fs/bpf/ebpf_agent_attach_type_unsupported",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps",
+  "success": false,
+  "skipped": false,
+  "reason": "workload_failed",
+  "scheme_a": {
+    "enabled": true,
+    "cfg_map_pin": "/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps/cfg",
+    "workload_pid": 1376,
+    "cfg_update_command": [
+      "sudo",
+      "/host/src/ebpf/utils/mapctl",
+      "update-u32",
+      "--map-pin",
+      "/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps/cfg",
+      "--key-u32",
+      "0",
+      "--value-u32",
+      "1376"
+    ],
+    "cfg_update_stdout": "{\"key\":0,\"value\":1376}\n",
+    "cfg_update_stderr": "",
+    "cfg_update_timed_out": false,
+    "cfg_update_returncode": 0,
+    "status": "applied"
+  },
+  "workload_command": [
+    "bash",
+    "/host/data/feature/attach_type_unsupported/workload.sh"
+  ],
+  "workload_stdout": "",
+  "workload_stderr": "openat2 failed: Function not implemented (38)\n",
+  "workload_timed_out": false
+}

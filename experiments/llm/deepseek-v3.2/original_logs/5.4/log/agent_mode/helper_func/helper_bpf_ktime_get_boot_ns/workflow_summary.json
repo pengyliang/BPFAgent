@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-23T16:12:06.851682+00:00",
+  "updated_at": "2026-03-23T16:13:11.875176+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 65.023,
+  "module_durations_s": {
+    "deploy_tool": 34.47,
+    "Analyzer": 22.888,
+    "Repairer": 6.717,
+    "Inspector": 0.949,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T16:12:06.851682+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 28.734
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T16:12:35.585366+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：将不支持的 helper 函数 bpf_ktime_get_boot_ns 替换为功能等价的早期兼容版本 bpf_ktime_get_ns，以保持获取单调递增时间戳的核心语义。",
+        "analysis_report": "静态检查失败，错误签名 static_check_failed。具体原因为：目标内核的 bpftool helper 白名单中不包含 bpf_ktime_get_boot_ns 这个 helper 函数。根据知识库规则，这属于 'helper_unsupported' 模式，其 aliases 包含 'helper_not_in_probe'，与当前错误码完全匹配。该模式在 static_check_failed 阶段出现，且 can_fix 为 true。分析源码上下文，程序使用了 bpf_ktime_get_boot_ns 来获取系统启动后的单调时间戳，这是一个时间相关的辅助函数。为了在不支持该 helper 的内核上运行，需要...(truncated)"
+      },
+      "duration_s": 22.888
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T16:12:58.473104+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "bpf_ktime_get_ns 是更早内核版本就支持的 helper 函数，它返回系统启动后的单调时间戳（从系统启动开始计时），与 bpf_ktime_get_boot_ns 的功能在获取单调递增时间戳这一核心语义上是等价的。这种替换保持了原始的业务逻辑：获取时间戳并用于条件判断。同时，保留了所有原始的条件判断逻辑，包括对 ts 的非零检查，确保 (*val)++ 只在 ts 不为零时执行。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 6.717
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-23T16:13:05.190467+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改符合 Analyzer 的修复建议。原始代码使用 bpf_ktime_get_boot_ns() 获取系统启动后的单调时间戳，修复后替换为 bpf_ktime_get_ns()。根据 Analyzer 的分析，bpf_ktime_get_ns 是更早内核版本支持的兼容 helper，同样返回系统启动后的单调时间戳，核心语义（获取单调递增时间戳）保持等价。关键修改仅涉及 helper 函数的替换，原始代码中与 (*val)++ 相关的条件判断逻辑（if (ts) (*val)++）完全保留，未做任何其他改动。"
+      },
+      "duration_s": 0.949
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-23T16:13:06.139479+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 5.736
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-23T16:13:11.875115+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

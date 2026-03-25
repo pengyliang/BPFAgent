@@ -1,0 +1,57 @@
+{
+  "success": false,
+  "error_warning_count": {
+    "error": 1,
+    "warning": 0
+  },
+  "issues": [
+    {
+      "check": "map_type_availability",
+      "level": "error",
+      "code": "map_type_not_in_probe",
+      "message": "Map type BPF_MAP_TYPE_UNSPEC is not present in bpftool map type support list.",
+      "suggestion": "Switch to supported map type or enable kernel feature.",
+      "evidence": {
+        "map_type": "BPF_MAP_TYPE_UNSPEC"
+      },
+      "source_file": "/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c"
+    }
+  ],
+  "results": [
+    {
+      "source_file": "/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c",
+      "program_sections": [
+        "tracepoint/syscalls/sys_enter_openat"
+      ],
+      "program_types": [
+        "tracepoint"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY",
+        "BPF_MAP_TYPE_HASH",
+        "BPF_MAP_TYPE_UNSPEC"
+      ],
+      "helper_calls": [
+        "bpf_get_current_pid_tgid",
+        "bpf_map_lookup_elem"
+      ],
+      "issues": [
+        {
+          "check": "map_type_availability",
+          "level": "error",
+          "code": "map_type_not_in_probe",
+          "message": "Map type BPF_MAP_TYPE_UNSPEC is not present in bpftool map type support list.",
+          "suggestion": "Switch to supported map type or enable kernel feature.",
+          "evidence": {
+            "map_type": "BPF_MAP_TYPE_UNSPEC"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "error_count": 1,
+    "warning_count": 0
+  }
+}

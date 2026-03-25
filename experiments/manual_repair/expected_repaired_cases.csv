@@ -1,0 +1,14 @@
+name,min_kernel,repair_method,4.19,5.4,5.15,6.6
+feature/attach_type_unsupported,5.6,-,,,1,1
+feature/btf_unsupported,5.2,delete btf operation,,1,1,1
+feature/map_type_unsupported,5.8,change map type,1,1,1,1
+feature/program_type_unsupported,5.5,-,,,1,1
+helper_func/helper_bpf_get_current_task_bpf,5.11,"delete ""_bpf"" suffix",,1,1,1
+helper_func/helper_bpf_ktime_get_boot_ns,5.8,"delete ""_boot""",1,1,1,1
+helper_func/helper_bpf_snprintf,5.13,"delete helper, bpf_printk(fmt, ...)",1,1,1,1
+helper_func/helper_bpf_strncmp,5.17,mimic bpf_strncmp function,1,1,1,1
+kernel_struct/field_add_remove,5.11,-,,,1,1
+kernel_struct/field_offset_change,6.6,use btf,,1,1,1
+kernel_struct/field_renamed,"5.14 ","rename ""__state"" field as ""state""",1,1,1,1
+verifier/loop_support,5.3,"use #pragma unroll or ""for""",1,1,1,1
+verifier/state_explosion,5.6,delete no use state,1,1,1,1

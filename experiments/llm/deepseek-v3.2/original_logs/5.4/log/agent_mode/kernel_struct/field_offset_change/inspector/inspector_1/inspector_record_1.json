@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-03-23T16:15:31.400843+00:00",
+  "node": "Inspector",
+  "node_index": 1,
+  "from_node": "Repairer",
+  "inputs": {
+    "source_before": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+    "source_after": "/host/output/5.4/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+    "analyzer_context": {
+      "analysis_report": "静态检查失败，错误签名 static_check_failed。具体原因为：Helper bpf_probe_read_kernel 不在 bpftool helper 白名单中，表明目标内核不支持此 helper 函数。根据知识库规则，此问题属于 helper_unsupported 模式，该模式在 static_check_failed 阶段出现，且 can_fix 为 true。失败上下文显示程序使用了 bpf_probe_read_kernel helper，但部署环境的内核版本较旧，未包含此 helper。此问题可通过修改源码，将不支持的 helper 替换为兼容版本来解决。",
+      "repair_action": {
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+        "key_lines": [
+          "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+        ]
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-23T16:14:58.502074+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], ...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "静态检查失败，错误签名 static_check_failed。具体原因为：Helper bpf_probe_read_kernel 不在 bpftool helper 白名单中，表明目标内核不支持此 helper 函数。根据知识库规则，此问题属于 helper_unsupported 模式，该模式在 static_check_failed 阶段出现，且 can_fix 为 true。失败上下文显示程序使用了 bpf_probe_read_kernel helper，但部署环...(truncated)",
+          "repair_action": {
+            "error_type": "helper_unsupported",
+            "repair_method": "修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+            "key_lines": [
+              "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_unsupported\",\n  \"analysis_report\": \"静态检查失败，错误签名 static_check_failed。具体原因为：Helper bpf_probe_read_kernel 不在 bpftool helper 白名单中，表明目标内核不支持此 helper 函数。根据知识库规则，此问题属于 helper_unsupported 模式，该模式在 static_check_failed 阶段出现，且 can_fix 为 true。失败上下文显示程序使用了 bpf_probe_read_kernel he...(truncated)"
+      },
+      {
+        "ts": "2026-03-23T16:15:22.413365+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries...(truncated)",
+            "analysis_report": "静态检查失败，错误签名 static_check_failed。具体原因为：Helper bpf_probe_read_kernel 不在 bpftool helper 白名单中，表明目标内核不支持此 helper 函数。根据知识库规则，此问题属于 helper_unsupported 模式，该模式在 static_check_failed 阶段出现，且 can_fix 为 true。失败上下文显示程序使用了 bpf_probe_read_kernel helper，但部署环...(truncated)",
+            "repair_action": {
+              "error_type": "helper_unsupported",
+              "repair_method": "修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            },
+            "error_signal": {
+              "stage": "static_check_failed",
+              "error_types": "[\"helper_not_in_probe\"]",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "code_change_summary": "新增 1 行，删除 11 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n #ifndef TASK_TGID_OFFSET\n #define TASK_TGID_OFFSET 0x574\n #endif\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entri...(truncated)",
+          "patched_code_file": "/host/output/5.4/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "rationale": "bpf_probe_read 是更通用的 helper 函数，在旧内核中可用，功能与 bpf_probe_read_kernel 类似，都能安全读取内核内存。替换后程序逻辑完全不变，只是使用了兼容性更好的 helper。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"依据 Analyzer 的分析报告，问题在于 bpf_probe_read_kernel helper 函数不被目标内核支持。修复方法是将 bpf_probe_read_kernel 替换为通用的 bpf_probe_read。由于读取的是内核内存（task 结构体），使用 bpf_probe_read 是合适的替代方案，能保持原始语义。\",\n  \"rationale\": \"bpf_probe_read 是更通用的 helper 函数，在旧内核中可用，功能与 bpf_probe_read_kernel 类似，都能安全读取内核内存。替换后程序逻辑完全不变，只是使用了兼容性更好的 help...(truncated)"
+      }
+    ],
+    "before_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u32 tgid_from_offset = 0;\n    __u32 current_tgid;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    void *task;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 cur = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (cur != *target_tgid)\n            return 0;\n    }\n\n    task = (void *)bpf_get_current_task();\n    if (!task)\n        return 0;\n\n    /* Crutial block */\n    if (bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset),\n                              (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)\n        return 0;\n    /* Crutial block end */\n    current_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (tgid_from_offset == current_tgid)   // cannot be deleted\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "after_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u32 tgid_from_offset = 0;\n    __u32 current_tgid;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    void *task;\n    if (!val)\n        return 0;\n    if (target_tgid && *target_tgid) {\n        __u32 cur = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (cur != *target_tgid)\n            return 0;\n    }\n    task = (void *)bpf_get_current_task();\n    if (!task)\n        return 0;\n    /* Crutial block */\n    if (bpf_probe_read(&tgid_from_offset, sizeof(tgid_from_offset),\n                              (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)\n        return 0;\n    /* Crutial block end */\n    current_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (tgid_from_offset == current_tgid)   // cannot be deleted\n        (*val)++;\n    return 0;\n}\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "code_change_summary": "新增 1 行，删除 11 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n #ifndef TASK_TGID_OFFSET\n #define TASK_TGID_OFFSET 0x574\n #endif\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);"
+  },
+  "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改前后代码语义完全等价。修复内容严格遵循Analyzer的修复建议：将不支持的helper函数bpf_probe_read_kernel替换为目标内核支持的通用helper bpf_probe_read。具体修改是将关键代码块中的'bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset), (const void *)((const char *)task + TASK_TGID_OFFSET))'替换为'bpf_probe_read(&tgid_from_offset, sizeof(tgid_from_offset), (const void *)((const char *)task + TASK_TGID_OFFSET))'。其他代码（包括与(*val)++相关的条件判断逻辑）均未改变，仅进行了格式调整（如移除空行）。bpf_probe_read是更通用的helper函数，在旧内核中可用，功能与bpf_probe_read_kernel类似，都能安全读取内核内存，因此程序逻辑完全不变。\",\n  \"suggestion\": \"\"\n}\n```",
+  "outputs": {
+    "semantic_equivalent": true,
+    "inspector_report": "修改前后代码语义完全等价。修复内容严格遵循Analyzer的修复建议：将不支持的helper函数bpf_probe_read_kernel替换为目标内核支持的通用helper bpf_probe_read。具体修改是将关键代码块中的'bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset), (const void *)((const char *)task + TASK_TGID_OFFSET))'替换为'bpf_probe_read(&tgid_from_offset, sizeof(tgid_from_offset), (const void *)((const char *)task + TASK_TGID_OFFSET))'。其他代码（包括与(*val)++相关的条件判断逻辑）均未改变，仅进行了格式调整（如移除空行）。bpf_probe_read是更通用的helper函数，在旧内核中可用，功能与bpf_probe_read_kernel类似，都能安全读取内核内存，因此程序逻辑完全不变。"
+  },
+  "result_params": {
+    "will_next_go_to": "deploy_tool"
+  }
+}

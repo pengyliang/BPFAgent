@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "stage": "compile",
+  "source_file": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+  "object_file": "/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+    "-o",
+    "/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c:23:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\n                               ^\n/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c:43:28: warning: incompatible pointer to integer conversion passing 'char[32]' to parameter of type '__u32' (aka 'unsigned int') [-Wint-conversion]\n    bpf_trace_printk(\"%s\", out);\n                           ^~~\n2 warnings generated.\n",
+  "returncode": 0,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": [
+    "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c:23:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]",
+    "int helper_arg_increase(struct trace_event_raw_sys_enter *ctx)",
+    "                               ^",
+    "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c:43:28: warning: incompatible pointer to integer conversion passing 'char[32]' to parameter of type '__u32' (aka 'unsigned int') [-Wint-conversion]",
+    "    bpf_trace_printk(\"%s\", out);",
+    "                           ^~~",
+    "2 warnings generated."
+  ]
+}

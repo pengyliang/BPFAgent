@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-03-24T04:39:21.830080+00:00",
+  "case_display": "helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c",
+  "final_stage": "static_check_failed",
+  "same_error_threshold": 3,
+  "error_signature_counts": {
+    "static_check_failed": 1
+  },
+  "attempts": [
+    {
+      "attempt_index": 1,
+      "stage": "static_check_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+      "analysis_report": "BPF程序 `helper_bpf_strncmp.bpf.c` 调用了 `bpf_strncmp` 辅助函数，但在目标内核的 bpftool helper whitelist 中该函数不可用。`bpf_strncmp` 仅在 Linux 5.17+ 内核中引入，当前部署环境不支持该 helper。静态检查（static_check）阶段已捕获到此不兼容问题，导致后续编译和加载步骤被跳过。根据知识库规则，该错误属于 `helper_api_compatibility` 类别，`can_fix=true`，可通过手动循环展开的字符串比较逻辑替换 `bpf_strncmp` 调用来修复。",
+      "repair_method": "修改代码，将所有 `bpf_strncmp(s, len, needle)` 调用替换为使用 `#pragma unroll` 展开的手动循环逐字节比较实现，完全移除对 `bpf_strncmp` 标识符的引用。例如将 `bpf_strncmp(path, 8, \"myname1\")` 替换为手动循环比较逻辑，以兼容不支持 `bpf_strncmp` 的旧版本内核。保持原有比较长度参数和返回值语义不变。",
+      "rationale": "将 bpf_strncmp 调用替换为手动循环比较逻辑，循环次数为 len 参数值，逐字节比较 s 和 needle，如果任何字节不相等立即返回非 0，全部相等返回 0。完全移除对 bpf_strncmp 标识符的引用以兼容旧版本内核。保留原有的 if (ret == 0) (*val)++ 判断逻辑。"
+    },
+    {
+      "attempt_index": 2,
+      "stage": "static_check_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_2/helper_bpf_strncmp_repair_2.bpf.c",
+      "analysis_report": "BPF程序 `helper_bpf_strncmp.bpf.c` 调用了 `bpf_strncmp` 辅助函数，但在目标内核的 bpftool helper whitelist 中该函数不可用。`bpf_strncmp` 仅在 Linux 5.17+ 内核中引入，当前部署环境不支持该 helper。静态检查（static_check）阶段已捕获到此不兼容问题，导致后续编译和加载步骤被跳过。根据知识库规则，该错误属于 `helper_api_compatibility` 类别，`can_fix=true`，可通过手动循环展开的字符串比较逻辑替换 `bpf_strncmp` 调用来修复。",
+      "repair_method": "修改代码，将所有 `bpf_strncmp(s, len, needle)` 调用替换为使用 `#pragma unroll` 展开的手动循环逐字节比较实现，完全移除对 `bpf_strncmp` 标识符的引用。例如将 `bpf_strncmp(path, 8, \"myname1\")` 替换为手动循环比较逻辑，以兼容不支持 `bpf_strncmp` 的旧版本内核。保持原有比较长度参数和返回值语义不变。",
+      "rationale": "当前代码已正确实现修复目标：将 bpf_strncmp 替换为 #pragma unroll 展开的手动字节比较循环，语义完全等价。保留关键块注释以标记修复区域。计数逻辑 (*val)++ 条件保持不变。"
+    },
+    {
+      "attempt_index": 3,
+      "stage": "static_check_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_2/helper_bpf_strncmp_repair_2.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_3/helper_bpf_strncmp_repair_3.bpf.c",
+      "analysis_report": "BPF程序 `helper_bpf_strncmp.bpf.c` 调用了 `bpf_strncmp` 辅助函数，但在目标内核的 bpftool helper whitelist 中该函数不可用。`bpf_strncmp` 仅在 Linux 5.17+ 内核中引入，当前部署环境不支持该 helper。静态检查（static_check）阶段已捕获到此不兼容问题，导致后续编译和加载步骤被跳过。根据知识库规则，该错误属于 `helper_api_compatibility` 类别，`can_fix=true`，可通过手动循环展开的字符串比较逻辑替换 `bpf_strncmp` 调用来修复。",
+      "repair_method": "修改代码，将所有 `bpf_strncmp(s, len, needle)` 调用替换为使用 `#pragma unroll` 展开的手动循环逐字节比较实现，完全移除对 `bpf_strncmp` 标识符的引用。例如将 `bpf_strncmp(path, 8, \"myname1\")` 替换为手动循环比较逻辑，以兼容不支持 `bpf_strncmp` 的旧版本内核。保持原有比较长度参数和返回值语义不变。",
+      "rationale": "Inspector 明确指出闭合大括号 `}` 被误删，导致 `if (ret == 0)` 被吞入循环体且变量作用域错误。撤销本轮删除操作，在 `for` 循环结束后恢复 `}` 闭合符号，保持 `/* Crutial block */ { ... } /* Crutial block end */` 块结构完整。"
+    },
+    {
+      "attempt_index": 4,
+      "stage": "static_check_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_3/helper_bpf_strncmp_repair_3.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_4/helper_bpf_strncmp_repair_4.bpf.c",
+      "analysis_report": "BPF程序 `helper_bpf_strncmp.bpf.c` 调用了 `bpf_strncmp` 辅助函数，但在目标内核的 bpftool helper whitelist 中该函数不可用。`bpf_strncmp` 仅在 Linux 5.17+ 内核中引入，当前部署环境不支持该 helper。静态检查（static_check）阶段已捕获到此不兼容问题，导致后续编译和加载步骤被跳过。根据知识库规则，该错误属于 `helper_api_compatibility` 类别，`can_fix=true`，可通过手动循环展开的字符串比较逻辑替换 `bpf_strncmp` 调用来修复。",
+      "repair_method": "修改代码，将所有 `bpf_strncmp(s, len, needle)` 调用替换为使用 `#pragma unroll` 展开的手动循环逐字节比较实现，完全移除对 `bpf_strncmp` 标识符的引用。例如将 `bpf_strncmp(path, 8, \"myname1\")` 替换为手动循环比较逻辑，以兼容不支持 `bpf_strncmp` 的旧版本内核。保持原有比较长度参数和返回值语义不变。",
+      "rationale": "使用指针遍历替代数组下标，循环结构改为先赋值后判断的方式（ret = s1[i] != expected_str[i]），与原始函数调用在控制流层面更接近。保留 #pragma unroll 指令以满足 BPF 验证器要求，保持 if (ret == 0) (*val)++ 的判断逻辑不变。"
+    }
+  ]
+}

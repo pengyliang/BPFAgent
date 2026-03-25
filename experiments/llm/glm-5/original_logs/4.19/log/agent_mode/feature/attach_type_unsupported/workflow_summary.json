@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-03-23T16:45:01.501338+00:00",
+  "updated_at": "2026-03-23T16:45:15.868791+00:00",
+  "final_decision": "failed_refine",
+  "deploy_state": false,
+  "failed_stage": "static_check_failed",
+  "total_duration_s": 14.367,
+  "module_durations_s": {
+    "deploy_tool": 9.76,
+    "Analyzer": 4.608,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T16:45:01.501338+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 9.76
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T16:45:11.260935+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": false,
+        "failed_stage": "static_check_failed",
+        "error_type": "attach_target_missing",
+        "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+        "analysis_report": "部署失败的根本原因是目标内核环境不支持 BTF（/sys/kernel/btf/vmlinux 缺失），导致依赖 CO-RE（Compile Once - Run Everywhere）机制的 BPF 程序无法运行。虽然日志中同时存在 attach target 'do_sys_openat2' 未找到的警告，但这通常是因为缺乏 BTF 信息导致无法解析内核符号结构，属于同一根因的并发症状。由于当前环境不支持 CO-RE 重定位，必须修改源码，移除对 BPF_CORE_READ 的依赖，转而使用传统的 bpf_probe_read_kernel 系列辅助函数，并采用硬编码偏移量或结构体定义的方式来适配目标内核。"
+      },
+      "duration_s": 4.608
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T16:45:15.868728+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "failed_refine",
+        "deploy_state": false,
+        "failed_stage": "static_check_failed",
+        "has_repaired": false,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-23T16:13:01.213728+00:00",
+  "node": "Repairer",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-23T16:12:37.716504+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/feature/btf_unsupported/btf_unsupported.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"helper_calls\"...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "静态检查失败，错误代码为 helper_not_in_probe。具体错误信息显示：Helper bpf_probe_read_kernel is not present in bpftool helper whitelist。这表明目标部署内核不支持 bpf_probe_read_kernel 这个 helper 函数。根据知识库规则，helper_unsupported 模式匹配此错误（aliases 包含 helper_not_in_probe），且其 can_fix ...(truncated)",
+          "repair_action": {
+            "error_type": "helper_unsupported",
+            "repair_method": "修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+            "key_lines": [
+              "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_unsupported\",\n  \"analysis_report\": \"静态检查失败，错误代码为 helper_not_in_probe。具体错误信息显示：Helper bpf_probe_read_kernel is not present in bpftool helper whitelist。这表明目标部署内核不支持 bpf_probe_read_kernel 这个 helper 函数。根据知识库规则，helper_unsupported 模式匹配此错误（aliases 包含 helper_not_in_probe），且其...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/data/feature/btf_unsupported/btf_unsupported.bpf.c",
+      "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint btf_unsupported(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u32 tgid;\n    long syscall_id;\n\n    if (!val)\n        return 0;\n\n    tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (target_tgid && *target_tgid && tgid != *target_tgid)\n        return 0;\n    /* Crutial block */\n    syscall_id = BPF_CORE_READ(ctx, id);\n    /* Crutial block end */\n    if (syscall_id >= 0) {\n        (*val)++;\n    }\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "静态检查失败，错误代码为 helper_not_in_probe。具体错误信息显示：Helper bpf_probe_read_kernel is not present in bpftool helper whitelist。这表明目标部署内核不支持 bpf_probe_read_kernel 这个 helper 函数。根据知识库规则，helper_unsupported 模式匹配此错误（aliases 包含 helper_not_in_probe），且其 can_fix 为 true。该模式适用于 static_check_failed 阶段，且证据提示（evidence_hint）包含 'unknown func'、'helper call'、'not allowed'，与当前报错完全吻合。因此，可以通过修改源码，将不支持的 helper 替换为兼容版本来解决此问题。",
+      "repair_action": {
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+        "key_lines": [
+          "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+        ]
+      },
+      "error_signal": {
+        "stage": "static_check_failed",
+        "error_types": [
+          "helper_not_in_probe"
+        ],
+        "key_lines": [
+          "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+        ]
+      }
+    }
+  },
+  "thought_process": "```json\n{\n  \"thought\": \"根据 Analyzer 的分析报告，静态检查失败的原因是目标内核不支持 bpf_probe_read_kernel 这个 helper 函数。但查看当前源码，并没有直接调用 bpf_probe_read_kernel 函数。然而，BPF_CORE_READ 宏在底层可能会使用 bpf_probe_read_kernel。根据知识库规则，helper_unsupported 错误可以通过将不支持的 helper 替换为兼容版本（如 bpf_probe_read）来解决。因此，需要将 BPF_CORE_READ 替换为使用 bpf_probe_read 的等价实现，以绕过内核版本限制。\",\n  \"rationale\": \"BPF_CORE_READ 宏在较旧的内核中可能依赖 bpf_probe_read_kernel，而目标内核不支持该 helper。通过手动实现读取逻辑并使用通用的 bpf_probe_read，可以保持原有语义（读取 ctx->id）同时兼容目标内核。修改仅限于替换宏调用，不影响其他逻辑，特别是 (*val)++ 的条件判断保持不变。\",\n  \"patched_code\": \"#include \\\"vmlinux.h\\\"\\n#include <bpf/bpf_core_read.h>\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\nSEC(\\\"tracepoint/syscalls/sys_enter_openat\\\")\\nint btf_unsupported(struct trace_event_raw_sys_enter *ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n    __u32 tgid;\\n    long syscall_id;\\n    if (!val)\\n        return 0;\\n    tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n    if (target_tgid && *target_tgid && tgid != *target_tgid)\\n        return 0;\\n    /* Crutial block */\\n    bpf_probe_read(&syscall_id, sizeof(syscall_id), &ctx->id);\\n    /* Crutial block end */\\n    if (syscall_id >= 0) {\\n        (*val)++;\\n    }\\n    return 0;\\n}\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_1/btf_unsupported_repair_1.bpf.c",
+    "code_change_summary": "新增 1 行，删除 8 行。\n #include <bpf/bpf_core_read.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } counter SEC(\".maps\");\n-\n struct {",
+    "patched_code_file": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_1/btf_unsupported_repair_1.bpf.c",
+    "rationale": "BPF_CORE_READ 宏在较旧的内核中可能依赖 bpf_probe_read_kernel，而目标内核不支持该 helper。通过手动实现读取逻辑并使用通用的 bpf_probe_read，可以保持原有语义（读取 ctx->id）同时兼容目标内核。修改仅限于替换宏调用，不影响其他逻辑，特别是 (*val)++ 的条件判断保持不变。"
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "next_deploy_index": 2
+  }
+}

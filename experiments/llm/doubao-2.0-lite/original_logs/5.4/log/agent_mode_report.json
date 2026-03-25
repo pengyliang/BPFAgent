@@ -1,0 +1,253 @@
+{
+  "metrics_1_40": [
+    {
+      "id": 1,
+      "name": "per_case_agent_calls_during_repair",
+      "value": {
+        "kernel_struct/field_offset_change": 11
+      }
+    },
+    {
+      "id": 2,
+      "name": "total_agent_calls_during_repair",
+      "value": 11
+    },
+    {
+      "id": 3,
+      "name": "initial_failure_count",
+      "value": 1
+    },
+    {
+      "id": 4,
+      "name": "total_repair_attempt_count",
+      "value": 0
+    },
+    {
+      "id": 5,
+      "name": "total_repair_success_case_count",
+      "value": 1
+    },
+    {
+      "id": 6,
+      "name": "total_repair_success_rate",
+      "value": 1.0
+    },
+    {
+      "id": 7,
+      "name": "total_fixed_time_sum",
+      "value": 2
+    },
+    {
+      "id": 8,
+      "name": "total_token_consumption_sum",
+      "value": null
+    },
+    {
+      "id": 9,
+      "name": "category_has_repair_needed",
+      "value": {
+        "kernel_struct": true
+      }
+    },
+    {
+      "id": 10,
+      "name": "category_repair_needed_case_count",
+      "value": {
+        "kernel_struct": 1
+      }
+    },
+    {
+      "id": 11,
+      "name": "category_repair_success_case_count",
+      "value": {
+        "kernel_struct": 1
+      }
+    },
+    {
+      "id": 12,
+      "name": "category_repair_success_rate",
+      "value": {
+        "kernel_struct": 1.0
+      }
+    },
+    {
+      "id": 13,
+      "name": "category_total_fixed_time_sum",
+      "value": {
+        "kernel_struct": 2
+      }
+    },
+    {
+      "id": 14,
+      "name": "category_total_token_consumption_sum",
+      "value": {
+        "kernel_struct": null
+      }
+    },
+    {
+      "id": 15,
+      "name": "initial_failed_stage_distribution_count",
+      "value": {
+        "static_check_failed": 1
+      }
+    },
+    {
+      "id": 16,
+      "name": "initial_failed_stage_distribution_ratio",
+      "value": {
+        "static_check_failed": 1.0
+      }
+    },
+    {
+      "id": 17,
+      "name": "final_repair_result_counts",
+      "value": {
+        "success_count": 1,
+        "failure_count": 0
+      }
+    },
+    {
+      "id": 18,
+      "name": "final_failed_stage_distribution_count_need_repair_initially",
+      "value": {}
+    },
+    {
+      "id": 19,
+      "name": "final_failed_stage_distribution_ratio_need_repair_initially",
+      "value": {}
+    },
+    {
+      "id": 20,
+      "name": "per_stage_repair_success_rate",
+      "value": {
+        "static_check_failed": 1.0
+      }
+    },
+    {
+      "id": 21,
+      "name": "per_stage_repair_success_cases_count",
+      "value": {
+        "static_check_failed": 1
+      }
+    },
+    {
+      "id": 22,
+      "name": "per_stage_repair_total_cases_count",
+      "value": {
+        "static_check_failed": 1
+      }
+    },
+    {
+      "id": 23,
+      "name": "final_failure_stage_distribution_all",
+      "value": {}
+    },
+    {
+      "id": 24,
+      "name": "final_failure_stage_distribution_all_ratio",
+      "value": {}
+    },
+    {
+      "id": 25,
+      "name": "repair_round_histogram",
+      "value": {
+        "0": 1
+      }
+    },
+    {
+      "id": 26,
+      "name": "repair_round_average",
+      "value": 0.0
+    },
+    {
+      "id": 27,
+      "name": "repair_round_max",
+      "value": 0
+    },
+    {
+      "id": 28,
+      "name": "repair_rounds_per_case",
+      "value": {
+        "kernel_struct/field_offset_change": 0
+      }
+    },
+    {
+      "id": 29,
+      "name": "analyzer_last_can_fix_distribution",
+      "value": {
+        "can_fix_true": 1,
+        "can_fix_false": 0,
+        "can_fix_none": 0
+      }
+    },
+    {
+      "id": 30,
+      "name": "can_fix_true_final_success_case_count",
+      "value": 1
+    },
+    {
+      "id": 31,
+      "name": "can_fix_true_final_failed_case_count",
+      "value": 0
+    },
+    {
+      "id": 32,
+      "name": "can_fix_false_final_success_case_count",
+      "value": 0
+    },
+    {
+      "id": 33,
+      "name": "can_fix_false_final_failed_case_count",
+      "value": 0
+    },
+    {
+      "id": 34,
+      "name": "analyze_can_fix_mismatch_rate",
+      "value": 0.0
+    },
+    {
+      "id": 35,
+      "name": "error_signature_counts_top10",
+      "value": []
+    },
+    {
+      "id": 36,
+      "name": "cases_hit_same_error_threshold_count",
+      "value": 0
+    },
+    {
+      "id": 37,
+      "name": "cases_hit_same_error_threshold_details",
+      "value": []
+    },
+    {
+      "id": 38,
+      "name": "error_signature_counts_aggregate_total_unique_signatures",
+      "value": 0
+    },
+    {
+      "id": 39,
+      "name": "per_case_last_analyzer_can_fix",
+      "value": {
+        "kernel_struct/field_offset_change": true
+      }
+    },
+    {
+      "id": 40,
+      "name": "per_case_final_status",
+      "value": {
+        "kernel_struct/field_offset_change": "success"
+      }
+    }
+  ],
+  "generated_at": "2026-03-24T04:22:09.391864+00:00",
+  "cases": [
+    "kernel_struct/field_offset_change"
+  ],
+  "total_files": 1,
+  "deploy_success_count": 1,
+  "deploy_failure_count": 0,
+  "deploy_success_rate": 100.0,
+  "deploy_failed_files": [],
+  "deploy_failed_stages": []
+}

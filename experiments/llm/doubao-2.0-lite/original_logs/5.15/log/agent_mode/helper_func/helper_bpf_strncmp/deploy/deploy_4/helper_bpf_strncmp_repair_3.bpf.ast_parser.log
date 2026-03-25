@@ -1,0 +1,11 @@
+status: FAILED
+source_file: /host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_3/helper_bpf_strncmp_repair_3.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_3 -I/usr/include/x86_64-linux-gnu /host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_3/helper_bpf_strncmp_repair_3.bpf.c
+stderr:
+/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_3/helper_bpf_strncmp_repair_3.bpf.c:8:6: error: '#' is not followed by a macro parameter
+    #pragma unroll \
+     ^
+/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_3/helper_bpf_strncmp_repair_3.bpf.c:30:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]
+int helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)
+                               ^
+1 warning and 1 error generated.

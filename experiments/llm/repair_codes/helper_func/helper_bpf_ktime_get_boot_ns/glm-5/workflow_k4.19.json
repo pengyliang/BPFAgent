@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-23T16:47:17.694451+00:00",
+  "updated_at": "2026-03-23T16:47:39.002344+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 21.308,
+  "module_durations_s": {
+    "deploy_tool": 7.1370000000000005,
+    "Analyzer": 8.547,
+    "Repairer": 4.855,
+    "Inspector": 0.77,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T16:47:17.694451+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 4.155
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T16:47:21.849111+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将不可用的 'bpf_ktime_get_boot_ns' 函数替换为 'bpf_ktime_get_ns'。后者是更基础的获取时间戳函数，在更广泛的内核版本中可用。",
+        "analysis_report": "静态检查阶段失败，错误代码为 'helper_not_in_probe'。根本原因是源码中使用了 BPF 辅助函数 'bpf_ktime_get_boot_ns'，该函数在当前目标内核的 bpftool 白名单中不存在，导致兼容性检查未通过。根据知识库规则，这属于 helper API 兼容性问题，可以通过替换为功能等价且兼容性更好的旧版辅助函数解决。"
+      },
+      "duration_s": 8.547
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T16:47:30.395678+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "将第 34 行的 'bpf_ktime_get_boot_ns()' 替换为 'bpf_ktime_get_ns()'。这两个函数在获取系统运行时间戳的语义上非常接近，后者是更基础的 API，在更广泛的内核版本中可用。此修改解决了 helper_not_in_probe 的错误，同时保留了原有的业务逻辑和条件判断结构。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 4.855
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-23T16:47:35.250563+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "对比修改前后的代码，核心变更位于关键代码块中。原代码使用 'bpf_ktime_get_boot_ns()' 获取时间戳，修改后代码将其替换为 'bpf_ktime_get_ns()'。这完全符合 Analyzer 提出的修复建议（将不可用的 helper 替换为兼容性更好的版本）。同时，修改后的代码完整保留了原有的业务逻辑结构，包括 'if (ts) (*val)++;' 条件判断，未对其他部分进行非必要的删减或修改。虽然代码格式（空行）有所变化，但语义逻辑符合修复预期。"
+      },
+      "duration_s": 0.77
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-23T16:47:36.020350+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 2.982
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-23T16:47:39.002290+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 5
+      }
+    }
+  ]
+}

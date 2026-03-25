@@ -1,0 +1,58 @@
+{
+  "case_display": "feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+  "updated_at": "2026-03-23T15:57:20.768813+00:00",
+  "history": [
+    {
+      "ts": "2026-03-23T15:57:20.768564+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "from_node": "deploy_tool",
+      "summary": "分析阶段 static_check_failed，can_fix=False，建议=不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+      "inputs": {
+        "failed_stage": "static_check_failed",
+        "failed_stage_result": {
+          "success": false,
+          "error_warning_count": {
+            "error": "1",
+            "warning": "1"
+          },
+          "issues": [
+            "{\"check\": \"program_type_attach_availability\", \"level\": \"warning\", \"code\": \"attach_target_not_found\", \"message\": \"Attach target do_sys_openat2 not found in /proc/kallsyms on current host.\", \"suggestion\": \"Verify target symbol on deployment k...(truncated)",
+            "{\"check\": \"core_btf_precondition\", \"level\": \"error\", \"code\": \"core_requires_btf\", \"message\": \"CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.\", \"suggestion\": \"Must switch to non-CO-RE downgrade path (e.g....(truncated)"
+          ],
+          "results": [
+            "{\"source_file\": \"/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c\", \"program_sections\": [\"kprobe/do_sys_openat2\"], \"program_types\": [\"kprobe\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"helper_calls\": [...(truncated)"
+          ],
+          "summary": {
+            "error_count": "1",
+            "warning_count": "1"
+          }
+        },
+        "deploy_summary": {
+          "success": false,
+          "stage": "static_check_failed",
+          "steps": {
+            "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+            "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+            "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+            "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+            "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+          }
+        }
+      },
+      "outputs": {
+        "can_fix": false,
+        "analysis_report": "静态检查失败包含两个问题：1) 核心错误（error）是检测到源码依赖 CO-RE/BPF_CORE_READ 路径，但目标内核缺少 /sys/kernel/btf/vmlinux BTF 支持，这属于 core_requires_btf 模式；2) 警告（warning）是 attach 目标符号 do_sys_openat2 在当前内核的 /proc/kallsyms 中未找到，这属于 attach_target_missing 模式。根据知识库规则，core_requi...(truncated)",
+        "repair_action": {
+          "error_type": "attach_target_missing",
+          "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+          "key_lines": [
+            "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+            "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux."
+          ]
+        }
+      },
+      "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"core_requires_btf\",\n  \"analysis_report\": \"静态检查失败包含两个问题：1) 核心错误（error）是检测到源码依赖 CO-RE/BPF_CORE_READ 路径，但目标内核缺少 /sys/kernel/btf/vmlinux BTF 支持，这属于 core_requires_btf 模式；2) 警告（warning）是 attach 目标符号 do_sys_openat2 在当前内核的 /proc/kallsyms 中未找到，这属于 attach_target_missing 模式。根据知识库规则，co...(truncated)"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-23T16:48:41.043181+00:00",
+  "node": "Repairer",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-23T16:48:28.057222+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码，将 bpf_strncmp 调用替换为 bpf_probe_read_kernel_str 配合手动循环比较的实现，或者使用 bpf_probe_read 读取字符串后逐字节比较，以兼容低版本内核。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_strncmp is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel supportin...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"hel...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "静态检查阶段（static_check_failed）报错，根本原因是当前内核版本不支持 BPF 辅助函数 bpf_strncmp。该函数是在 Linux 5.17 版本引入的，用于安全比较字符串。在旧版本内核中，bpftool 的 helper whitelist 不包含此函数，导致加载检查失败。根据知识库规则，属于 helper_api_compatibility 模式，可以通过替换为兼容的辅助函数组合来解决。",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，将 bpf_strncmp 调用替换为 bpf_probe_read_kernel_str 配合手动循环比较的实现，或者使用 bpf_probe_read 读取字符串后逐字节比较，以兼容低版本内核。",
+            "key_lines": [
+              "Helper bpf_strncmp is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"静态检查阶段（static_check_failed）报错，根本原因是当前内核版本不支持 BPF 辅助函数 bpf_strncmp。该函数是在 Linux 5.17 版本引入的，用于安全比较字符串。在旧版本内核中，bpftool 的 helper whitelist 不包含此函数，导致加载检查失败。根据知识库规则，属于 helper_api_compatibility 模式，可以通过替换为兼容的辅助函数组合来解决。\",\n  \"repair_met...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c",
+      "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nconst char expected_str[] = \"ok\";\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    const char s1[] = \"ok\";\n    long ret;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n    /* Crutial block */\n    ret = bpf_strncmp(s1, sizeof(s1), expected_str);\n    /* Crutial block end */\n    if (ret == 0)\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "静态检查阶段（static_check_failed）报错，根本原因是当前内核版本不支持 BPF 辅助函数 bpf_strncmp。该函数是在 Linux 5.17 版本引入的，用于安全比较字符串。在旧版本内核中，bpftool 的 helper whitelist 不包含此函数，导致加载检查失败。根据知识库规则，属于 helper_api_compatibility 模式，可以通过替换为兼容的辅助函数组合来解决。",
+      "repair_action": {
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将 bpf_strncmp 调用替换为 bpf_probe_read_kernel_str 配合手动循环比较的实现，或者使用 bpf_probe_read 读取字符串后逐字节比较，以兼容低版本内核。",
+        "key_lines": [
+          "Helper bpf_strncmp is not present in bpftool helper whitelist."
+        ]
+      },
+      "error_signal": {
+        "stage": "static_check_failed",
+        "error_types": [
+          "helper_not_in_probe"
+        ],
+        "key_lines": [
+          "Helper bpf_strncmp is not present in bpftool helper whitelist."
+        ]
+      }
+    }
+  },
+  "thought_process": "```json\n{\n  \"thought\": \"根据 Analyzer 的分析，当前内核不支持 bpf_strncmp 辅助函数（Linux 5.17+ 引入）。需要将其替换为兼容旧内核的实现。原代码使用 bpf_strncmp 比较字符串 s1 和 expected_str，返回 0 表示相等。修复方案是使用手动循环逐字节比较来实现相同的字符串比较逻辑，同时保留原有的条件判断和计数器递增语义。\",\n  \"rationale\": \"将 `ret = bpf_strncmp(s1, sizeof(s1), expected_str);` 替换为手动实现的字符串比较逻辑。使用 `#pragma unroll` 确保循环在编译时展开以满足 BPF 验证器要求。比较逻辑：逐字节比较，遇到字符串结束符 '\\\\0' 或达到最大长度时停止，完全匹配时 ret 设为 0。这样既解决了 helper 兼容性问题，又完整保留了原始的业务语义（字符串相等时计数器加一）。\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <linux/bpf.h>\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\nconst char expected_str[] = \\\"ok\\\";\\nSEC(\\\"tracepoint/syscalls/sys_enter_openat\\\")\\nint helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n    const char s1[] = \\\"ok\\\";\\n    long ret = -1;\\n    int i;\\n    if (!val)\\n        return 0;\\n    if (target_tgid && *target_tgid) {\\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n        if (tgid != *target_tgid)\\n            return 0;\\n    }\\n    /* Crutial block - manual string comparison to replace bpf_strncmp */\\n    ret = 0;\\n    #pragma unroll\\n    for (i = 0; i < sizeof(s1); i++) {\\n        if (s1[i] != expected_str[i]) {\\n            ret = 1;\\n            break;\\n        }\\n        if (s1[i] == '\\\\0')\\n            break;\\n    }\\n    /* Crutial block end */\\n    if (ret == 0)\\n        (*val)++;\\n    return 0;\\n}\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+    "code_change_summary": "新增 13 行，删除 11 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } counter SEC(\".maps\");\n-\n struct {",
+    "patched_code_file": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+    "rationale": "将 `ret = bpf_strncmp(s1, sizeof(s1), expected_str);` 替换为手动实现的字符串比较逻辑。使用 `#pragma unroll` 确保循环在编译时展开以满足 BPF 验证器要求。比较逻辑：逐字节比较，遇到字符串结束符 '\\0' 或达到最大长度时停止，完全匹配时 ret 设为 0。这样既解决了 helper 兼容性问题，又完整保留了原始的业务语义（字符串相等时计数器加一）。"
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "next_deploy_index": 2
+  }
+}

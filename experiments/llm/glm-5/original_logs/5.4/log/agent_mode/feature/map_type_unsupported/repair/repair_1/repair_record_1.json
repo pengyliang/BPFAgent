@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-03-23T17:05:58.438173+00:00",
+  "node": "Repairer",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-23T17:05:46.964554+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码，将 BPF_MAP_TYPE_RINGBUF 类型的地图定义替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并补全 key_size 和 value_size 定义（通常为 4 字节）。将 bpf_ringbuf_output 函数调用替换为 bpf_perf_event_output，传入上下文 ctx、地图指针以及 BPF_F_CURRENT_CPU 标志，并确保传递的数据结构体在栈上正确初始化。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "2",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_ringbuf_output is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel su...(truncated)",
+              "{\"check\": \"map_type_availability\", \"level\": \"error\", \"code\": \"map_type_not_in_probe\", \"message\": \"Map type BPF_MAP_TYPE_RINGBUF is not present in bpftool map type support list.\", \"suggestion\": \"Switch to supported map type or enable kernel ...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/feature/map_type_unsupported/map_type_unsupported.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\", \"BPF_...(truncated)"
+            ],
+            "summary": {
+              "error_count": "2",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "静态检查失败，根本原因是目标内核版本较低（通常低于 5.8），不支持 BPF_MAP_TYPE_RINGBUF 地图类型以及 bpf_ringbuf_output 辅助函数。源码中使用了 Ring Buffer 机制向用户态传递数据，这在旧版本内核中无法通过验证。根据知识库规则，这是一个典型的兼容性问题，可以通过替换为 Perf Event 机制解决。",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，将 BPF_MAP_TYPE_RINGBUF 类型的地图定义替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并补全 key_size 和 value_size 定义（通常为 4 字节）。将 bpf_ringbuf_output 函数调用替换为 bpf_perf_event_output，传入上下文 ctx、地图指针以及 BPF_F_CURRENT_CPU 标志，并确保传递的数据结构体在栈上正确初始化。",
+            "key_lines": [
+              "Helper bpf_ringbuf_output is not present in bpftool helper whitelist.",
+              "Map type BPF_MAP_TYPE_RINGBUF is not present in bpftool map type support list."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"静态检查失败，根本原因是目标内核版本较低（通常低于 5.8），不支持 BPF_MAP_TYPE_RINGBUF 地图类型以及 bpf_ringbuf_output 辅助函数。源码中使用了 Ring Buffer 机制向用户态传递数据，这在旧版本内核中无法通过验证。根据知识库规则，这是一个典型的兼容性问题，可以通过替换为 Perf Event 机制解决。\",\n  \"repair_method\": \"修改代码，将 BPF_MAP_TYPE_RINGB...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/data/feature/map_type_unsupported/map_type_unsupported.bpf.c",
+      "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct event {\n    __u64 ts;\n};\n\n/* Crutial block */\nstruct {\n    __uint(type, BPF_MAP_TYPE_RINGBUF);\n    __uint(max_entries, 1 << 12);\n} events SEC(\".maps\");\n/* Crutial block end */\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint map_type_unsupported(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    struct event e = {};\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    /**/\n    e.ts = bpf_ktime_get_ns();\n    bpf_ringbuf_output(&events, &e, sizeof(e), 0);\n    (*val)++;\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "静态检查失败，根本原因是目标内核版本较低（通常低于 5.8），不支持 BPF_MAP_TYPE_RINGBUF 地图类型以及 bpf_ringbuf_output 辅助函数。源码中使用了 Ring Buffer 机制向用户态传递数据，这在旧版本内核中无法通过验证。根据知识库规则，这是一个典型的兼容性问题，可以通过替换为 Perf Event 机制解决。",
+      "repair_action": {
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将 BPF_MAP_TYPE_RINGBUF 类型的地图定义替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并补全 key_size 和 value_size 定义（通常为 4 字节）。将 bpf_ringbuf_output 函数调用替换为 bpf_perf_event_output，传入上下文 ctx、地图指针以及 BPF_F_CURRENT_CPU 标志，并确保传递的数据结构体在栈上正确初始化。",
+        "key_lines": [
+          "Helper bpf_ringbuf_output is not present in bpftool helper whitelist.",
+          "Map type BPF_MAP_TYPE_RINGBUF is not present in bpftool map type support list."
+        ]
+      },
+      "error_signal": {
+        "stage": "static_check_failed",
+        "error_types": [
+          "helper_not_in_probe",
+          "map_type_not_in_probe"
+        ],
+        "key_lines": [
+          "Helper bpf_ringbuf_output is not present in bpftool helper whitelist.",
+          "Map type BPF_MAP_TYPE_RINGBUF is not present in bpftool map type support list."
+        ]
+      }
+    }
+  },
+  "thought_process": "```json\n{\n  \"thought\": \"根据 Analyzer 的分析报告，目标内核不支持 BPF_MAP_TYPE_RINGBUF 和 bpf_ringbuf_output。需要将其替换为兼容性更好的 BPF_MAP_TYPE_PERF_EVENT_ARRAY 和 bpf_perf_event_output。修改点包括：1. 将 map 定义中的 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并添加 key_size=4, value_size=4；2. 将 bpf_ringbuf_output 调用替换为 bpf_perf_event_output，需要传入 ctx、map 指针、BPF_F_CURRENT_CPU 标志以及数据指针。原有的业务逻辑（计数器更新、进程过滤）必须完整保留。\",\n  \"rationale\": \"BPF_MAP_TYPE_RINGBUF 是 Linux 5.8 引入的特性，在旧内核上不可用。BPF_MAP_TYPE_PERF_EVENT_ARRAY 是传统的向用户态发送事件的机制，兼容性更好。bpf_perf_event_output 需要指定 CPU ID，使用 BPF_F_CURRENT_CPU 宏可以自动获取当前 CPU。Perf Event Array 类型的 map 必须定义 key_size 和 value_size（均为 u32，4字节）。\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <linux/bpf.h>\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\nstruct event {\\n    __u64 ts;\\n};\\n/* Crutial block */\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);\\n    __uint(key_size, sizeof(__u32));\\n    __uint(value_size, sizeof(__u32));\\n} events SEC(\\\".maps\\\");\\n/* Crutial block end */\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\nSEC(\\\"tracepoint/syscalls/sys_enter_openat\\\")\\nint map_type_unsupported(struct trace_event_raw_sys_enter *ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n    struct event e = {};\\n    if (!val)\\n        return 0;\\n    if (target_tgid && *target_tgid) {\\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n        if (tgid != *target_tgid)\\n            return 0;\\n    }\\n    /**/\\n    e.ts = bpf_ktime_get_ns();\\n    bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &e, sizeof(e));\\n    (*val)++;\\n    return 0;\\n}\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/5.4/log/agent_mode/feature/map_type_unsupported/repair/repair_1/map_type_unsupported_repair_1.bpf.c",
+    "code_change_summary": "新增 4 行，删除 11 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct event {\n     __u64 ts;\n };\n-\n /* Crutial block */\n struct {\n-    __uint(type, BPF_MAP_TYPE_RINGBUF);\n-    __uint(max_entries, 1 << 12);",
+    "patched_code_file": "/host/output/5.4/log/agent_mode/feature/map_type_unsupported/repair/repair_1/map_type_unsupported_repair_1.bpf.c",
+    "rationale": "BPF_MAP_TYPE_RINGBUF 是 Linux 5.8 引入的特性，在旧内核上不可用。BPF_MAP_TYPE_PERF_EVENT_ARRAY 是传统的向用户态发送事件的机制，兼容性更好。bpf_perf_event_output 需要指定 CPU ID，使用 BPF_F_CURRENT_CPU 宏可以自动获取当前 CPU。Perf Event Array 类型的 map 必须定义 key_size 和 value_size（均为 u32，4字节）。"
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "next_deploy_index": 2
+  }
+}

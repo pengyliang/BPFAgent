@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-03-24T04:37:18.894978+00:00",
+  "case_display": "helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+  "final_stage": "load_failed",
+  "same_error_threshold": 3,
+  "error_signature_counts": {
+    "load_failed": 5
+  },
+  "attempts": [
+    {
+      "attempt_index": 1,
+      "stage": "load_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+      "analysis_report": "BPF 程序加载失败，根因是 CO-RE (Compile Once - Run Everywhere) 无法正确解析 tracepoint 上下文类型 `trace_event_raw_sys_enter`。错误信息 `arg#0 reference type('FWD trace_event_raw_sys_enter') size cannot be determined: -22` 表明 BTF 信息中该结构体仅为前向声明(FWD)，没有完整定义，导致验证器无法确定上下文参数的大小和布局。\n\n这在旧版内核或特定发行版中较为常见，因为 tracepoint 结构体的 BTF 信息可能不完整或需要 CO-RE 之外的替代方案来处理。\n\n当前程序尝试直接访问 tracepoint 上下文字段，但验证器无法验证这些访问的安全性。",
+      "repair_method": "修改代码，将 tracepoint 程序签名从 `struct trace_event_raw_sys_enter *ctx` 改为 `void *ctx`，然后使用 bpf_probe_read 配合固定偏移量手动读取 syscall 号和参数。例如：\n1. 读取 syscall 号：`bpf_probe_read(&syscall_nr, sizeof(int), (void *)ctx + offsetof_syscall('nr'))`\n2. 读取第一个参数 (filename)：`bpf_probe_read(filename, sizeof(filename), (void *)ctx + offsetof_syscall('args[0]'))`\n3. 通过 `syscall_nr` 判断是否为 openat 系统调用 (__NR_openat=257) 后，再进行后续逻辑处理。\n这样可以绕过 CO-RE 对 trace_event_raw_sys_enter 结构体的依赖，使用固定偏移量访问参数，同时保留原有的 if(*val)++ 等核心业务逻辑。",
+      "rationale": "使用 void *ctx 绕过 CO-RE 对结构体定义的依赖，通过固定偏移量直接读取 tracepoint 上下文数据：syscall_nr 在 offset 0，args 在 offset 8。最小必要修改仅改变函数签名和添加必要的 bpf_probe_read 调用，核心业务逻辑（tgid 过滤、bpf_snprintf、trace_printk、计数器递增）完全保留。"
+    },
+    {
+      "attempt_index": 2,
+      "stage": "load_failed",
+      "error_type": "verifier_reject",
+      "can_fix": true,
+      "source_before": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_2/helper_bpf_snprintf_repair_2.bpf.c",
+      "analysis_report": "阶段 `load_failed` 失败；识别到错误类型：verifier_reject；建议优先做最小必要修复。",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "rationale": "将 void *ctx 改为 __u64 ctx，__u64 是固定大小的标量类型，验证器可以确定其大小，从而避免 'UNKNOWN' 类型错误。同时 __u64 能够接收 ctx 指针值（在 64 位系统中指针为 64 位）。最小必要修改，仅改变 ctx 参数类型声明，不涉及其他任何逻辑。"
+    },
+    {
+      "attempt_index": 3,
+      "stage": "load_failed",
+      "error_type": "verifier_reject",
+      "can_fix": true,
+      "source_before": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_2/helper_bpf_snprintf_repair_2.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_3/helper_bpf_snprintf_repair_3.bpf.c",
+      "analysis_report": "阶段 `load_failed` 失败；识别到错误类型：verifier_reject；建议优先做最小必要修复。",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "rationale": "将函数签名改回 void *ctx，但配合 bpf_probe_read 读取固定偏移处的 syscall_nr（offset 0）和 args（offset 8），确保验证器接受上下文。最小必要修改：仅改函数签名+添加偏移读取代码，不涉及任何业务逻辑。保留 Crutial block、(*val)++ 和 tgid 过滤逻辑。"
+    },
+    {
+      "attempt_index": 4,
+      "stage": "load_failed",
+      "error_type": "verifier_reject",
+      "can_fix": true,
+      "source_before": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_3/helper_bpf_snprintf_repair_3.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_4/helper_bpf_snprintf_repair_4.bpf.c",
+      "analysis_report": "阶段 `load_failed` 失败；识别到错误类型：verifier_reject；建议优先做最小必要修复。",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "rationale": "添加 bpf_probe_read 实际读取 ctx 数据，这是第一轮 Analyzer 建议的核心方案，也是让验证器接受 void* ctx 类型的关键。最小必要修改：仅添加一条 bpf_probe_read 调用读取 syscall_nr，不涉及其他任何逻辑。保留 Crutial block、(*val)++ 和 tgid 过滤逻辑。"
+    }
+  ]
+}

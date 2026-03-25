@@ -1,0 +1,8 @@
+{
+  "source_file": "/host/output/5.4/log/agent_mode/kernel_struct/field_add_remove/repair/repair_1/field_add_remove_repair_1.bpf.c",
+  "ast_fallback": true,
+  "ast_fallback_reason": "clang_exit_1",
+  "bpf_helper_calls": [],
+  "struct_field_access_paths": [],
+  "map_operation_sequence": []
+}

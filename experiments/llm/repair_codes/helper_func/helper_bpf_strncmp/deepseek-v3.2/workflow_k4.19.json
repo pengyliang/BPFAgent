@@ -1,0 +1,195 @@
+{
+  "generated_at": "2026-03-23T15:57:26.384756+00:00",
+  "updated_at": "2026-03-23T16:00:44.933038+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 198.548,
+  "module_durations_s": {
+    "deploy_tool": 56.099000000000004,
+    "Analyzer": 104.81199999999998,
+    "Repairer": 35.492999999999995,
+    "Inspector": 2.145,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T15:57:26.384756+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 10.009
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T15:57:36.394216+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：将不支持的字符串比较 helper `bpf_strncmp` 替换为手动实现：使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。将自定义的兼容实现函数重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免被静态检查器误识别为内核 helper。",
+        "analysis_report": "静态检查失败，错误代码为 'helper_not_in_probe'，具体信息为 'Helper bpf_strncmp is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 `bpf_strncmp` 这个 helper 函数。根据知识库规则，'helper_unsupported' 模式匹配此错误（其别名包含 'helper_not_in_probe'），且该模式在 'static_check_failed' 阶段出现，'can_fix' 为 true。因此，可以通过修改源码，将不支持的 helper 替换为兼容实现来解决此问题。"
+      },
+      "duration_s": 29.976
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T15:58:06.369770+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "1. 添加一个自定义的 my_strncmp 函数，使用 bpf_probe_read 将字符串读入栈缓冲区，然后通过循环逐字节比较，遇到空字符时停止，返回比较结果。\n2. 将原有的 bpf_strncmp 调用替换为 my_strncmp 调用。\n3. 保持原有的条件判断逻辑不变，特别是 (*val)++ 的执行条件。\n4. 这是最小必要修改，只替换不支持的 helper，不改变原始业务语义。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 6.783
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-23T15:58:13.152650+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改符合 Analyzer 的修复建议。1. 将不支持的 `bpf_strncmp` helper 替换为自定义的 `my_strncmp` 函数，该函数使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回比较结果。2. 函数重命名为不以 `bpf_` 开头的名称，避免了静态检查器误识别。3. 关键的业务逻辑（`ret == 0` 时 `(*val)++`）完全保留，没有改变原始语义。4. 修改仅限于替换不支持的 helper，没有引入其他无关变更。"
+      },
+      "duration_s": 0.667
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-23T15:58:13.819433+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "load_failed"
+      },
+      "duration_s": 16.308
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-23T15:58:30.127096+00:00",
+      "node": "Analyzer",
+      "node_index": 2,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "load_failed",
+        "error_type": "verifier_memory_bounds",
+        "repair_method": "修改代码：在自定义的my_strncmp函数中，为bpf_probe_read调用添加明确的边界检查，确保源地址不为空且目标栈缓冲区大小足够。将循环比较逻辑拆分为更简单的步骤，使用临时变量存储中间结果，避免复杂的指针运算。确保所有内存访问都在verifier可证明的范围内，必要时缩小一次访问的内存跨度。",
+        "analysis_report": "程序在加载阶段失败（load_failed），返回错误码-22（Invalid argument）。从加载日志可见，程序通过了静态检查和编译，但在内核verifier验证时失败。关键线索是：1）日志显示'libbpf: prog 'helper_arg_decrease': relo #2: poisoning insn #36 that loads map #2 'helper_b.rodata''，这表明libbpf对.rodata数据映射的处理可能存在问题。2）verifier日志在指令19处中断：'19: (61) r1 = *(u32 *)(r7 +0)'，此时寄存器状态显示R7=map_value(id=0,off=0,...(truncated)"
+      },
+      "duration_s": 36.85
+    },
+    {
+      "seq": 7,
+      "ts": "2026-03-23T15:59:06.977347+00:00",
+      "node": "Repairer",
+      "node_index": 2,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "1. 在 my_strncmp 函数中，为 bpf_probe_read 调用添加明确的边界检查：检查源指针 s1 和 s2 是否为空，并确保读取长度不超过目标缓冲区大小。2. 简化循环比较逻辑：使用临时变量存储字符值，避免复杂的数组索引运算。3. 确保所有内存访问都在 verifier 可证明的范围内：将循环上限限制为缓冲区大小和参数 n 的最小值。4. 这是最小必要修改，只针对 verifie...(truncated)",
+        "next_deploy_index": 3
+      },
+      "duration_s": 9.019
+    },
+    {
+      "seq": 8,
+      "ts": "2026-03-23T15:59:15.996181+00:00",
+      "node": "Inspector",
+      "node_index": 2,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改符合 Analyzer 的修复建议。1. 在自定义的 my_strncmp 函数中，为 bpf_probe_read 调用添加了明确的边界检查：检查源指针 s1 和 s2 是否为空，并计算 max_len 限制读取长度不超过缓冲区大小和参数 n 的最小值。2. 简化了循环比较逻辑：使用临时变量 c1 和 c2 存储字符值，避免复杂的数组索引运算，使 verifier 更容易推理内存访问边界。3. 确保所有内存访问都在 verifier 可证明的范围内：将循环上限限制为 max_len，并确保读取长度不超过缓冲区大小。4. 关键的业务逻辑（ret == 0 时 (*val)++）完全保留，没有改变原始语义。5. 修改仅限于解决 v...(truncated)"
+      },
+      "duration_s": 0.603
+    },
+    {
+      "seq": 9,
+      "ts": "2026-03-23T15:59:16.599426+00:00",
+      "node": "deploy_tool",
+      "node_index": 3,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "load_failed"
+      },
+      "duration_s": 17.767
+    },
+    {
+      "seq": 10,
+      "ts": "2026-03-23T15:59:34.366910+00:00",
+      "node": "Analyzer",
+      "node_index": 3,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "load_failed",
+        "error_type": "verifier_memory_bounds",
+        "repair_method": "修改代码：将全局只读字符串常量'expected_str'从.rodata区移动到栈上局部变量，以避免创建不支持的.rodata映射类型。具体做法：1) 删除全局const char数组声明；2) 在tracepoint处理函数开头定义局部字符数组并初始化为相同字符串值；3) 将my_strncmp调用中的expected_str参数替换为该局部变量。同时确保my_strncmp函数中的边界检查逻辑保持完整，所有内存访问都在verifier可证明的范围内。",
+        "analysis_report": "程序在加载阶段失败（load_failed），返回错误码-22（Invalid argument）。从加载日志可见，程序通过了静态检查和编译，但在内核verifier验证时失败。关键线索是：1）日志显示'libbpf: prog 'helper_arg_decrease': relo #2: poisoning insn #36 that loads map #2 'helper_b.rodata''，这表明libbpf对.rodata数据映射的处理可能存在问题。2）verifier日志在指令19处中断，显示'R1_w=inv27503'，表明寄存器R1的值被固定为27503（即字符串'/e'的数值表示），这可能是从.rodata映...(truncated)"
+      },
+      "duration_s": 37.986
+    },
+    {
+      "seq": 11,
+      "ts": "2026-03-23T16:00:12.352532+00:00",
+      "node": "Repairer",
+      "node_index": 3,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "1. 删除全局 const char expected_str[] 声明，避免创建 .rodata 映射。2. 在 tracepoint 处理函数 helper_arg_decrease 开头定义局部字符数组 expected_str_local 并初始化为相同字符串值 \"ok\"。3. 将 my_strncmp 调用中的 expected_str 参数替换为 expected_str_local。...(truncated)",
+        "next_deploy_index": 4
+      },
+      "duration_s": 19.691
+    },
+    {
+      "seq": 12,
+      "ts": "2026-03-23T16:00:32.043054+00:00",
+      "node": "Inspector",
+      "node_index": 3,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改符合 Analyzer 的修复建议。1. 将全局只读字符串常量 'expected_str' 从 .rodata 区移动到栈上局部变量：删除了全局的 `const char expected_str[] = \"ok\";` 声明，在 `helper_arg_decrease` 函数开头定义了局部字符数组 `const char expected_str_local[] = \"ok\";`。2. 将 `my_strncmp` 调用中的 `expected_str` 参数替换为局部变量 `expected_str_local`。3. 保持了 `my_strncmp` 函数中的边界检查逻辑完整，所有内存访问都在 verifier 可证明的...(truncated)"
+      },
+      "duration_s": 0.875
+    },
+    {
+      "seq": 13,
+      "ts": "2026-03-23T16:00:32.918469+00:00",
+      "node": "deploy_tool",
+      "node_index": 4,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 12.015
+    },
+    {
+      "seq": 14,
+      "ts": "2026-03-23T16:00:44.932980+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 4
+      }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "case_display": "feature/program_type_unsupported/program_type_unsupported.bpf.c",
+  "updated_at": "2026-03-23T16:12:35.562281+00:00",
+  "history": [
+    {
+      "ts": "2026-03-23T16:12:35.562050+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "from_node": "deploy_tool",
+      "summary": "分析阶段 static_check_failed，can_fix=False，建议=不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+      "inputs": {
+        "failed_stage": "static_check_failed",
+        "failed_stage_result": {
+          "success": false,
+          "error_warning_count": {
+            "error": "1",
+            "warning": ""
+          },
+          "issues": [
+            "{\"check\": \"program_type_attach_availability\", \"level\": \"error\", \"code\": \"program_type_not_supported\", \"message\": \"Program type \\\"fentry\\\" from SEC(\\\"fentry/__x64_sys_clock_nanosleep\\\") is not in bpftool program type support list for this ke...(truncated)"
+          ],
+          "results": [
+            "{\"source_file\": \"/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c\", \"program_sections\": [\"fentry/__x64_sys_clock_nanosleep\"], \"program_types\": [\"fentry\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"hel...(truncated)"
+          ],
+          "summary": {
+            "error_count": "1",
+            "warning_count": ""
+          }
+        },
+        "deploy_summary": {
+          "success": false,
+          "stage": "static_check_failed",
+          "steps": {
+            "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+            "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+            "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+            "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+            "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+          }
+        }
+      },
+      "outputs": {
+        "can_fix": false,
+        "analysis_report": "静态检查失败，错误签名 static_check_failed。关键报错信息显示：Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel。这表明当前部署内核不支持 fentry 类型的 eBPF 程序。根据知识库规则，此错误匹配 'attach_type_unsupported' ...(truncated)",
+        "repair_action": {
+          "error_type": "attach_type_unsupported",
+          "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+          "key_lines": [
+            "Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel."
+          ]
+        }
+      },
+      "thought_process": "```json\n{\n  \"can_fix\": false,\n  \"error_type\": \"attach_type_unsupported\",\n  \"analysis_report\": \"静态检查失败，错误签名 static_check_failed。关键报错信息显示：Program type \\\"fentry\\\" from SEC(\\\"fentry/__x64_sys_clock_nanosleep\\\") is not in bpftool program type support list for this kernel。这表明当前部署内核不支持 fentry 类型的 eBPF 程序。根据知识库规则，此错误匹配 'attach...(truncated)"
+    }
+  ]
+}

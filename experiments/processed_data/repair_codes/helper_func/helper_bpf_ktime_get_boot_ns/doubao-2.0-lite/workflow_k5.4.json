@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T03:11:45.844686+00:00",
+  "updated_at": "2026-03-24T03:12:26.398543+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 40.554,
+  "module_durations_s": {
+    "deploy_tool": 28.695,
+    "Analyzer": 7.372,
+    "Repairer": 3.122,
+    "Inspector": 1.365,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T03:11:45.844686+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 24.228
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T03:12:10.072802+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将不被支持的bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。",
+        "analysis_report": "静态检查阶段检测到当前代码使用了bpf_ktime_get_boot_ns辅助函数，该函数在当前目标内核中不存在，未被包含在bpftool的助手白名单中，属于eBPF辅助函数兼容性问题，可以通过替换为兼容的辅助函数修改源码解决。"
+      },
+      "duration_s": 7.372
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T03:12:17.444917+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "bpf_ktime_get_boot_ns在当前目标内核不存在，替换为兼容性更好的bpf_ktime_get_ns可以解决静态检查错误，同时保留原有计数逻辑，不改变原始语义。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 3.122
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T03:12:20.566862+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改符合Analyzer的修复建议，已将不被支持的bpf_ktime_get_boot_ns成功替换为兼容性更好的bpf_ktime_get_ns，原有业务逻辑（包括条件判断、计数逻辑等）均完整保留，仅删除了多余的空行，未修改核心功能，符合修复要求。"
+      },
+      "duration_s": 1.365
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T03:12:21.931396+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 4.467
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T03:12:26.398496+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 15
+      }
+    }
+  ]
+}

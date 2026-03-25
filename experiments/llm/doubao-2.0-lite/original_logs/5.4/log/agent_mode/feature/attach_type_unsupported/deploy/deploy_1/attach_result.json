@@ -1,0 +1,46 @@
+{
+  "success": false,
+  "stage": "attach",
+  "attached": false,
+  "skipped": false,
+  "reason": "libbpf_loader_attach_failed",
+  "error_log": "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2",
+  "error_message": "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2",
+  "daemon_stdout": "loaded obj=/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o\npinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps\n",
+  "daemon_stderr": "libbpf: prog 'attach_type_unsupported': failed to create kprobe 'do_sys_openat2+0x0' perf event: No such file or directory\nattach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2\n",
+  "daemon_returncode": 20,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_attach_type_unsupported"
+  ],
+  "plan": {
+    "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+    "section": "kprobe/do_sys_openat2",
+    "program_type": "kprobe",
+    "attach_target": "do_sys_openat2",
+    "autoattach_supported": true,
+    "autoattach_requested": true
+  },
+  "pid": 311,
+  "maps_dir": null,
+  "ready_line": null,
+  "via_libbpf_loader_daemon": true,
+  "error_log_lines": [
+    "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2"
+  ],
+  "error_message_lines": [
+    "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2"
+  ],
+  "daemon_stdout_lines": [
+    "loaded obj=/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+    "pinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps"
+  ],
+  "daemon_stderr_lines": [
+    "libbpf: prog 'attach_type_unsupported': failed to create kprobe 'do_sys_openat2+0x0' perf event: No such file or directory",
+    "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2"
+  ]
+}

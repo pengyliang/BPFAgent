@@ -1,0 +1,34 @@
+{
+  "success": false,
+  "stage": "compile_failed",
+  "steps": {
+    "static_check": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "compile": {
+      "status": "failed",
+      "success": false,
+      "error_log": "In file included from /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c:2:\nIn file included from /usr/include/bpf/bpf.h:29:\nIn file included from /usr/lib/llvm-14/lib/clang/14.0.6/include/stdint.h:52:\nIn file included from /usr/include/stdint.h:26:\nIn file included from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33:\nIn file included from /usr/include/features.h:513:\n/usr/include/x86_64-linux-gnu/gnu/stubs.h:7:11: fatal error: 'gnu/stubs-32.h' file not found\n# include <gnu/stubs-32.h>\n          ^~~~~~~~~~~~~~~~\n1 error generated."
+    },
+    "load": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "attach": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "runtime": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    }
+  }
+}

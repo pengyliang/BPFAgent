@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-03-24T04:29:56.763895+00:00",
+  "updated_at": "2026-03-24T04:30:40.795340+00:00",
+  "final_decision": "failed_refine",
+  "deploy_state": false,
+  "failed_stage": "static_check_failed",
+  "total_duration_s": 44.031,
+  "module_durations_s": {
+    "deploy_tool": 23.678,
+    "Analyzer": 20.353,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T04:29:56.763895+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 23.678
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T04:30:20.442083+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": false,
+        "failed_stage": "static_check_failed",
+        "error_type": "attach_target_missing",
+        "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+        "analysis_report": "当前失败由两个核心问题导致：1) 目标符号 do_sys_openat2 在当前主机的 /proc/kallsyms 中不存在，这意味着该符号在内核中未导出或名称不匹配；2) 代码使用了 CO-RE/BPF_CORE_READ 机制，但目标内核缺少 /sys/kernel/btf/vmlinux (BTF信息)，无法支持CO-RE重定位。这两个问题都属于目标内核环境兼容性问题，而非源码缺陷。根据知识库规则 attach_type_unsupported 的 handoff 指引：当目标符号不存在于 /proc/kallsyms 时，属于内核环境层面的限制，无法通过源码修改解决。当前内核既不提供目标符号导出，也不提供BTF支持，属于双...(truncated)"
+      },
+      "duration_s": 20.353
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T04:30:40.795295+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "failed_refine",
+        "deploy_state": false,
+        "failed_stage": "static_check_failed",
+        "has_repaired": false,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

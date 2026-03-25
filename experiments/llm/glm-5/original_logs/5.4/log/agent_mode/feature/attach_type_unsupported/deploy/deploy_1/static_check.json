@@ -1,0 +1,58 @@
+{
+  "success": true,
+  "error_warning_count": {
+    "error": 0,
+    "warning": 1
+  },
+  "issues": [
+    {
+      "check": "program_type_attach_availability",
+      "level": "warning",
+      "code": "attach_target_not_found",
+      "message": "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+      "suggestion": "Verify target symbol on deployment kernel or adjust attach target.",
+      "evidence": {
+        "sec": "kprobe/do_sys_openat2",
+        "target": "do_sys_openat2"
+      },
+      "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c"
+    }
+  ],
+  "results": [
+    {
+      "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+      "program_sections": [
+        "kprobe/do_sys_openat2"
+      ],
+      "program_types": [
+        "kprobe"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_map_lookup_elem",
+        "bpf_map_lookup_elem",
+        "bpf_get_current_pid_tgid"
+      ],
+      "issues": [
+        {
+          "check": "program_type_attach_availability",
+          "level": "warning",
+          "code": "attach_target_not_found",
+          "message": "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+          "suggestion": "Verify target symbol on deployment kernel or adjust attach target.",
+          "evidence": {
+            "sec": "kprobe/do_sys_openat2",
+            "target": "do_sys_openat2"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "error_count": 0,
+    "warning_count": 1
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "success": true,
+  "stage": "compile",
+  "source_file": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_1/attach_type_unsupported_repair_1.bpf.c",
+  "object_file": "/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+  "compile_mode": "core",
+  "vmlinux_header": "/host/output/5.4/log/vmlinux.h",
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-D__TARGET_ARCH_x86",
+    "-I/host/output/5.4/log",
+    "-I/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_1",
+    "-c",
+    "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_1/attach_type_unsupported_repair_1.bpf.c",
+    "-o",
+    "/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "",
+  "returncode": 0,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": []
+}

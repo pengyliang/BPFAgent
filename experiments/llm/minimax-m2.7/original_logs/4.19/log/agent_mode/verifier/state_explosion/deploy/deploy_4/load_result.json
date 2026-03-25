@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "stage": "load",
+  "skipped": true,
+  "reason": "compile_failed"
+}

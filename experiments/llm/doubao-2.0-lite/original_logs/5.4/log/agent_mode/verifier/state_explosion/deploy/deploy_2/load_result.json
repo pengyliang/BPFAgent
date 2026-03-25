@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "stage": "load",
+  "via_libbpf_loader_daemon": true,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/5.4/build/verifier/state_explosion/state_explosion.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_state_explosion"
+  ],
+  "pid": 661,
+  "ready_line": "READY pid=662 maps_dir=/sys/fs/bpf/ebpf_agent_state_explosion_maps attached=1",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_state_explosion_maps",
+  "phase_details": {},
+  "error_message": "",
+  "stdout_lines": [],
+  "stderr_lines": []
+}

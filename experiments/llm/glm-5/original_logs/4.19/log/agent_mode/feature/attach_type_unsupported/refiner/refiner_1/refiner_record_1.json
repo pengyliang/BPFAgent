@@ -1,0 +1,87 @@
+{
+  "generated_at": "2026-03-23T16:45:11.285772+00:00",
+  "node": "Refiner",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "deploy_state": false,
+    "failed_stage": "static_check_failed",
+    "deploy": {
+      "success": false,
+      "stage": "static_check_failed",
+      "compile": {
+        "success": true,
+        "stage": "compile",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "load": {
+        "success": true,
+        "stage": "load",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "attach": {
+        "success": true,
+        "stage": "attach",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "runtime": {
+        "success": true,
+        "stage": "runtime_test",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "detach": {
+        "success": true,
+        "stage": "detach",
+        "detached": true,
+        "skipped": false,
+        "reason": "loader_terminated",
+        "pin_path": "/sys/fs/bpf/ebpf_agent_attach_type_unsupported",
+        "pid": null
+      }
+    },
+    "repair_attempts": [],
+    "workflow_events": [
+      {
+        "seq": 1,
+        "ts": "2026-03-23T16:45:01.501338+00:00",
+        "node": "deploy_tool",
+        "node_index": 1,
+        "key_results": {
+          "deploy_state": false,
+          "failed_stage": "static_check_failed"
+        },
+        "duration_s": 9.76
+      },
+      {
+        "seq": 2,
+        "ts": "2026-03-23T16:45:11.260935+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "key_results": {
+          "can_fix": false,
+          "failed_stage": "static_check_failed",
+          "error_type": "attach_target_missing",
+          "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+          "analysis_report": "部署失败的根本原因是目标内核环境不支持 BTF（/sys/kernel/btf/vmlinux 缺失），导致依赖 CO-RE（Compile Once - Run Everywhere）机制的 BPF 程序无法运行。虽然日志中同时存在 attach target 'do_sys_openat2' 未找到的警告，但这通常是因为缺乏 BTF 信息导致无法解析内核符号结构，属于同一根因的并发症状。由于当前环境不支持 CO-RE 重定位，必须修改源码，移除对 BPF_CORE_READ 的依赖，转而使用传统的 bpf_probe_read_kernel 系列辅助函数，并采用硬编码偏移量或结构体定义的方式来适配目标内核。"
+        }
+      }
+    ]
+  },
+  "thought_process": "```yaml\npatterns:\n  \"core_environment_mismatch\":\n    summary: 目标内核环境缺失 BTF 支持或指定的 Hook 点符号不存在，导致 CO-RE 程序无法运行或 Attach 失败。\n    aliases:\n      - core_requires_btf\n      - attach_target_not_found\n    stage_hints:\n      - static_check_failed\n    can_fix: false\n    handoff: \"目标内核不支持 BTF 或缺少目标符号，无法通过源码自动修复。建议切换至非 CO-RE 环境部署，或人工确认内核版本与符号存在性。\"\n```",
+  "outputs": {
+    "final_decision": "failed_refine",
+    "reflect_record_path": null,
+    "repair_report_path": "/host/output/4.19/log/agent_mode/feature/attach_type_unsupported/repair_report.json",
+    "knowledge_base_path": "/host/knowledge_base/repair/repair_method.yaml",
+    "applied_updates": {}
+  },
+  "result_params": {
+    "has_repaired": false,
+    "fixed_time": 0,
+    "last_error_signature": "static_check_failed"
+  }
+}

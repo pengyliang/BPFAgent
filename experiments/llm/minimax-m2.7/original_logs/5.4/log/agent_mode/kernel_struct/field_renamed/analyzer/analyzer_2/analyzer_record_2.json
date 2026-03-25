@@ -1,0 +1,252 @@
+{
+  "generated_at": "2026-03-24T04:33:34.854345+00:00",
+  "node": "Analyzer",
+  "node_index": 2,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_1/field_renamed_repair_1.bpf.c",
+    "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint field_add_remove(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    struct task_struct *task;\n    __u64 task_state;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    task = (struct task_struct *)bpf_get_current_task();\n    if (!task)\n        return 0;\n    /* Crutial block */\n    task_state = BPF_CORE_READ(task, state);\n    /* Crutial block end */\n    (*val)++;\n\n    return 0;\n}\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "static_check_failed",
+    "failed_stage_result_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/deploy/deploy_2/static_check.json",
+    "failed_stage_result": {
+      "success": false,
+      "error_warning_count": {
+        "error": 1,
+        "warning": 0
+      },
+      "issues": [
+        {
+          "check": "helper_availability",
+          "level": "error",
+          "code": "helper_not_in_probe",
+          "message": "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.",
+          "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+          "evidence": {
+            "helper": "bpf_probe_read_kernel"
+          },
+          "source_file": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_1/field_renamed_repair_1.bpf.c"
+        }
+      ],
+      "results": [
+        {
+          "source_file": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_1/field_renamed_repair_1.bpf.c",
+          "program_sections": [
+            "tracepoint/syscalls/sys_enter_openat"
+          ],
+          "program_types": [
+            "tracepoint"
+          ],
+          "license": "GPL",
+          "map_types": [
+            "BPF_MAP_TYPE_ARRAY"
+          ],
+          "helper_calls": [
+            "bpf_map_lookup_elem",
+            "bpf_map_lookup_elem",
+            "bpf_get_current_pid_tgid",
+            "bpf_get_current_task",
+            "bpf_probe_read_kernel"
+          ],
+          "issues": [
+            {
+              "check": "helper_availability",
+              "level": "error",
+              "code": "helper_not_in_probe",
+              "message": "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.",
+              "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+              "evidence": {
+                "helper": "bpf_probe_read_kernel"
+              }
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 0
+      }
+    },
+    "deploy_summary_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/deploy/deploy_2/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "static_check_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "load": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        }
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:32:47.132480+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 compile_failed，can_fix=True，建议=修改代码，将 /host/data/kernel_struct/field_renamed/field_renamed.bpf.c 第42行的 BPF_CORE_READ(task, __state) 修改为 BPF_CORE_READ(task, state)，以匹配当前内核 vmlinux.h 中的结构体成员定义 'volatile long int state'。",
+        "inputs": {
+          "failed_stage": "compile_failed",
+          "failed_stage_result": {
+            "success": false,
+            "stage": "compile",
+            "source_file": "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c",
+            "object_file": "/host/output/5.4/build/kernel_struct/field_renamed/field_renamed.bpf.o",
+            "compile_mode": "core",
+            "vmlinux_header": "/host/output/5.4/log/vmlinux.h",
+            "vmlinux_generation": null,
+            "command": [
+              "clang",
+              "-O3",
+              "-g",
+              "-target",
+              "bpf",
+              "-D__TARGET_ARCH_x86",
+              "-I/host/output/5.4/log",
+              "-I/host/data/kernel_struct/field_renamed",
+              "... trimmed 4 items"
+            ],
+            "stdout": "",
+            "stderr": "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?\n    task_state = BPF_CORE_READ(task, __state);\n                                     ^~~~~~~\n  ...(truncated)",
+            "returncode": 1,
+            "timed_out": false,
+            "...": "trimmed 2 fields"
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "compile_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"failed\", \"success\": false, \"error_log\": \"/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?\\n    task_state = BPF_CORE_READ(task, __s...(truncated)",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"compile_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"compile_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"compile_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "编译失败根因明确：源码第42行使用 BPF_CORE_READ(task, __state) 访问 task_struct 结构体成员，但当前内核 vmlinux.h 中该成员已从 '__state' 重命名为 'state'。clang 编译器在类型检查阶段发现成员名称不匹配，直接报错 'no member named __state in struct task_struct'，并建议使用 'state'。这是典型的内核版本间结构体成员命名变更问题，CO-RE (Comp...(truncated)",
+          "repair_action": {
+            "error_type": "struct_member_renamed_in_vmlinux",
+            "repair_method": "修改代码，将 /host/data/kernel_struct/field_renamed/field_renamed.bpf.c 第42行的 BPF_CORE_READ(task, __state) 修改为 BPF_CORE_READ(task, state)，以匹配当前内核 vmlinux.h 中的结构体成员定义 'volatile long int state'。",
+            "key_lines": [
+              "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?",
+              "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?"
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"struct_member_renamed_in_vmlinux\",\n  \"analysis_report\": \"编译失败根因明确：源码第42行使用 BPF_CORE_READ(task, __state) 访问 task_struct 结构体成员，但当前内核 vmlinux.h 中该成员已从 '__state' 重命名为 'state'。clang 编译器在类型检查阶段发现成员名称不匹配，直接报错 'no member named __state in struct task_struct'，并建议使用 'state'。这是典型的内核版本间...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:33:01.953690+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c",
+            "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} co...(truncated)",
+            "analysis_report": "编译失败根因明确：源码第42行使用 BPF_CORE_READ(task, __state) 访问 task_struct 结构体成员，但当前内核 vmlinux.h 中该成员已从 '__state' 重命名为 'state'。clang 编译器在类型检查阶段发现成员名称不匹配，直接报错 'no member named __state in struct task_struct'，并建议使用 'state'。这是典型的内核版本间结构体成员命名变更问题，CO-RE (Comp...(truncated)",
+            "repair_action": {
+              "error_type": "struct_member_renamed_in_vmlinux",
+              "repair_method": "修改代码，将 /host/data/kernel_struct/field_renamed/field_renamed.bpf.c 第42行的 BPF_CORE_READ(task, __state) 修改为 BPF_CORE_READ(task, state)，以匹配当前内核 vmlinux.h 中的结构体成员定义 'volatile long int state'。",
+              "key_lines": "[\"/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?\", \"/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named ...(truncated)"
+            },
+            "error_signal": {
+              "stage": "compile_failed",
+              "error_types": "[\"compile_error\"]",
+              "key_lines": "[\"/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?\", \"/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named ...(truncated)"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_1/field_renamed_repair_1.bpf.c",
+          "code_change_summary": "新增 1 行，删除 2 行。\n     if (!task)\n         return 0;\n     /* Crutial block */\n-    task_state = BPF_CORE_READ(task, __state);\n+    task_state = BPF_CORE_READ(task, state);\n     /* Crutial block end */\n     (*val)++;\n \n     return 0;\n }\n-\n char...(truncated)",
+          "patched_code_file": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_1/field_renamed_repair_1.bpf.c",
+          "rationale": "根据 clang 编译器报错 'no member named __state in struct task_struct; did you mean state?'，当前内核 5.4 的 vmlinux.h 中 task_struct 的状态成员已从 '__state' 重命名为 'state'。BPF_CORE_READ 宏在编译时进行类型检查，成员名称必须与 vmlinux.h 保持一致。最小修复方案：将第42行的 'BPF_CORE_READ(task, __stat...(truncated)"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"基于 Analyzer 的分析报告，明确指出第42行使用了已重命名的结构体成员 '__state'，需改为 'state'。这是内核版本间结构体成员命名变更问题，编译时必须使用目标内核 vmlinux.h 中定义的成员名称。修复方法仅涉及一处文本替换，保持其他所有代码不变。\",\n  \"rationale\": \"根据 clang 编译器报错 'no member named __state in struct task_struct; did you mean state?'，当前内核 5.4 的 vmlinux.h 中 task_struct 的状态成员已从 '__state' 重命名...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:33:10.282225+00:00",
+        "node": "Inspector",
+        "node_index": 1,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=True，结论=修改前后语义完全等价。修复动作精准对应 Analyzer 的 repair_action：仅将第42行 BPF_CORE_READ(task, __state) 中的结构体成员名 '__state' 替换为 'state'，其余代码逻辑（map 查找、tgid 过滤、task 获取、空指针检查、(*val)++ 计数逻辑）均原样保留。修改符合 'struct_member_renamed_in_vmlinux' 的修复方向，未引入任何额外变更或逻辑偏移。",
+        "inputs": {
+          "source_before": "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c",
+          "source_after": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_1/field_renamed_repair_1.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "编译失败根因明确：源码第42行使用 BPF_CORE_READ(task, __state) 访问 task_struct 结构体成员，但当前内核 vmlinux.h 中该成员已从 '__state' 重命名为 'state'。clang 编译器在类型检查阶段发现成员名称不匹配，直接报错 'no member named __state in struct task_struct'，并建议使用 'state'。这是典型的内核版本间结构体成员命名变更问题，CO-RE (Comp...(truncated)",
+            "repair_action": {
+              "error_type": "struct_member_renamed_in_vmlinux",
+              "repair_method": "修改代码，将 /host/data/kernel_struct/field_renamed/field_renamed.bpf.c 第42行的 BPF_CORE_READ(task, __state) 修改为 BPF_CORE_READ(task, state)，以匹配当前内核 vmlinux.h 中的结构体成员定义 'volatile long int state'。",
+              "key_lines": "[\"/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?\", \"/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named ...(truncated)"
+            }
+          },
+          "code_change_summary": "新增 1 行，删除 2 行。\n     if (!task)\n         return 0;\n     /* Crutial block */\n-    task_state = BPF_CORE_READ(task, __state);\n+    task_state = BPF_CORE_READ(task, state);\n     /* Crutial block end */\n     (*val)++;\n \n     return 0;\n }\n-\n char...(truncated)"
+        },
+        "outputs": {
+          "semantic_equivalent": true,
+          "inspector_report": "修改前后语义完全等价。修复动作精准对应 Analyzer 的 repair_action：仅将第42行 BPF_CORE_READ(task, __state) 中的结构体成员名 '__state' 替换为 'state'，其余代码逻辑（map 查找、tgid 过滤、task 获取、空指针检查、(*val)++ 计数逻辑）均原样保留。修改符合 'struct_member_renamed_in_vmlinux' 的修复方向，未引入任何额外变更或逻辑偏移。"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改前后语义完全等价。修复动作精准对应 Analyzer 的 repair_action：仅将第42行 BPF_CORE_READ(task, __state) 中的结构体成员名 '__state' 替换为 'state'，其余代码逻辑（map 查找、tgid 过滤、task 获取、空指针检查、(*val)++ 计数逻辑）均原样保留。修改符合 'struct_member_renamed_in_vmlinux' 的修复方向，未引入任何额外变更或逻辑偏移。\",\n  \"suggestion\": \"\"\n}\n```"
+      }
+    ],
+    "error_signature": "static_check_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  attach_type_unsupported:\n    summary: 目标内核不支持当前选择的attach类型，或目标符号未以允许对应探针类型挂载的形式导出\n    aliases:\n    - program_type_not_supported\n    - attach_target_not_found\n    stage_hints:\n    - attach_failed\n    - static_check_failed\n    can_fix: false\n    evidence_hint: []\n    repair_methods: []\n    handoff: 当前内核不支持所有尝试过的attach类型，且目标符号不存在于/proc/kallsyms，停止自动修复，请检查目标符号或更换兼容的内核环境。\n  helper_api_compatibility:\n    summary: 使用的 BPF 辅助函数在当前内核版本或配置中不可用\n    aliases:\n    - helper_not_in_probe\n    - map_type_not_in_probe\n    - helper_bpf_probe_read_kernel_missing\n    - helper_bpf_strncmp_missing\n    - helper_bpf_get_current_task_btf_missing\n    - helper_bpf_snprintf_missing\n    - bpf_snprintf_rodata_relocation_failed\n    - helper_api_compatibility\n    stage_hints:\n    - static_check_failed\n    - compile_failed\n    - load_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 将不可用的辅助函数替换为功能等价且兼容性更好的替代实现（如使用 bpf_probe_read_kernel_str 配合手动循环比较替代 bpf_strncmp）。\n    - 若存在功能等价的旧版辅助函数，优先直接替换。若无直接等价函数，则通过组合其他可用辅助函数实现原语逻辑。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义。\n    - 将 bpf_ringbuf_output 替换为 bpf_perf_event_output，传入上下文 ctx、map 指针以及 BPF_F_CURRENT_CPU\n      标志（或结合 bpf_get_smp_processor_id）。\n    - 若目标内核不支持 bpf_ktime_get_boot_ns（常见于 < 5.8 内核），将其替换为兼容性更好的 bpf_ktime_get_ns。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），使用 `#pragma unroll` 展开的手动循环逐字节比较字符串，以兼容旧版本内核。\n    - 修改代码，移除对 bpf_snprintf 的调用。由于 bpf_snprintf 常用于格式化输出字符串到 map 或 ringbuf，在低版本内核中，应改用\n      bpf_probe_read_kernel_str 等可用函数读取字符串，并手动逐字节拷贝到目标 buffer 中，或者直接输出原始数据而避免在内核态进行格式化处理。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将 `BPF_CORE_READ` 宏调用替换为显式的 `bpf_probe_read`\n      调用。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义（通常为 4 字节）。\n    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+），将其替换为 bpf_get_current_task，并检查后续成员访问逻辑是否兼容。\n    - 若目标内核不支持 bpf_snprintf (Linux 5.13+)，应将其替换为 bpf_probe_read_kernel_str (Linux\n      5.5+) 或 bpf_probe_read (Linux 4.7+)，并适配返回值逻辑（如将 bpf_probe_read 的 0 返回值映射为正数）以保留原有的条件判断结构。\n    - 修改代码，将bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，移除对bpf_snprintf的调用，改用bpf_probe_read_kernel_str读取字符串，手动逐字节拷贝到目标buffer中，或直接输出原始数据避免在内核态进行格式化处理。\n    - 修改代码，将不被支持的bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容。将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 修改代码，使用`#pragma unroll`展开的手动循环逐字节比较字符串，替代不可用的bpf_strncmp函数，兼容低版本内核。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），直接在调用点展开使用 `#pragma unroll` 的手动循环逐字节比较实现，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。\n    - 修改代码，将BPF_MAP_TYPE_RINGBUF地图类型替换为BPF_MAP_TYPE_PERF_EVENT_ARRAY，并补全key_size和value_size定义（通常为4字节）。再将bpf_ringbuf_output替换为bpf_perf_event_output，传入上下文ctx、map指针以及BPF_F_CURRENT_CPU标志。\n    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+）且不支持CO-RE BTF，将其替换为 bpf_get_current_task，移除vmlinux.h引入并前向声明不完整struct\n      task_struct，使用对应架构内核版本的固定偏移量结合bpf_probe_read读取成员，彻底消除对CO-RE BTF的依赖。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），在调用点直接展开使用 `#pragma unroll` 的手动循环逐字节比较实现，显式保留最大比较长度参数，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。\n    - 在Linux 5.13以下内核使用bpf_snprintf时，需直接移除对bpf_snprintf的调用，若存在字符串常量输出仍导致.rodata.str1.1重定位失败，需彻底移除包含静态字符串常量的输出调用，保留原有核心业务逻辑。\n    - 修改代码，将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在 BPF_CORE_READ\n      宏调用则将其替换为显式的 bpf_probe_read 调用。\n    - 修改代码，将 `bpf_ktime_get_boot_ns` 替换为兼容性更好的 `bpf_ktime_get_ns`。具体修改：在源文件 /host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c\n      中，将所有对 `bpf_ktime_get_boot_ns()` 的调用替换为 `bpf_ktime_get_ns()`，并同步更新对应的头文件或函数声明。\n    - 修改代码，将所有 bpf_ktime_get_boot_ns 替换为 bpf_ktime_get_ns。bpf_ktime_get_ns 是更早期内核版本就支持的兼容函数，返回墙上时间（wall\n      clock time）纳秒数，功能等价且覆盖更广的内核版本。",
+    "error_signal": {
+      "stage": "static_check_failed",
+      "error_types": [
+        "helper_not_in_probe"
+      ],
+      "key_lines": [
+        "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"静态检查失败，根因是 `bpf_probe_read_kernel` helper 在目标内核 5.4 中不可用。该 helper 是 Linux 5.5+ 才引入的，而当前目标内核为 5.4。根据历史记录，源码已通过第42行从 `BPF_CORE_READ(task, __state)` 修复为 `BPF_CORE_READ(task, state)`，编译阶段通过。但 BPF_CORE_READ 宏在 CO-RE 场景下会展开为 `bpf_probe_read_kernel` 调用（而非 `bpf_probe_read`），导致 bpftool static checker 检测到该 helper 不在 5.4 内核的白名单中，触发 `helper_not_in_probe` 错误。这是典型的 BPF 辅助函数与目标内核版本不兼容问题",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "阶段 `static_check_failed` 失败；识别到错误类型：helper_not_in_probe；建议优先做最小必要修复。",
+    "repair_action": {
+      "error_type": "helper_not_in_probe",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "key_lines": [
+        "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "max_fix_time": 4
+  }
+}

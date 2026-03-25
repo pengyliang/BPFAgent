@@ -1,0 +1,50 @@
+{
+  "stage": "runtime_test",
+  "case_dir": "/host/data/verifier/state_explosion",
+  "workload": "/host/data/verifier/state_explosion/workload.sh",
+  "validator": "/host/data/verifier/state_explosion/validator.yaml",
+  "pin_path": "/sys/fs/bpf/ebpf_agent_state_explosion",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_state_explosion_maps",
+  "success": true,
+  "skipped": false,
+  "reason": "validator_passed",
+  "validator_payload": {
+    "type": "min",
+    "map": "counter",
+    "key": 0,
+    "value": 1
+  },
+  "scheme_a": {
+    "enabled": true,
+    "cfg_map_pin": "/sys/fs/bpf/ebpf_agent_state_explosion_maps/cfg",
+    "workload_pid": 1315,
+    "cfg_update_command": [
+      "sudo",
+      "/host/src/ebpf/utils/mapctl",
+      "update-u32",
+      "--map-pin",
+      "/sys/fs/bpf/ebpf_agent_state_explosion_maps/cfg",
+      "--key-u32",
+      "0",
+      "--value-u32",
+      "1315"
+    ],
+    "cfg_update_stdout": "{\"key\":0,\"value\":1315}\n",
+    "cfg_update_stderr": "",
+    "cfg_update_timed_out": false,
+    "cfg_update_returncode": 0,
+    "status": "applied"
+  },
+  "map_pin_path": "/sys/fs/bpf/ebpf_agent_state_explosion_maps/counter",
+  "actual_value": 2514976298,
+  "expected": ">= 1",
+  "mapctl_command": [
+    "sudo",
+    "/host/src/ebpf/utils/mapctl",
+    "lookup-u64",
+    "--map-pin",
+    "/sys/fs/bpf/ebpf_agent_state_explosion_maps/counter",
+    "--key-u32",
+    "0"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "success": false,
+  "stage": "compile_failed",
+  "steps": {
+    "static_check": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "compile": {
+      "status": "failed",
+      "success": false,
+      "error_log": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_4/field_offset_change_repair_4.bpf.c:19:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n                               ^\n/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_4/field_offset_change_repair_4.bpf.c:36:62: error: use of undeclared identifier 'size_t'; did you mean 'sizeof'?\n                       (const void *)((const char *)task + ((size_t)&((struct task_struct *)0)->tgid))) != 0)\n                                                             ^~~~~~\n                                                             sizeof\n/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_4/field_offset_change_repair_4.bpf.c:36:95: error: incomplete definition of type 'struct task_struct'\n                       (const void *)((const char *)task + ((size_t)&((struct task_struct *)0)->tgid))) != 0)\n                                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~^\n/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'\nstruct task_struct;\n       ^\n/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_4/field_offset_change_repair_4.bpf.c:36:61: error: reference to overloaded function could not be resolved; did you mean to call it?\n                       (const void *)((const char *)task + ((size_t)&((struct task_struct *)0)->tgid))) != 0)\n                                                            ^~~~~~~~\n1 warning and 3 errors generated."
+    },
+    "load": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "attach": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "runtime": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    }
+  }
+}

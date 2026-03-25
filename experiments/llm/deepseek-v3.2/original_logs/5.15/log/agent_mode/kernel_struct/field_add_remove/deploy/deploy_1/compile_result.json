@@ -1,0 +1,29 @@
+{
+  "success": true,
+  "stage": "compile",
+  "source_file": "/host/data/kernel_struct/field_add_remove/field_add_remove.bpf.c",
+  "object_file": "/host/output/5.15/build/kernel_struct/field_add_remove/field_add_remove.bpf.o",
+  "compile_mode": "core",
+  "vmlinux_header": "/host/output/5.15/log/vmlinux.h",
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-D__TARGET_ARCH_x86",
+    "-I/host/output/5.15/log",
+    "-I/host/data/kernel_struct/field_add_remove",
+    "-c",
+    "/host/data/kernel_struct/field_add_remove/field_add_remove.bpf.c",
+    "-o",
+    "/host/output/5.15/build/kernel_struct/field_add_remove/field_add_remove.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "",
+  "returncode": 0,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": []
+}

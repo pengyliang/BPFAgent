@@ -1,0 +1,144 @@
+{
+  "generated_at": "2026-03-23T16:12:35.708585+00:00",
+  "updated_at": "2026-03-23T16:14:49.095849+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 133.387,
+  "module_durations_s": {
+    "deploy_tool": 27.741,
+    "Analyzer": 79.818,
+    "Repairer": 15.103,
+    "Inspector": 10.725,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T16:12:35.708585+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 10.433
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T16:12:46.141815+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：1) 将 bpf_get_current_task_btf 替换为更兼容的 bpf_get_current_task。2) 将 bpf_probe_read_kernel 替换为更兼容的 bpf_probe_read（这是老版本内核中可用的 helper，功能类似但缺少用户/内核空间区分）。",
+        "analysis_report": "静态检查失败，根因是目标内核不支持源码中使用的两个较新的 BPF helper 函数：`bpf_get_current_task_btf` 和 `bpf_probe_read_kernel`。这两个 helper 分别用于获取当前任务结构体（依赖 BTF）和从内核空间安全读取数据。根据知识库规则 `helper_unsupported`，其 `stage_hints` 包含 `static_check_failed`，`can_fix` 为 true，且报错信息 `Helper ... is not present in bpftool helper whitelist.` 与 `evidence_hint` 中的 `unknown...(truncated)"
+      },
+      "duration_s": 23.783
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T16:13:09.924797+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "将 bpf_get_current_task_btf() 替换为 bpf_get_current_task() 是最小必要修改。bpf_get_current_task() 是更早版本内核就支持的 helper，功能类似但返回的是 struct task_struct* 指针，兼容性更好。这个修改保持了获取当前任务结构体的原始语义，不影响后续的 BPF_CORE_READ(task, tgid) ...(truncated)",
+        "next_deploy_index": 2
+      },
+      "duration_s": 6.574
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-23T16:13:16.499094+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改符合 Analyzer 的修复建议。原始代码使用 `bpf_get_current_task_btf()` 获取当前任务结构体，但目标内核不支持该 helper。修复后代码将其替换为 `bpf_get_current_task()`，这是 Analyzer 建议的更兼容版本。修改仅涉及 helper 函数的替换，程序的核心逻辑（包括条件判断、map 操作、BPF_CORE_READ 和计数器递增）均保持不变。代码中并未使用 `bpf_probe_read_kernel`，因此无需替换，这与 Analyzer 建议的修复方向一致。"
+      },
+      "duration_s": 4.665
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-23T16:13:21.163785+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 11.096
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-23T16:13:32.260243+00:00",
+      "node": "Analyzer",
+      "node_index": 2,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+        "analysis_report": "静态检查再次失败，但错误类型已发生变化。回顾历史：第一轮分析发现源码使用了两个不支持的 helper（bpf_get_current_task_btf 和 bpf_probe_read_kernel），Repairer 成功将 bpf_get_current_task_btf 替换为 bpf_get_current_task。然而，当前失败显示修复后的代码中仍存在另一个不支持的 helper：bpf_probe_read_kernel。根据 static_check_failed 阶段的错误详情，helper_calls 列表确认了 bpf_probe_read_kernel 的使用。结合知识库规则 helper_unsupport...(truncated)"
+      },
+      "duration_s": 56.035
+    },
+    {
+      "seq": 7,
+      "ts": "2026-03-23T16:14:28.295033+00:00",
+      "node": "Repairer",
+      "node_index": 2,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "将 BPF_CORE_READ(task, tgid) 替换为使用 bpf_probe_read(&task_tgid, sizeof(task_tgid), &task->tgid)。这样做的原因是：1) BPF_CORE_READ 宏在旧内核中可能依赖 bpf_probe_read_kernel，而目标内核不支持该 helper；2) 直接使用 bpf_probe_read 是兼容性更好的替代...(truncated)",
+        "next_deploy_index": 3
+      },
+      "duration_s": 8.529
+    },
+    {
+      "seq": 8,
+      "ts": "2026-03-23T16:14:36.823827+00:00",
+      "node": "Inspector",
+      "node_index": 2,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改符合 Analyzer 的修复建议。Analyzer 指出修复后的代码中仍存在不支持的 helper 函数 bpf_probe_read_kernel，并建议将其替换为目标内核支持的 bpf_probe_read。Repairer 将 `task_tgid = BPF_CORE_READ(task, tgid);` 替换为 `bpf_probe_read(&task_tgid, sizeof(task_tgid), &task->tgid);`。这一修改是合理的，因为 BPF_CORE_READ 宏在旧内核中可能依赖 bpf_probe_read_kernel，而直接使用 bpf_probe_read 是兼容性更好的替代方案。修...(truncated)"
+      },
+      "duration_s": 6.06
+    },
+    {
+      "seq": 9,
+      "ts": "2026-03-23T16:14:42.884060+00:00",
+      "node": "deploy_tool",
+      "node_index": 3,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 6.212
+    },
+    {
+      "seq": 10,
+      "ts": "2026-03-23T16:14:49.095776+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

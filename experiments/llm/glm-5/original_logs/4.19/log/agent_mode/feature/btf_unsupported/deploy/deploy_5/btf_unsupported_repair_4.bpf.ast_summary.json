@@ -1,0 +1,8 @@
+{
+  "source_file": "/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c",
+  "ast_fallback": true,
+  "ast_fallback_reason": "clang_exit_1",
+  "bpf_helper_calls": [],
+  "struct_field_access_paths": [],
+  "map_operation_sequence": []
+}

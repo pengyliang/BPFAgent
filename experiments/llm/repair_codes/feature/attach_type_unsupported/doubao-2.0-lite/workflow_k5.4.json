@@ -1,0 +1,158 @@
+{
+  "generated_at": "2026-03-24T03:12:11.310452+00:00",
+  "updated_at": "2026-03-24T03:14:01.856834+00:00",
+  "final_decision": "failed_refine",
+  "deploy_state": false,
+  "failed_stage": "static_check_failed",
+  "total_duration_s": 110.546,
+  "module_durations_s": {
+    "deploy_tool": 15.564,
+    "Analyzer": 77.316,
+    "Repairer": 7.367000000000001,
+    "Inspector": 10.297,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T03:12:11.310452+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "attach_failed"
+      },
+      "duration_s": 7.26
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T03:12:18.570553+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "attach_failed",
+        "error_type": "attach_type_unsupported",
+        "repair_method": "修改代码，将kprobe类型替换为kretprobe，若该内核符号仅允许kretprobe挂载或导出符号命名存在差异，调整section声明为kretprobe/do_sys_openat2并适配对应probe逻辑。",
+        "analysis_report": "本次attach失败原因为当前内核不支持对目标符号do_sys_openat2的kprobeattach类型，尝试创建kprobe perf event时找不到对应内核符号，返回No such file or directory错误，问题出在eBPF程序的attach类型选择与当前内核环境不兼容，属于可通过修改源码调整attach类型解决的问题。"
+      },
+      "duration_s": 67.669
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T03:13:26.240022+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "修改SEC声明的attach类型为kretprobe即可解决attach类型不支持的问题，原有计数逻辑和条件判断都保留，不改变原始语义",
+        "next_deploy_index": 2
+      },
+      "duration_s": 2.483
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T03:13:28.722723+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "当前修改完全符合Analyzer的修复建议，已将原代码中kprobe/do_sys_openat2的section声明修改为kretprobe/do_sys_openat2，保留了原有的计数逻辑和条件判断，没有修改原有业务语义，满足修复要求。"
+      },
+      "duration_s": 5.486
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T03:13:34.209203+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "attach_failed"
+      },
+      "duration_s": 3.926
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T03:13:38.135338+00:00",
+      "node": "Analyzer",
+      "node_index": 2,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "attach_failed",
+        "error_type": "attach_type_unsupported",
+        "repair_method": "修改代码，将kretprobe类型替换为fexit，调整section声明为fexit/do_sys_openat2，并适配对应probe的上下文逻辑，保留原有计数判断逻辑。",
+        "analysis_report": "第一次尝试kprobe类型attach do_sys_openat2失败，修改为kretprobe类型后仍然attach失败，报错依然是创建perf event时找不到目标符号do_sys_openat2，说明当前内核中该符号没有以允许kprobe/kretprobe直接挂载的形式导出，属于attach目标符号与探针类型不兼容，可通过修改源码使用fentry/fexit替换kprobe/kretprobe解决。"
+      },
+      "duration_s": 6.2
+    },
+    {
+      "seq": 7,
+      "ts": "2026-03-24T03:13:44.335729+00:00",
+      "node": "Repairer",
+      "node_index": 2,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "将section声明修改为fexit/do_sys_openat2，适配fexit的BPF_PROG宏参数，保留原有所有计数和条件判断逻辑，不改变原始语义，解决attach类型不兼容的问题",
+        "next_deploy_index": 3
+      },
+      "duration_s": 4.884
+    },
+    {
+      "seq": 8,
+      "ts": "2026-03-24T03:13:49.219675+00:00",
+      "node": "Inspector",
+      "node_index": 2,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "当前修改完全符合Analyzer的最新修复建议，已将原代码中kretprobe/do_sys_openat2的section声明修改为fexit/do_sys_openat2，完整保留了原有的计数判断逻辑和条件过滤逻辑，未修改原有业务语义，满足修复要求。"
+      },
+      "duration_s": 4.811
+    },
+    {
+      "seq": 9,
+      "ts": "2026-03-24T03:13:54.030982+00:00",
+      "node": "deploy_tool",
+      "node_index": 3,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 4.378
+    },
+    {
+      "seq": 10,
+      "ts": "2026-03-24T03:13:58.409318+00:00",
+      "node": "Analyzer",
+      "node_index": 3,
+      "key_results": {
+        "can_fix": false,
+        "failed_stage": "static_check_failed",
+        "error_type": "attach_type_unsupported",
+        "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+        "analysis_report": "前两轮分别尝试kprobe、kretprobe挂载do_sys_openat2均因找不到目标符号attach失败，修改为fexit后，当前静态检查提示当前内核不支持fexit程序类型，同时目标符号do_sys_openat2也未在/proc/kallsyms中找到，属于当前内核环境的eBPF程序类型兼容性问题，可通过修改源码更换为兼容当前内核的attach类型解决该问题。"
+      },
+      "duration_s": 3.447
+    },
+    {
+      "seq": 11,
+      "ts": "2026-03-24T03:14:01.856756+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "failed_refine",
+        "deploy_state": false,
+        "failed_stage": "static_check_failed",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

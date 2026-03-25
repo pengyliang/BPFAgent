@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-03-23T17:13:19.103109+00:00",
+  "case_display": "kernel_struct/field_renamed/field_renamed.bpf.c",
+  "final_stage": "static_check_failed",
+  "same_error_threshold": 3,
+  "error_signature_counts": {
+    "compile_failed:/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?": 1,
+    "static_check_failed": 1
+  },
+  "attempts": [
+    {
+      "attempt_index": 1,
+      "stage": "compile_failed",
+      "error_type": "struct_member_renamed_in_vmlinux",
+      "can_fix": true,
+      "source_before": "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_1/field_renamed_repair_1.bpf.c",
+      "analysis_report": "编译失败的原因是源码中使用了 `BPF_CORE_READ(task, __state)` 尝试读取 `task_struct` 结构体的 `__state` 字段，但当前内核版本（由 vmlinux.h 定义）中该结构体成员的实际名称为 `state`。这是内核结构体字段重命名导致的编译错误，Clang 编译器明确提示 'did you mean state?'。由于 BPF CO-RE (Compile Once - Run Everywhere) 机制依赖于字段名的精确匹配，当字段名发生变更时，需要修改源码以适配目标内核的字段定义。",
+      "repair_method": "修改代码，将 `/host/data/kernel_struct/field_renamed/field_renamed.bpf.c` 文件第 42 行的 `BPF_CORE_READ(task, __state)` 修改为 `BPF_CORE_READ(task, state)`，以匹配当前内核 vmlinux.h 中的结构体成员定义。",
+      "rationale": "修复方案是将第 42 行的 `task_state = BPF_CORE_READ(task, __state);` 修改为 `task_state = BPF_CORE_READ(task, state);`。这样做的原因是当前目标内核的 `task_struct` 定义中该字段名为 `state`。修改后，BPF CO-RE 机制将能正确读取该字段，从而解决编译错误。该修改完全符合 '最小必要修复' 的原则，未触碰其他任何逻辑代码。"
+    },
+    {
+      "attempt_index": 2,
+      "stage": "static_check_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_1/field_renamed_repair_1.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_2/field_renamed_repair_2.bpf.c",
+      "analysis_report": "本次失败发生在静态检查阶段（static_check_failed），根因是修复后的代码中使用了 `bpf_probe_read_kernel` 辅助函数，但目标内核版本（5.4）不支持该函数（该函数引入于 Linux 5.5）。上一轮修复虽然解决了 `task_struct` 字段名称适配问题（`__state` -> `state`），但编译器在处理 `BPF_CORE_READ` 宏展开时生成了对 `bpf_probe_read_kernel` 的调用，导致在低版本内核上检查失败。根据知识库规则，这是一个典型的辅助函数兼容性问题，可以通过替换为兼容的 `bpf_probe_read` 解决。",
+      "repair_method": "修改代码，将源码中所有的 `BPF_CORE_READ` 宏调用替换为显式的 `bpf_probe_read` 调用以兼容 5.4 内核。例如，将 `task_state = BPF_CORE_READ(task, state);` 修改为 `bpf_probe_read(&task_state, sizeof(task_state), &task->state);`。同时检查代码中其他使用 `BPF_CORE_READ` 的地方，确保全部替换为 `bpf_probe_read`，从而消除对 `bpf_probe_read_kernel` 的依赖。",
+      "rationale": "本次修复针对 `helper_api_compatibility` 错误。`bpf_probe_read_kernel` 是在 Linux 5.5 引入的，目标内核 5.4 仅支持 `bpf_probe_read`。虽然 `BPF_CORE_READ` 提供了跨版本的字段偏移重定位能力，但其底层实现依赖的 helper 函数在编译时被选定（取决于编译时的内核版本或 libbpf 版本），此处生成了不兼容的调用。显式使用 `bpf_probe_read` 是解决此兼容性问题的标准方法，且 `task->state` 的字段访问在编译期确定偏移（前提是 vmlinux.h 定义匹配，这在上一轮已修复）。此修改仅涉及读取内核内存的方式，不改变业务逻辑。"
+    },
+    {
+      "attempt_index": 3,
+      "stage": "static_check_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_2/field_renamed_repair_2.bpf.c",
+      "patched": false,
+      "patched_path": null,
+      "analysis_report": "本次失败发生在静态检查阶段（static_check_failed），根因是修复后的代码中使用了 `bpf_probe_read_kernel` 辅助函数，但目标内核版本（5.4）不支持该函数（该函数引入于 Linux 5.5）。上一轮修复虽然解决了 `task_struct` 字段名称适配问题（`__state` -> `state`），但编译器在处理 `BPF_CORE_READ` 宏展开时生成了对 `bpf_probe_read_kernel` 的调用，导致在低版本内核上检查失败。根据知识库规则，这是一个典型的辅助函数兼容性问题，可以通过替换为兼容的 `bpf_probe_read` 解决。",
+      "repair_method": "修改代码，将源码中所有的 `BPF_CORE_READ` 宏调用替换为显式的 `bpf_probe_read` 调用以兼容 5.4 内核。例如，将 `task_state = BPF_CORE_READ(task, state);` 修改为 `bpf_probe_read(&task_state, sizeof(task_state), &task->state);`。同时检查代码中其他使用 `BPF_CORE_READ` 的地方，确保全部替换为 `bpf_probe_read`，从而消除对 `bpf_probe_read_kernel` 的依赖。",
+      "rationale": "本次修复针对 `helper_api_compatibility` 错误。目标内核 5.4 不支持 `bpf_probe_read_kernel`（由 `BPF_CORE_READ` 展开调用），仅支持 `bpf_probe_read`。修复方案是将 `BPF_CORE_READ(task, state)` 替换为显式的 `bpf_probe_read(&task_state, sizeof(task_state), &task->state)`。此修改改变了底层的 helper 函数调用，产生了实质性的代码差异（从宏调用变为显式函数调用），同时保留了读取 `task->state` 的语义和后续的 `(*val)++` 逻辑，符合最小必要修复原则。"
+    }
+  ]
+}

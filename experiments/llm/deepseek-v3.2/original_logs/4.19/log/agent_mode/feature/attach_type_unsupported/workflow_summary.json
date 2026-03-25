@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-03-23T15:57:04.718265+00:00",
+  "updated_at": "2026-03-23T15:57:25.558017+00:00",
+  "final_decision": "failed_refine",
+  "deploy_state": false,
+  "failed_stage": "static_check_failed",
+  "total_duration_s": 20.84,
+  "module_durations_s": {
+    "deploy_tool": 16.064,
+    "Analyzer": 4.776,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T15:57:04.718265+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 16.064
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T15:57:20.782100+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": false,
+        "failed_stage": "static_check_failed",
+        "error_type": "attach_target_missing",
+        "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+        "analysis_report": "静态检查失败包含两个问题：1) 核心错误（error）是检测到源码依赖 CO-RE/BPF_CORE_READ 路径，但目标内核缺少 /sys/kernel/btf/vmlinux BTF 支持，这属于 core_requires_btf 模式；2) 警告（warning）是 attach 目标符号 do_sys_openat2 在当前内核的 /proc/kallsyms 中未找到，这属于 attach_target_missing 模式。根据知识库规则，core_requires_btf 的 can_fix=true，可通过修改源码消除 CO-RE 依赖；而 attach_target_missing 的 can_fix=fals...(truncated)"
+      },
+      "duration_s": 4.776
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T15:57:25.557976+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "failed_refine",
+        "deploy_state": false,
+        "failed_stage": "static_check_failed",
+        "has_repaired": false,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

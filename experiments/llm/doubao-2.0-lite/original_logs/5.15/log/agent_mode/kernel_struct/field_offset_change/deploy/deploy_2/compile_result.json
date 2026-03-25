@@ -1,0 +1,41 @@
+{
+  "success": false,
+  "stage": "compile",
+  "source_file": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+  "object_file": "/host/output/5.15/build/kernel_struct/field_offset_change/field_offset_change.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+    "-o",
+    "/host/output/5.15/build/kernel_struct/field_offset_change/field_offset_change.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:19:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n                               ^\n/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:39:67: error: incomplete definition of type 'struct task_struct'\n                              (const void *)((const char *)task + offsetof(struct task_struct, tgid))) != 0)\n                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/usr/include/bpf/bpf_helpers.h:81:60: note: expanded from macro 'offsetof'\n#define offsetof(TYPE, MEMBER)  ((unsigned long)&((TYPE *)0)->MEMBER)\n                                                 ~~~~~~~~~~~^\n/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'\nstruct task_struct;\n       ^\n1 warning and 1 error generated.\n",
+  "returncode": 1,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": [
+    "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:19:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]",
+    "int field_offset_change(struct trace_event_raw_sys_enter *ctx)",
+    "                               ^",
+    "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:39:67: error: incomplete definition of type 'struct task_struct'",
+    "                              (const void *)((const char *)task + offsetof(struct task_struct, tgid))) != 0)",
+    "                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "/usr/include/bpf/bpf_helpers.h:81:60: note: expanded from macro 'offsetof'",
+    "#define offsetof(TYPE, MEMBER)  ((unsigned long)&((TYPE *)0)->MEMBER)",
+    "                                                 ~~~~~~~~~~~^",
+    "/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'",
+    "struct task_struct;",
+    "       ^",
+    "1 warning and 1 error generated."
+  ]
+}

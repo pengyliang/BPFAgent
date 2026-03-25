@@ -1,0 +1,156 @@
+{
+  "generated_at": "2026-03-22T14:20:21.628889+00:00",
+  "node": "Analyzer",
+  "node_index": 1,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/data/helper_func/helper_absent/helper_absent.bpf.c",
+    "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_absent(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    struct task_struct *task;\n    __u32 cur_tgid;\n    __u32 task_tgid;\n\n    if (!val)\n        return 0;\n\n    cur_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (target_tgid && *target_tgid && cur_tgid != *target_tgid)\n        return 0;\n\n    task = (struct task_struct *)bpf_get_current_task_btf();\n    if (!task)\n        return 0;\n\n    /* 确认 BTF task 与当前上下文一致：task->tgid 应等于当前线程组 ID */\n    task_tgid = BPF_CORE_READ(task, tgid);\n    if (task_tgid == 0 || task_tgid != cur_tgid)\n        return 0;\n\n    (*val)++;\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "static_check_failed",
+    "failed_stage_result_path": "/host/output/4.19/log/agent_mode/helper_func/helper_absent/deploy/deploy_1/static_check.json",
+    "failed_stage_result": {
+      "success": false,
+      "error_warning_count": {
+        "error": 2,
+        "warning": 0
+      },
+      "issues": [
+        {
+          "check": "helper_availability",
+          "level": "error",
+          "code": "helper_not_in_probe",
+          "message": "Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.",
+          "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+          "evidence": {
+            "helper": "bpf_get_current_task_btf"
+          },
+          "source_file": "/host/data/helper_func/helper_absent/helper_absent.bpf.c"
+        },
+        {
+          "check": "core_btf_precondition",
+          "level": "error",
+          "code": "core_requires_btf",
+          "message": "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.",
+          "suggestion": "Must switch to non-CO-RE downgrade path (e.g., bpf_probe_read_kernel with offsets).",
+          "evidence": {
+            "source_file": "/host/data/helper_func/helper_absent/helper_absent.bpf.c"
+          },
+          "source_file": "/host/data/helper_func/helper_absent/helper_absent.bpf.c"
+        }
+      ],
+      "results": [
+        {
+          "source_file": "/host/data/helper_func/helper_absent/helper_absent.bpf.c",
+          "program_sections": [
+            "tracepoint/syscalls/sys_enter_openat"
+          ],
+          "program_types": [
+            "tracepoint"
+          ],
+          "license": "GPL",
+          "map_types": [
+            "BPF_MAP_TYPE_ARRAY"
+          ],
+          "helper_calls": [
+            "bpf_get_current_pid_tgid",
+            "bpf_get_current_task_btf",
+            "bpf_map_lookup_elem"
+          ],
+          "issues": [
+            {
+              "check": "helper_availability",
+              "level": "error",
+              "code": "helper_not_in_probe",
+              "message": "Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.",
+              "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+              "evidence": {
+                "helper": "bpf_get_current_task_btf"
+              }
+            },
+            {
+              "check": "core_btf_precondition",
+              "level": "error",
+              "code": "core_requires_btf",
+              "message": "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.",
+              "suggestion": "Must switch to non-CO-RE downgrade path (e.g., bpf_probe_read_kernel with offsets).",
+              "evidence": {
+                "source_file": "/host/data/helper_func/helper_absent/helper_absent.bpf.c"
+              }
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "error_count": 2,
+        "warning_count": 0
+      }
+    },
+    "deploy_summary_path": "/host/output/4.19/log/agent_mode/helper_func/helper_absent/deploy/deploy_1/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "static_check_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "load": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        }
+      }
+    },
+    "shared_history": [],
+    "error_signature": "static_check_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  core_requires_btf:\n    summary: 当前源码依赖 CO-RE/BTF 能力，但部署目标缺少对应 BTF 支持。\n    aliases:\n    - core_requires_btf\n    stage_hints:\n    - static_check_failed\n    - runtime_test_failed\n    can_fix: true\n    evidence_hint:\n    - source code has vmlinux.h dependency\n    - no /sys/kernel/btf/vmlinux\n    - co-re\n    - btf\n    repair_methods:\n    - 删除vmlinux.h头文件依赖，为字段读取提供非 CO-RE 降级路径，确保在缺少 BTF 的目标内核上仍可维持原始观测语义。\n  attach_target_missing:\n    summary: attach 目标符号或 attach target 在当前部署内核不存在。\n    aliases:\n    - attach_target_not_found\n    - missing_attach_target\n    stage_hints:\n    - static_check_failed\n    - attach_failed\n    can_fix: false\n    evidence_hint:\n    - target symbol not found\n    - missing attach target\n    repair_methods: []\n    handoff: 目标内核缺少所需 attach target；应由人工确认部署内核上的真实目标符号或重新定义观测目标，停止自动源码修复。\n  attach_type_unsupported:\n    summary: 当前内核能力不支持所选 attach 方式或所需最小内核版本。\n    aliases:\n    - program_type_min_kernel\n    - program_type_not_supported\n    - fentry_fexit_require_btf\n    stage_hints:\n    - static_check_failed\n    - attach_failed\n    can_fix: false\n    evidence_hint:\n    - requires kernel\n    - not supported\n    - requires BTF\n    repair_methods: []\n    handoff: 当前部署环境不支持该 attach 方式；除非人工确认存在不改变观测语义的 attach fallback，否则应停止自动源码修复并改由环境或方案调整处理。\n  helper_unsupported:\n    summary: 当前内核或 verifier 不允许使用某个 helper，需要改写为兼容实现。\n    aliases:\n    - unknown_func\n    - invalid_func\n    - helper_not_allowed\n    stage_hints:\n    - static_check_failed\n    - load_failed\n    can_fix: true\n    evidence_hint:\n    - unknown func\n    - helper call\n    - not allowed\n    repair_methods:\n    - 将目标内核不支持的 helper 替换为等价的兼容 helper，或改写为不依赖该 helper 的简单实现。\n  map_type_unsupported:\n    summary: 当前 map 类型或相关 map 特性不受目标内核支持。\n    aliases:\n    - invalid_map_type\n    - map_feature_incompatible\n    - map_type_not_in_probe\n    stage_hints:\n    - static_check_failed\n    - load_failed\n    can_fix: true\n    evidence_hint:\n    - unsupported map\n    - map type\n    - map feature\n    repair_methods:\n    - 将不兼容的 map 类型或特性替换为目标内核支持的实现，并同步调整对应的读写逻辑和初始化方式。",
+    "error_signal": {
+      "stage": "static_check_failed",
+      "error_types": [
+        "helper_not_in_probe",
+        "core_requires_btf"
+      ],
+      "key_lines": [
+        "Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.",
+        "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux."
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"core_requires_btf\",\n  \"analysis_report\": \"分析发现两个关键错误：1) 使用了需要 BTF 支持的 helper 函数 bpf_get_current_task_btf，该函数在目标内核的 bpftool helper 白名单中不存在；2) 源码中存在 CO-RE/BPF_CORE_READ 路径依赖，但目标内核缺少 /sys/kernel/btf/vmlinux 文件。这两个错误均指向同一根因：目标内核缺少 BTF 支持，导致 CO-RE 相关功能无法使用。根据知识库规则，core_requires_btf 模式匹配当前错误特征（stage_hints 包含 static_check_failed，evidence_hint 包含 'co-re'、'btf'、'no /sys/kernel/btf/vmlinux'），且 can_fix=true。虽然第一个错误表面上是 helper_unsupported，但本质是 BTF 缺失导致的 helper 不可用，因此统一归因于 core_requires_btf。\",\n  \"repair_method\": \"删除 vmlinux.h 头文件依赖，为字段读取提供非 CO-RE 降级路径。具体包括：1) 将 bpf_get_current_task_btf() 替换为 bpf_get_current_task() 或其他兼容 helper；2) 将 BPF_CORE_READ 或直接结构体访问改写为 bpf_probe_read_kernel() 配合手动偏移量计算，确保在缺少 BTF 的目标内核上仍可维持原始观测语义。\"\n}\n```",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "分析发现两个关键错误：1) 使用了需要 BTF 支持的 helper 函数 bpf_get_current_task_btf，该函数在目标内核的 bpftool helper 白名单中不存在；2) 源码中存在 CO-RE/BPF_CORE_READ 路径依赖，但目标内核缺少 /sys/kernel/btf/vmlinux 文件。这两个错误均指向同一根因：目标内核缺少 BTF 支持，导致 CO-RE 相关功能无法使用。根据知识库规则，core_requires_btf 模式匹配当前错误特征（stage_hints 包含 static_check_failed，evidence_hint 包含 'co-re'、'btf'、'no /sys/kernel/btf/vmlinux'），且 can_fix=true。虽然第一个错误表面上是 helper_unsupported，但本质是 BTF 缺失导致的 helper 不可用，因此统一归因于 core_requires_btf。",
+    "repair_action": {
+      "error_type": "core_requires_btf",
+      "repair_method": "删除 vmlinux.h 头文件依赖，为字段读取提供非 CO-RE 降级路径。具体包括：1) 将 bpf_get_current_task_btf() 替换为 bpf_get_current_task() 或其他兼容 helper；2) 将 BPF_CORE_READ 或直接结构体访问改写为 bpf_probe_read_kernel() 配合手动偏移量计算，确保在缺少 BTF 的目标内核上仍可维持原始观测语义。",
+      "key_lines": [
+        "Helper bpf_get_current_task_btf is not present in bpftool helper whitelist.",
+        "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux."
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 0,
+    "max_fix_time": 5
+  }
+}

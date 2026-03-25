@@ -1,0 +1,80 @@
+{
+  "success": false,
+  "error_warning_count": {
+    "error": 2,
+    "warning": 0
+  },
+  "issues": [
+    {
+      "check": "helper_availability",
+      "level": "error",
+      "code": "helper_not_in_probe",
+      "message": "Helper bpf_ringbuf_output is not present in bpftool helper whitelist.",
+      "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+      "evidence": {
+        "helper": "bpf_ringbuf_output"
+      },
+      "source_file": "/host/data/feature/map_type_unsupported/map_type_unsupported.bpf.c"
+    },
+    {
+      "check": "map_type_availability",
+      "level": "error",
+      "code": "map_type_not_in_probe",
+      "message": "Map type BPF_MAP_TYPE_RINGBUF is not present in bpftool map type support list.",
+      "suggestion": "Switch to supported map type or enable kernel feature.",
+      "evidence": {
+        "map_type": "BPF_MAP_TYPE_RINGBUF"
+      },
+      "source_file": "/host/data/feature/map_type_unsupported/map_type_unsupported.bpf.c"
+    }
+  ],
+  "results": [
+    {
+      "source_file": "/host/data/feature/map_type_unsupported/map_type_unsupported.bpf.c",
+      "program_sections": [
+        "tracepoint/syscalls/sys_enter_openat"
+      ],
+      "program_types": [
+        "tracepoint"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY",
+        "BPF_MAP_TYPE_RINGBUF"
+      ],
+      "helper_calls": [
+        "bpf_map_lookup_elem",
+        "bpf_map_lookup_elem",
+        "bpf_get_current_pid_tgid",
+        "bpf_ktime_get_ns",
+        "bpf_ringbuf_output"
+      ],
+      "issues": [
+        {
+          "check": "helper_availability",
+          "level": "error",
+          "code": "helper_not_in_probe",
+          "message": "Helper bpf_ringbuf_output is not present in bpftool helper whitelist.",
+          "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+          "evidence": {
+            "helper": "bpf_ringbuf_output"
+          }
+        },
+        {
+          "check": "map_type_availability",
+          "level": "error",
+          "code": "map_type_not_in_probe",
+          "message": "Map type BPF_MAP_TYPE_RINGBUF is not present in bpftool map type support list.",
+          "suggestion": "Switch to supported map type or enable kernel feature.",
+          "evidence": {
+            "map_type": "BPF_MAP_TYPE_RINGBUF"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "error_count": 2,
+    "warning_count": 0
+  }
+}

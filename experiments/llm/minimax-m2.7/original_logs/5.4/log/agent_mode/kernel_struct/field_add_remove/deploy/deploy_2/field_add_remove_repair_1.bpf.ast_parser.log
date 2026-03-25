@@ -1,0 +1,5 @@
+status: SUCCESS
+source_file: /host/output/5.4/log/agent_mode/kernel_struct/field_add_remove/repair/repair_1/field_add_remove_repair_1.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/5.4/log/agent_mode/kernel_struct/field_add_remove/repair/repair_1 -I/usr/include/x86_64-linux-gnu -D__TARGET_ARCH_x86 -I/host/output/5.4/log /host/output/5.4/log/agent_mode/kernel_struct/field_add_remove/repair/repair_1/field_add_remove_repair_1.bpf.c
+stderr:
+<empty>

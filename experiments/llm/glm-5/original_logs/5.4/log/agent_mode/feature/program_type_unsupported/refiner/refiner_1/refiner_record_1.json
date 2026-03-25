@@ -1,0 +1,87 @@
+{
+  "generated_at": "2026-03-23T17:06:17.184080+00:00",
+  "node": "Refiner",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "deploy_state": false,
+    "failed_stage": "static_check_failed",
+    "deploy": {
+      "success": false,
+      "stage": "static_check_failed",
+      "compile": {
+        "success": true,
+        "stage": "compile",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "load": {
+        "success": true,
+        "stage": "load",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "attach": {
+        "success": true,
+        "stage": "attach",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "runtime": {
+        "success": true,
+        "stage": "runtime_test",
+        "skipped": true,
+        "reason": "static_check_failed"
+      },
+      "detach": {
+        "success": true,
+        "stage": "detach",
+        "detached": true,
+        "skipped": false,
+        "reason": "loader_terminated",
+        "pin_path": "/sys/fs/bpf/ebpf_agent_program_type_unsupported",
+        "pid": null
+      }
+    },
+    "repair_attempts": [],
+    "workflow_events": [
+      {
+        "seq": 1,
+        "ts": "2026-03-23T17:06:09.818901+00:00",
+        "node": "deploy_tool",
+        "node_index": 1,
+        "key_results": {
+          "deploy_state": false,
+          "failed_stage": "static_check_failed"
+        },
+        "duration_s": 7.346
+      },
+      {
+        "seq": 2,
+        "ts": "2026-03-23T17:06:17.165061+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "key_results": {
+          "can_fix": false,
+          "failed_stage": "static_check_failed",
+          "error_type": "attach_type_unsupported",
+          "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+          "analysis_report": "静态检查阶段报错，当前内核不支持 'fentry' 类型的 BPF 程序。fentry（BPF trampoline）通常需要 Linux 5.5+ 内核支持。错误信息明确指出 SEC(\"fentry/__x64_sys_clock_nanosleep\") 中的程序类型不在内核支持列表中。这是一个典型的内核版本与 BPF 特性不兼容问题，可以通过将源码降级为兼容性更好的 'kprobe' 类型来解决。"
+        }
+      }
+    ]
+  },
+  "thought_process": "```yaml\npatterns:\n  program_type_not_supported:\n    summary: 目标内核版本不支持程序类型（如 fentry/fexit），属于内核能力缺失\n    aliases:\n      - program_type_not_supported\n    stage_hints:\n      - static_check_failed\n    can_fix: false\n    handoff: 目标内核不支持该程序类型，建议升级内核版本或人工将程序类型替换为兼容的低版本实现（如将 fentry 替换为 kprobe）。\n```",
+  "outputs": {
+    "final_decision": "failed_refine",
+    "reflect_record_path": null,
+    "repair_report_path": "/host/output/5.4/log/agent_mode/feature/program_type_unsupported/repair_report.json",
+    "knowledge_base_path": "/host/knowledge_base/repair/repair_method.yaml",
+    "applied_updates": {}
+  },
+  "result_params": {
+    "has_repaired": false,
+    "fixed_time": 0,
+    "last_error_signature": "static_check_failed"
+  }
+}

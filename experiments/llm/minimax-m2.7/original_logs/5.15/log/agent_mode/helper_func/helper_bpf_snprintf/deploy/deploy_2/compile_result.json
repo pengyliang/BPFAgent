@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "stage": "compile",
+  "source_file": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+  "object_file": "/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+    "-o",
+    "/host/output/5.15/build/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c:43:28: warning: incompatible pointer to integer conversion passing 'char[32]' to parameter of type '__u32' (aka 'unsigned int') [-Wint-conversion]\n    bpf_trace_printk(\"%s\", out);\n                           ^~~\n1 warning generated.\n",
+  "returncode": 0,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": [
+    "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c:43:28: warning: incompatible pointer to integer conversion passing 'char[32]' to parameter of type '__u32' (aka 'unsigned int') [-Wint-conversion]",
+    "    bpf_trace_printk(\"%s\", out);",
+    "                           ^~~",
+    "1 warning generated."
+  ]
+}

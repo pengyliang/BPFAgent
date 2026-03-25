@@ -1,0 +1,41 @@
+status: FAILED
+source_file: /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4 -I/usr/include/x86_64-linux-gnu -I/host/output/4.19/log/agent_mode/feature/btf_unsupported/deploy/deploy_5/stubs /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c
+stderr:
+In file included from /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c:3:
+In file included from /usr/include/bpf/bpf_helpers.h:11:
+/usr/include/bpf/bpf_helper_defs.h:56:16: error: redefinition of 'bpf_map_lookup_elem' as different kind of symbol
+static void *(*bpf_map_lookup_elem)(void *map, const void *key) = (void *) 1;
+               ^
+/usr/include/bpf/bpf.h:129:16: note: previous definition is here
+LIBBPF_API int bpf_map_lookup_elem(int fd, const void *key, void *value);
+               ^
+In file included from /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c:3:
+In file included from /usr/include/bpf/bpf_helpers.h:11:
+/usr/include/bpf/bpf_helper_defs.h:78:15: error: redefinition of 'bpf_map_update_elem' as different kind of symbol
+static long (*bpf_map_update_elem)(void *map, const void *key, const void *value, __u64 flags) = (void *) 2;
+              ^
+/usr/include/bpf/bpf.h:126:16: note: previous definition is here
+LIBBPF_API int bpf_map_update_elem(int fd, const void *key, const void *value,
+               ^
+In file included from /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c:3:
+In file included from /usr/include/bpf/bpf_helpers.h:11:
+/usr/include/bpf/bpf_helper_defs.h:88:15: error: redefinition of 'bpf_map_delete_elem' as different kind of symbol
+static long (*bpf_map_delete_elem)(void *map, const void *key) = (void *) 3;
+              ^
+/usr/include/bpf/bpf.h:136:16: note: previous definition is here
+LIBBPF_API int bpf_map_delete_elem(int fd, const void *key);
+               ^
+/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c:27:52: error: too few arguments to function call, expected 3, have 2
+    __u64 *val = bpf_map_lookup_elem(&counter, &key);
+                 ~~~~~~~~~~~~~~~~~~~               ^
+/usr/include/bpf/bpf.h:129:16: note: 'bpf_map_lookup_elem' declared here
+LIBBPF_API int bpf_map_lookup_elem(int fd, const void *key, void *value);
+               ^
+/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c:28:56: error: too few arguments to function call, expected 3, have 2
+    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);
+                         ~~~~~~~~~~~~~~~~~~~           ^
+/usr/include/bpf/bpf.h:129:16: note: 'bpf_map_lookup_elem' declared here
+LIBBPF_API int bpf_map_lookup_elem(int fd, const void *key, void *value);
+               ^
+5 errors generated.

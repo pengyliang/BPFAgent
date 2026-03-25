@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T03:13:11.930035+00:00",
+  "updated_at": "2026-03-24T03:13:40.899180+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 28.969,
+  "module_durations_s": {
+    "deploy_tool": 7.279999999999999,
+    "Analyzer": 16.602,
+    "Repairer": 4.078,
+    "Inspector": 1.008,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T03:13:11.930035+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "load_failed"
+      },
+      "duration_s": 5.64
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T03:13:17.570152+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "load_failed",
+        "error_type": "state_explosion",
+        "repair_method": "修改代码，将循环内调用的子函数global_add_stress强制声明为static __always_inline，消除BPF-to-BPF调用的上下文切换开销，减少验证器的状态复杂度。",
+        "analysis_report": "当前eBPF程序在加载阶段失败，失败原因为循环中多次调用非内联的子函数global_add_stress，产生了大量BPF-to-BPF调用，导致eBPF验证器状态爆炸，最终加载失败报错Argument list too long，符合知识库中state_explosion模式的特征，可以通过源码修改解决该问题。"
+      },
+      "duration_s": 16.602
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T03:13:34.172440+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "将global_add_stress强制内联后，编译器会把函数体直接展开到循环中，消除了BPF-to-BPF调用，减少验证器的状态拆分，解决状态爆炸问题，同时完整保留原有业务逻辑和所有分支判断",
+        "next_deploy_index": 2
+      },
+      "duration_s": 4.078
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T03:13:38.250774+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改将原代码中的`__noinline int global_add_stress`改为`static __always_inline int global_add_stress`，完全符合Analyzer给出的修复建议，原函数的所有业务逻辑、分支判断都完整保留，未修改原有功能，也没有Analyzer建议之外的额外修改。"
+      },
+      "duration_s": 1.008
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T03:13:39.258968+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 1.64
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T03:13:40.899129+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 3
+      }
+    }
+  ]
+}

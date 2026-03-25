@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-03-23T16:04:01.415041+00:00",
+  "case_display": "kernel_struct/field_offset_change/field_offset_change.bpf.c",
+  "final_stage": "runtime_test_failed",
+  "same_error_threshold": 3,
+  "error_signature_counts": {
+    "static_check_failed": 1,
+    "runtime_test_failed": 4
+  },
+  "attempts": [
+    {
+      "attempt_index": 1,
+      "stage": "static_check_failed",
+      "error_type": "helper_unsupported",
+      "can_fix": true,
+      "source_before": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+      "analysis_report": "静态检查失败，错误签名 static_check_failed，具体原因为 helper_availability 检查未通过。关键报错信息显示：'Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 bpf_probe_read_kernel 这个 helper 函数。根据知识库规则，此现象匹配 'helper_unsupported' 模式（aliases 包含 'helper_not_in_probe'），且失败阶段 static_check_failed 符合其 stage_hints。该模式 can_fix 为 true，可通过源码修改将不支持的 helper 替换为兼容版本来解决。当前上下文显示程序使用了 bpf_probe_read_kernel，这是一个较新的 helper，在老版本内核中可能不存在。其功能与更早、更广泛支持的 bpf_probe_read helper 类似，主要区别在于前者明确用于读取内核空间数据，而后者在老版本中未严格区分用户/内核空间。因此，可以通过替换 helper 来消除对不支持的 helper 的依赖，从而通过静态检查。",
+      "repair_method": "修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+      "rationale": "bpf_probe_read_kernel 是较新的 helper，在老版本内核中可能不存在。bpf_probe_read 是更早、更广泛支持的 helper，在老版本内核中可用于读取内核空间数据。替换后可以消除对不支持的 helper 的依赖，同时保持读取内核 task 结构体字段的原始语义。"
+    },
+    {
+      "attempt_index": 2,
+      "stage": "runtime_test_failed",
+      "error_type": "kernel_struct_offset_mismatch",
+      "can_fix": true,
+      "source_before": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_2/field_offset_change_repair_2.bpf.c",
+      "analysis_report": "运行时测试失败，错误签名 runtime_test_failed，具体原因为 validator_mismatch。关键报错信息显示：validator 期望 map 'counter' 中 key=0 的值 >=3，但实际值为 0。结合统一历史分析，此前已成功修复了静态检查失败（将 bpf_probe_read_kernel 替换为 bpf_probe_read），代码已成功编译、加载和附着。当前失败发生在运行时语义验证阶段，表明程序逻辑执行未达到预期效果。分析源码逻辑：程序通过硬编码偏移量 TASK_TGID_OFFSET (0x574) 从当前 task 结构体读取 tgid 字段，并与当前进程的 tgid 进行比较，若相等则递增计数器。实际值为 0 表明条件判断 (tgid_from_offset == current_tgid) 始终为假。这强烈暗示硬编码偏移量 0x574 在当前目标内核版本（4.19）上与实际的 task_struct.tgid 字段偏移不匹配，导致读取到错误的值，从而条件判断失败。根据知识库规则，此现象匹配 'kernel_struct_offset_mismatch' 模式（aliases: hardcoded_offset_read, field_offset_mismatch），其典型特征为硬编码偏移访问导致运行时语义不匹配。",
+      "repair_method": "修改代码：将硬编码偏移量 0x574 替换为适用于目标内核版本（4.19）的正确偏移量。由于目标内核缺少 BTF 支持，无法使用 CO-RE，需要通过试错法找到正确的偏移。建议尝试常见偏移量序列（如 0x5e0, 0x5e8, 0x5d8, 0x5f0 等），并保留所有原始业务逻辑（包括条件判断和计数器递增）。",
+      "rationale": "原始偏移量 0x574 导致读取到错误的值，使得条件判断 (tgid_from_offset == current_tgid) 始终为假，计数器无法递增。将偏移量修改为 0x5e0 是修复 kernel_struct_offset_mismatch 问题的标准方法之一，该值在 4.19 内核版本中可能是 task_struct.tgid 的正确偏移。修改后保留了所有原始业务逻辑，包括与 (*val)++ 相关的条件判断逻辑。"
+    },
+    {
+      "attempt_index": 3,
+      "stage": "runtime_test_failed",
+      "error_type": "kernel_struct_offset_mismatch",
+      "can_fix": true,
+      "source_before": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_2/field_offset_change_repair_2.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_3/field_offset_change_repair_3.bpf.c",
+      "analysis_report": "运行时测试再次失败，错误签名 runtime_test_failed，具体原因为 validator_mismatch。关键报错信息显示：validator 期望 map 'counter' 中 key=0 的值 >=3，但实际值仍为 0。结合统一历史分析，此前已成功修复了静态检查失败（将 bpf_probe_read_kernel 替换为 bpf_probe_read），并尝试修复了内核结构体偏移不匹配问题（将偏移量从 0x574 修改为 0x5e0）。当前失败表明，偏移量 0x5e0 在目标内核版本（4.19）上仍然不是 task_struct.tgid 的正确偏移，导致程序读取到的 tgid_from_offset 值与当前进程的 current_tgid 不匹配，条件判断 (tgid_from_offset == current_tgid) 始终为假，计数器无法递增。这符合知识库中 'kernel_struct_offset_mismatch' 模式的特征：硬编码偏移量不匹配导致运行时语义错误。由于目标内核缺少 BTF 支持，无法使用 CO-RE，需要通过试错法继续寻找正确的偏移量。",
+      "repair_method": "修改代码：将硬编码偏移量 0x5e0 替换为适用于目标内核版本（4.19）的另一个可能偏移量。根据知识库建议的常见偏移量序列，建议尝试 0x5e8、0x5d8、0x5f0 等值，并保留所有原始业务逻辑（包括条件判断和计数器递增）。",
+      "rationale": "原始偏移量 0x5e0 仍然导致读取到错误的值，使得条件判断 (tgid_from_offset == current_tgid) 始终为假，计数器无法递增。将偏移量修改为 0x5e8 是修复 kernel_struct_offset_mismatch 问题的标准方法之一，该值在 4.19 内核版本中可能是 task_struct.tgid 的正确偏移。修改后保留了所有原始业务逻辑，包括与 (*val)++ 相关的条件判断逻辑。"
+    },
+    {
+      "attempt_index": 4,
+      "stage": "runtime_test_failed",
+      "error_type": "kernel_struct_offset_mismatch",
+      "can_fix": true,
+      "source_before": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_3/field_offset_change_repair_3.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_4/field_offset_change_repair_4.bpf.c",
+      "analysis_report": "运行时测试再次失败，错误签名 runtime_test_failed，具体原因为 validator_mismatch。关键报错信息显示：validator 期望 map 'counter' 中 key=0 的值 >=3，但实际值仍为 0。结合统一历史分析，此前已成功修复了静态检查失败（将 bpf_probe_read_kernel 替换为 bpf_probe_read），并已尝试修复内核结构体偏移不匹配问题（将偏移量从 0x574 修改为 0x5e0，再修改为 0x5e8）。当前失败表明，偏移量 0x5e8 在目标内核版本（4.19）上仍然不是 task_struct.tgid 的正确偏移，导致程序读取到的 tgid_from_offset 值与实际的 current_tgid 不匹配，条件判断 (tgid_from_offset == current_tgid) 始终为假，计数器无法递增。代码已成功编译、加载和附着，说明语法和基本结构正确。问题根源在于硬编码偏移量与目标内核实际布局不匹配，属于典型的 kernel_struct_offset_mismatch 问题。由于目标内核缺少 BTF 支持，无法使用 CO-RE，需要通过试错法继续寻找正确的偏移量。",
+      "repair_method": "修改代码：将硬编码偏移量 0x5e8 替换为适用于目标内核版本（4.19）的另一个可能偏移量。根据知识库建议的常见偏移量序列，建议尝试 0x5d8、0x5f0 等值，并保留所有原始业务逻辑（包括条件判断和计数器递增）。",
+      "rationale": "原始偏移量 0x5e8 仍然导致读取到错误的值，使得条件判断 (tgid_from_offset == current_tgid) 始终为假，计数器无法递增。将偏移量修改为 0x5d8 是修复 kernel_struct_offset_mismatch 问题的标准方法之一，该值在 4.19 内核版本中可能是 task_struct.tgid 的正确偏移。修改后保留了所有原始业务逻辑，包括与 (*val)++ 相关的条件判断逻辑。"
+    }
+  ]
+}

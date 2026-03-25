@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-03-24T04:29:56.337431+00:00",
+  "updated_at": "2026-03-24T04:30:36.048292+00:00",
+  "final_decision": "failed_refine",
+  "deploy_state": false,
+  "failed_stage": "static_check_failed",
+  "total_duration_s": 39.711,
+  "module_durations_s": {
+    "deploy_tool": 30.366,
+    "Analyzer": 9.345,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T04:29:56.337431+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 30.366
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T04:30:26.703474+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": false,
+        "failed_stage": "static_check_failed",
+        "error_type": "attach_type_unsupported",
+        "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+        "analysis_report": "失败根因分析：当前内核不支持 fentry 程序类型，导致静态检查阶段即报错。错误信息明确指出两个关键限制：(1) fentry 不在当前内核的 bpftool 支持列表中；(2) fentry 依赖 BTF 启用但内核未满足要求。fentry/fexit 类探针需要内核 5.5+ 版本、CONFIG_BPF_FENTRY_SYSCALL 和 CONFIG_BPF_FTRACE 编译选项支持，以及内核包含 BTF 信息。查看历史摘要为空，说明这是首轮失败。当前内核显然不满足这些条件。\n\n根据知识库 attach_type_unsupported 模式的 handoff 指引：'当前内核不支持所有尝试过的attach类型，且目标符号不...(truncated)"
+      },
+      "duration_s": 9.345
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T04:30:36.048247+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "failed_refine",
+        "deploy_state": false,
+        "failed_stage": "static_check_failed",
+        "has_repaired": false,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

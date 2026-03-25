@@ -1,0 +1,58 @@
+{
+  "case_display": "feature/program_type_unsupported/program_type_unsupported.bpf.c",
+  "updated_at": "2026-03-23T16:46:07.839233+00:00",
+  "history": [
+    {
+      "ts": "2026-03-23T16:46:07.838968+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "from_node": "deploy_tool",
+      "summary": "分析阶段 static_check_failed，can_fix=False，建议=不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+      "inputs": {
+        "failed_stage": "static_check_failed",
+        "failed_stage_result": {
+          "success": false,
+          "error_warning_count": {
+            "error": "2",
+            "warning": ""
+          },
+          "issues": [
+            "{\"check\": \"program_type_attach_availability\", \"level\": \"error\", \"code\": \"program_type_not_supported\", \"message\": \"Program type \\\"fentry\\\" from SEC(\\\"fentry/__x64_sys_clock_nanosleep\\\") is not in bpftool program type support list for this ke...(truncated)",
+            "{\"check\": \"program_type_attach_availability\", \"level\": \"error\", \"code\": \"fentry_fexit_require_btf\", \"message\": \"SEC(\\\"fentry/__x64_sys_clock_nanosleep\\\") requires BTF-enabled kernel.\", \"suggestion\": \"Switch to kprobe/tracepoint fallback whe...(truncated)"
+          ],
+          "results": [
+            "{\"source_file\": \"/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c\", \"program_sections\": [\"fentry/__x64_sys_clock_nanosleep\"], \"program_types\": [\"fentry\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"hel...(truncated)"
+          ],
+          "summary": {
+            "error_count": "2",
+            "warning_count": ""
+          }
+        },
+        "deploy_summary": {
+          "success": false,
+          "stage": "static_check_failed",
+          "steps": {
+            "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+            "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+            "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+            "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+            "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+          }
+        }
+      },
+      "outputs": {
+        "can_fix": false,
+        "analysis_report": "静态检查失败，根因是目标内核不支持 BTF（BPF Type Format）或内核版本较低，导致不支持 'fentry' 类型的程序。'fentry' 程序强依赖内核 BTF 信息进行函数签名匹配和参数类型检查。错误日志显示 SEC(\"fentry/__x64_sys_clock_nanosleep\") 既不在 bpftool 支持列表中，也明确提示需要 BTF-enabled kernel。由于这是程序类型与内核能力不匹配的问题，可以通过修改源码将 attach 方式降级为...(truncated)",
+        "repair_action": {
+          "error_type": "attach_type_unsupported",
+          "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+          "key_lines": [
+            "Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel.",
+            "SEC(\"fentry/__x64_sys_clock_nanosleep\") requires BTF-enabled kernel."
+          ]
+        }
+      },
+      "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"program_type_not_supported\",\n  \"analysis_report\": \"静态检查失败，根因是目标内核不支持 BTF（BPF Type Format）或内核版本较低，导致不支持 'fentry' 类型的程序。'fentry' 程序强依赖内核 BTF 信息进行函数签名匹配和参数类型检查。错误日志显示 SEC(\\\"fentry/__x64_sys_clock_nanosleep\\\") 既不在 bpftool 支持列表中，也明确提示需要 BTF-enabled kernel。由于这是程序类型与内核能力不匹配的问题，可以通...(truncated)"
+    }
+  ]
+}

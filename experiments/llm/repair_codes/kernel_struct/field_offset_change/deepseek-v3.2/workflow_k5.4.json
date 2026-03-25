@@ -1,0 +1,246 @@
+{
+  "generated_at": "2026-03-23T16:14:49.960900+00:00",
+  "updated_at": "2026-03-23T16:18:23.037559+00:00",
+  "final_decision": "failed_refine",
+  "deploy_state": false,
+  "failed_stage": "runtime_test_failed",
+  "total_duration_s": 213.077,
+  "module_durations_s": {
+    "deploy_tool": 66.22,
+    "Analyzer": 104.499,
+    "Repairer": 36.811,
+    "Inspector": 5.546,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T16:14:49.960900+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 8.573
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T16:14:58.533764+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将 bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。",
+        "analysis_report": "静态检查失败，错误签名 static_check_failed。具体原因为：Helper bpf_probe_read_kernel 不在 bpftool helper 白名单中，表明目标内核不支持此 helper 函数。根据知识库规则，此问题属于 helper_unsupported 模式，该模式在 static_check_failed 阶段出现，且 can_fix 为 true。失败上下文显示程序使用了 bpf_probe_read_kernel helper，但部署环境的内核版本较旧，未包含此 helper。此问题可通过修改源码，将不支持的 helper 替换为兼容版本来解决。"
+      },
+      "duration_s": 23.898
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T16:15:22.431512+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "bpf_probe_read 是更通用的 helper 函数，在旧内核中可用，功能与 bpf_probe_read_kernel 类似，都能安全读取内核内存。替换后程序逻辑完全不变，只是使用了兼容性更好的 helper。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 9.014
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-23T16:15:31.445649+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改前后代码语义完全等价。修复内容严格遵循Analyzer的修复建议：将不支持的helper函数bpf_probe_read_kernel替换为目标内核支持的通用helper bpf_probe_read。具体修改是将关键代码块中的'bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset), (const void *)((const char *)task + TASK_TGID_OFFSET))'替换为'bpf_probe_read(&tgid_from_offset, sizeof(tgid_from_offset), (const void *)((c...(truncated)"
+      },
+      "duration_s": 1.459
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-23T16:15:32.904868+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "runtime_test_failed"
+      },
+      "duration_s": 17.061
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-23T16:15:49.965397+00:00",
+      "node": "Analyzer",
+      "node_index": 2,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "runtime_test_failed",
+        "error_type": "kernel_struct_offset_mismatch",
+        "repair_method": "修改代码：将硬编码偏移量 0x574 替换为适用于目标内核版本的偏移量。由于目标内核缺少 BTF，无法使用 CO-RE，应采用试错法。首先尝试一组常见偏移量（如 0x5e0, 0x5e8, 0x5d8, 0x5f0），以找到能正确读取 task_struct 中 tgid 字段的偏移。修改 TASK_TGID_OFFSET 的定义，并确保核心业务逻辑（条件判断和计数器递增）完全保留。",
+        "analysis_report": "运行时测试失败，错误签名 runtime_test_failed。具体原因为：validator 期望 map 'counter' 中 key 0 的值 >= 3，但实际值为 0，表明程序的核心计数逻辑未被执行。结合统一历史分析，程序在上一轮修复中已成功通过静态检查、编译、加载和附着阶段，说明语法和基本兼容性问题已解决。当前失败的根本原因在于程序运行时语义未按预期工作。程序的核心逻辑是：在 tracepoint/syscalls/sys_enter_openat 中，获取当前任务结构体，然后通过硬编码偏移量 TASK_TGID_OFFSET (0x574) 读取其 tgid 字段，并与通过配置 map 传入的目标 pid 进行比较。...(truncated)"
+      },
+      "duration_s": 26.519
+    },
+    {
+      "seq": 7,
+      "ts": "2026-03-23T16:16:16.484566+00:00",
+      "node": "Repairer",
+      "node_index": 2,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "原始偏移量 0x574 在目标内核 5.4 中不正确，导致程序无法正确读取 tgid 字段。通过尝试一组常见偏移量，可以找到适用于当前内核的正确偏移，从而恢复程序的预期功能。修改仅涉及偏移量定义，不改变任何业务逻辑，保持了原始语义。",
+        "next_deploy_index": 3
+      },
+      "duration_s": 8.746
+    },
+    {
+      "seq": 8,
+      "ts": "2026-03-23T16:16:25.230889+00:00",
+      "node": "Inspector",
+      "node_index": 2,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改前后代码语义完全等价。修复内容严格遵循Analyzer的修复建议：将硬编码偏移量0x574替换为适用于目标内核版本的偏移量。具体修改是将TASK_TGID_OFFSET的定义从0x574改为0x5e0，这是Analyzer建议的试错法中的第一个常见偏移量。核心业务逻辑（条件判断和计数器递增）完全保留，包括：1）通过bpf_get_current_task()获取任务结构体；2）使用bpf_probe_read读取偏移量处的tgid字段；3）将读取的tgid_from_offset与current_tgid比较；4）条件成立时递增计数器(*val)++。所有其他代码保持不变，仅修改了偏移量定义，符合kernel_struct_of...(truncated)"
+      },
+      "duration_s": 1.554
+    },
+    {
+      "seq": 9,
+      "ts": "2026-03-23T16:16:26.784706+00:00",
+      "node": "deploy_tool",
+      "node_index": 3,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "runtime_test_failed"
+      },
+      "duration_s": 16.344
+    },
+    {
+      "seq": 10,
+      "ts": "2026-03-23T16:16:43.129095+00:00",
+      "node": "Analyzer",
+      "node_index": 3,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "runtime_test_failed",
+        "error_type": "kernel_struct_offset_mismatch",
+        "repair_method": "修改代码：将硬编码偏移量 0x5e0 替换为适用于目标内核版本的偏移量。由于目标内核缺少 BTF，无法使用 CO-RE，应采用试错法扩展偏移量尝试范围。建议尝试下一组常见偏移量（如 0x5e8, 0x5d8, 0x5f0, 0x570, 0x578, 0x580），以找到能正确读取 task_struct 中 tgid 字段的偏移。修改 TASK_TGID_OFFSET 的定义，并确保核心业务逻辑（条件判断和计数器递增）完全保留。",
+        "analysis_report": "运行时测试失败，错误签名 runtime_test_failed。具体原因为：validator 期望 map 'counter' 中 key 0 的值 >= 3，但实际值为 0，表明程序的核心计数逻辑未被执行。结合统一历史分析，程序已成功通过静态检查、编译、加载和附着阶段，说明语法和基本兼容性问题已解决。当前失败的根本原因在于程序运行时语义未按预期工作。程序的核心逻辑是：在 tracepoint/syscalls/sys_enter_openat 中，获取当前任务结构体，通过硬编码偏移量 TASK_TGID_OFFSET 读取 tgid 字段，若读取的 tgid 与当前进程的 tgid 匹配，则递增计数器。上一轮修复将偏移量从 0...(truncated)"
+      },
+      "duration_s": 27.165
+    },
+    {
+      "seq": 11,
+      "ts": "2026-03-23T16:17:10.294372+00:00",
+      "node": "Repairer",
+      "node_index": 3,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "原始偏移量 0x5e0 在目标内核 5.4 中不正确，导致程序无法正确读取 tgid 字段。通过尝试下一组常见偏移量，可以找到适用于当前内核的正确偏移，从而恢复程序的预期功能。修改仅涉及偏移量定义，不改变任何业务逻辑，保持了原始语义。",
+        "next_deploy_index": 4
+      },
+      "duration_s": 9.517
+    },
+    {
+      "seq": 12,
+      "ts": "2026-03-23T16:17:19.811821+00:00",
+      "node": "Inspector",
+      "node_index": 3,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改前后代码语义完全等价。修复内容严格遵循Analyzer的修复建议：将硬编码偏移量0x5e0替换为适用于目标内核版本的偏移量。具体修改是将TASK_TGID_OFFSET的定义从0x5e0改为0x5e8，这是Analyzer建议的试错法扩展范围中的第一个偏移量（0x5e8, 0x5d8, 0x5f0, 0x570, 0x578, 0x580）。核心业务逻辑（条件判断和计数器递增）完全保留，包括：1）通过bpf_get_current_task()获取任务结构体；2）使用bpf_probe_read读取偏移量处的tgid字段；3）将读取的tgid_from_offset与current_tgid比较；4）条件成立时递增计数器(*va...(truncated)"
+      },
+      "duration_s": 1.205
+    },
+    {
+      "seq": 13,
+      "ts": "2026-03-23T16:17:21.016481+00:00",
+      "node": "deploy_tool",
+      "node_index": 4,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "runtime_test_failed"
+      },
+      "duration_s": 15.788
+    },
+    {
+      "seq": 14,
+      "ts": "2026-03-23T16:17:36.804947+00:00",
+      "node": "Analyzer",
+      "node_index": 4,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "runtime_test_failed",
+        "error_type": "kernel_struct_offset_mismatch",
+        "repair_method": "修改代码：将硬编码偏移量 0x5e8 替换为适用于目标内核版本的偏移量。由于目标内核缺少 BTF，无法使用 CO-RE，应采用试错法进一步扩展偏移量尝试范围。建议尝试下一组常见偏移量（如 0x5d8, 0x5f0, 0x570, 0x578, 0x580, 0x588），以找到能正确读取 task_struct 中 tgid 字段的偏移。修改 TASK_TGID_OFFSET 的定义，并确保核心业务逻辑（条件判断和计数器递增）完全保留。",
+        "analysis_report": "运行时测试失败，错误签名 runtime_test_failed。具体原因为：validator 期望 map 'counter' 中 key 0 的值 >= 3，但实际值为 0，表明程序的核心计数逻辑未被执行。结合统一历史分析，程序已成功通过静态检查、编译、加载和附着阶段，说明语法和基本兼容性问题已解决。当前失败的根本原因在于程序运行时语义未按预期工作。程序的核心逻辑是：在 tracepoint/syscalls/sys_enter_openat 中，获取当前任务结构体，通过硬编码偏移量读取 tgid 字段，并与当前进程的 tgid 比较，若相等则递增计数器。前两轮修复已将偏移量从 0x574 依次尝试为 0x5e0 和 0x5e...(truncated)"
+      },
+      "duration_s": 26.917
+    },
+    {
+      "seq": 15,
+      "ts": "2026-03-23T16:18:03.722159+00:00",
+      "node": "Repairer",
+      "node_index": 4,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "原始偏移量 0x5e8 在目标内核 5.4 中不正确，导致程序无法正确读取 tgid 字段。通过尝试下一组常见偏移量，可以找到适用于当前内核的正确偏移，从而恢复程序的预期功能。修改仅涉及偏移量定义，不改变任何业务逻辑，保持了原始语义。",
+        "next_deploy_index": 5
+      },
+      "duration_s": 9.534
+    },
+    {
+      "seq": 16,
+      "ts": "2026-03-23T16:18:13.256012+00:00",
+      "node": "Inspector",
+      "node_index": 4,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改前后代码语义完全等价。修复内容严格遵循Analyzer的修复建议：将硬编码偏移量0x5e8替换为适用于目标内核版本的偏移量。具体修改是将TASK_TGID_OFFSET的定义从0x5e8改为0x5d8，这是Analyzer建议的试错法进一步扩展范围中的第一个偏移量（0x5d8, 0x5f0, 0x570, 0x578, 0x580, 0x588）。核心业务逻辑（条件判断和计数器递增）完全保留，包括：1）通过bpf_get_current_task()获取任务结构体；2）使用bpf_probe_read读取偏移量处的tgid字段；3）将读取的tgid_from_offset与current_tgid比较；4）条件成立时递增计数器(...(truncated)"
+      },
+      "duration_s": 1.328
+    },
+    {
+      "seq": 17,
+      "ts": "2026-03-23T16:18:14.583543+00:00",
+      "node": "deploy_tool",
+      "node_index": 5,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "runtime_test_failed"
+      },
+      "duration_s": 8.454
+    },
+    {
+      "seq": 18,
+      "ts": "2026-03-23T16:18:23.037493+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "failed_refine",
+        "deploy_state": false,
+        "failed_stage": "runtime_test_failed",
+        "has_repaired": true,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

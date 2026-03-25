@@ -1,0 +1,22 @@
+status: FAILED
+source_file: /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4 -I/usr/include/x86_64-linux-gnu /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c
+stderr:
+In file included from /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_4/btf_unsupported_repair_4.bpf.c:13:
+In file included from /usr/include/bpf/bpf_helpers.h:11:
+/usr/include/bpf/bpf_helper_defs.h:794:14: error: function cannot return function type 'int (__be32 *, __u32, __be32 *, __u32, __wsum)' (aka 'int (unsigned int *, unsigned int, unsigned int *, unsigned int, unsigned int)')
+static __s64 (*bpf_csum_diff)(__be32 *from, __u32 from_size, __be32 *to, __u32 to_size, __wsum seed) = (void *) 28;
+             ^
+/usr/include/bpf/bpf_helper_defs.h:1061:14: error: function cannot return function type 'int (struct __sk_buff *, __wsum)' (aka 'int (struct __sk_buff *, unsigned int)')
+static __s64 (*bpf_csum_update)(struct __sk_buff *skb, __wsum csum) = (void *) 40;
+             ^
+/usr/include/bpf/bpf_helper_defs.h:2736:14: error: function cannot return function type 'int (void *, void *, __u32, struct tcphdr *, __u32)' (aka 'int (void *, void *, unsigned int, struct tcphdr *, unsigned int)')
+static __s64 (*bpf_tcp_gen_syncookie)(void *sk, void *iph, __u32 iph_len, struct tcphdr *th, __u32 th_len) = (void *) 110;
+             ^
+/usr/include/bpf/bpf_helper_defs.h:4547:14: error: function cannot return function type 'int (struct iphdr *, struct tcphdr *, __u32)' (aka 'int (struct iphdr *, struct tcphdr *, unsigned int)')
+static __s64 (*bpf_tcp_raw_gen_syncookie_ipv4)(struct iphdr *iph, struct tcphdr *th, __u32 th_len) = (void *) 204;
+             ^
+/usr/include/bpf/bpf_helper_defs.h:4573:14: error: function cannot return function type 'int (struct ipv6hdr *, struct tcphdr *, __u32)' (aka 'int (struct ipv6hdr *, struct tcphdr *, unsigned int)')
+static __s64 (*bpf_tcp_raw_gen_syncookie_ipv6)(struct ipv6hdr *iph, struct tcphdr *th, __u32 th_len) = (void *) 205;
+             ^
+5 errors generated.

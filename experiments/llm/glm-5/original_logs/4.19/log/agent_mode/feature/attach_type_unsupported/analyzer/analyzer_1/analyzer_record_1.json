@@ -1,0 +1,157 @@
+{
+  "generated_at": "2026-03-23T16:45:11.222744+00:00",
+  "node": "Analyzer",
+  "node_index": 1,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+    "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\n/* Crutial block */\nSEC(\"kprobe/do_sys_openat2\")\n/* Crutial block end */\nint attach_type_unsupported(struct pt_regs *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    (*val)++;\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "static_check_failed",
+    "failed_stage_result_path": "/host/output/4.19/log/agent_mode/feature/attach_type_unsupported/deploy/deploy_1/static_check.json",
+    "failed_stage_result": {
+      "success": false,
+      "error_warning_count": {
+        "error": 1,
+        "warning": 1
+      },
+      "issues": [
+        {
+          "check": "program_type_attach_availability",
+          "level": "warning",
+          "code": "attach_target_not_found",
+          "message": "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+          "suggestion": "Verify target symbol on deployment kernel or adjust attach target.",
+          "evidence": {
+            "sec": "kprobe/do_sys_openat2",
+            "target": "do_sys_openat2"
+          },
+          "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c"
+        },
+        {
+          "check": "core_btf_precondition",
+          "level": "error",
+          "code": "core_requires_btf",
+          "message": "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.",
+          "suggestion": "Must switch to non-CO-RE downgrade path (e.g., bpf_probe_read_kernel with offsets).",
+          "evidence": {
+            "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c"
+          },
+          "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c"
+        }
+      ],
+      "results": [
+        {
+          "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+          "program_sections": [
+            "kprobe/do_sys_openat2"
+          ],
+          "program_types": [
+            "kprobe"
+          ],
+          "license": "GPL",
+          "map_types": [
+            "BPF_MAP_TYPE_ARRAY"
+          ],
+          "helper_calls": [
+            "bpf_get_current_pid_tgid",
+            "bpf_map_lookup_elem"
+          ],
+          "issues": [
+            {
+              "check": "program_type_attach_availability",
+              "level": "warning",
+              "code": "attach_target_not_found",
+              "message": "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+              "suggestion": "Verify target symbol on deployment kernel or adjust attach target.",
+              "evidence": {
+                "sec": "kprobe/do_sys_openat2",
+                "target": "do_sys_openat2"
+              }
+            },
+            {
+              "check": "core_btf_precondition",
+              "level": "error",
+              "code": "core_requires_btf",
+              "message": "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.",
+              "suggestion": "Must switch to non-CO-RE downgrade path (e.g., bpf_probe_read_kernel with offsets).",
+              "evidence": {
+                "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c"
+              }
+            }
+          ]
+        }
+      ],
+      "summary": {
+        "error_count": 1,
+        "warning_count": 1
+      }
+    },
+    "deploy_summary_path": "/host/output/4.19/log/agent_mode/feature/attach_type_unsupported/deploy/deploy_1/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "static_check_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "load": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "static_check_failed"
+        }
+      }
+    },
+    "shared_history": [],
+    "error_signature": "static_check_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  helper_api_compatibility:\n    summary: 使用的 BPF 辅助函数在当前内核版本或配置中不可用\n    aliases:\n    - helper_not_in_probe\n    stage_hints:\n    - static_check_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 将不可用的辅助函数替换为功能等价且兼容性更好的替代实现（如使用 bpf_probe_read_kernel_str 配合手动循环比较替代 bpf_strncmp）。\n    - 若存在功能等价的旧版辅助函数，优先直接替换。若无直接等价函数，则通过组合其他可用辅助函数实现原语逻辑。",
+    "error_signal": {
+      "stage": "static_check_failed",
+      "error_types": [
+        "attach_target_not_found",
+        "core_requires_btf"
+      ],
+      "key_lines": [
+        "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+        "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux."
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"core_requires_btf\",\n  \"analysis_report\": \"部署失败的根本原因是目标内核环境不支持 BTF（/sys/kernel/btf/vmlinux 缺失），导致依赖 CO-RE（Compile Once - Run Everywhere）机制的 BPF 程序无法运行。虽然日志中同时存在 attach target 'do_sys_openat2' 未找到的警告，但这通常是因为缺乏 BTF 信息导致无法解析内核符号结构，属于同一根因的并发症状。由于当前环境不支持 CO-RE 重定位，必须修改源码，移除对 BPF_CORE_READ 的依赖，转而使用传统的 bpf_probe_read_kernel 系列辅助函数，并采用硬编码偏移量或结构体定义的方式来适配目标内核。\",\n  \"repair_method\": \"修改代码，移除所有 BPF_CORE_READ 相关调用和 CO-RE 重定位宏（如 __builtin_preserve_access_index）。将内核结构体字段的读取逻辑替换为 bpf_probe_read_kernel 或 bpf_probe_read_kernel_str 配合手动计算偏移量的实现方式，确保程序在不依赖 BTF 的情况下也能正确读取内核内存数据。\"\n}\n```",
+  "outputs": {
+    "can_fix": false,
+    "analysis_report": "部署失败的根本原因是目标内核环境不支持 BTF（/sys/kernel/btf/vmlinux 缺失），导致依赖 CO-RE（Compile Once - Run Everywhere）机制的 BPF 程序无法运行。虽然日志中同时存在 attach target 'do_sys_openat2' 未找到的警告，但这通常是因为缺乏 BTF 信息导致无法解析内核符号结构，属于同一根因的并发症状。由于当前环境不支持 CO-RE 重定位，必须修改源码，移除对 BPF_CORE_READ 的依赖，转而使用传统的 bpf_probe_read_kernel 系列辅助函数，并采用硬编码偏移量或结构体定义的方式来适配目标内核。",
+    "repair_action": {
+      "error_type": "attach_target_missing",
+      "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+      "key_lines": [
+        "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+        "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux."
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 0,
+    "max_fix_time": 4
+  }
+}

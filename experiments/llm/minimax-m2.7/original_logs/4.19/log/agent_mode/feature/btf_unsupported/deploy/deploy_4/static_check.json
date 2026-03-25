@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "error_warning_count": {
+    "error": 0,
+    "warning": 0
+  },
+  "issues": [],
+  "results": [
+    {
+      "source_file": "/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c",
+      "program_sections": [
+        "tracepoint/syscalls/sys_enter_openat"
+      ],
+      "program_types": [
+        "tracepoint"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_get_current_pid_tgid",
+        "bpf_map_lookup_elem"
+      ],
+      "issues": []
+    }
+  ],
+  "summary": {
+    "error_count": 0,
+    "warning_count": 0
+  }
+}

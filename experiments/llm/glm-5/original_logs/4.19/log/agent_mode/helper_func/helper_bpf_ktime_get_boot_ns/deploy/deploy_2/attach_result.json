@@ -1,0 +1,34 @@
+{
+  "success": true,
+  "stage": "attach",
+  "attached": true,
+  "skipped": false,
+  "reason": "attached_with_libbpf_loader_daemon",
+  "error_log": null,
+  "error_message": null,
+  "daemon_stdout": null,
+  "daemon_stderr": null,
+  "daemon_returncode": null,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/4.19/build/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns"
+  ],
+  "plan": {
+    "source_file": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c",
+    "section": "tracepoint/syscalls/sys_enter_openat",
+    "program_type": "tracepoint",
+    "attach_target": "syscalls/sys_enter_openat",
+    "autoattach_supported": true,
+    "autoattach_requested": true
+  },
+  "pid": 5815,
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps",
+  "ready_line": "READY pid=5816 maps_dir=/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps attached=1",
+  "via_libbpf_loader_daemon": true,
+  "error_log_lines": [],
+  "error_message_lines": []
+}

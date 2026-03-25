@@ -1,0 +1,38 @@
+{
+  "success": false,
+  "stage": "compile",
+  "source_file": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c",
+  "object_file": "/host/output/4.19/build/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c",
+    "-o",
+    "/host/output/4.19/build/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:18:26: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint helper_absent(struct trace_event_raw_sys_enter *ctx)\n                         ^\n/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:37:56: error: incomplete definition of type 'struct task_struct'\n    bpf_probe_read(&task_tgid, sizeof(task_tgid), &task->tgid);\n                                                   ~~~~^\n/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'\nstruct task_struct;\n       ^\n1 warning and 1 error generated.\n",
+  "returncode": 1,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": [
+    "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:18:26: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]",
+    "int helper_absent(struct trace_event_raw_sys_enter *ctx)",
+    "                         ^",
+    "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:37:56: error: incomplete definition of type 'struct task_struct'",
+    "    bpf_probe_read(&task_tgid, sizeof(task_tgid), &task->tgid);",
+    "                                                   ~~~~^",
+    "/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'",
+    "struct task_struct;",
+    "       ^",
+    "1 warning and 1 error generated."
+  ]
+}

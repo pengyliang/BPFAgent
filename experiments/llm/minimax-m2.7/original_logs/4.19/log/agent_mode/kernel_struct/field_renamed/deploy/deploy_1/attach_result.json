@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "stage": "attach",
+  "skipped": true,
+  "reason": "static_check_failed"
+}

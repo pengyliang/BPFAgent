@@ -1,0 +1,122 @@
+{
+  "generated_at": "2026-03-23T16:12:44.663773+00:00",
+  "node": "Analyzer",
+  "node_index": 1,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+    "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u32 tgid_from_offset = 0;\n    __u32 current_tgid;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    void *task;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 cur = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (cur != *target_tgid)\n            return 0;\n    }\n\n    task = (void *)bpf_get_current_task();\n    if (!task)\n        return 0;\n\n    /* Crutial block */\n    if (bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset),\n                              (const void *)((const char *)task + TASK_TGID_OFFSET)) != 0)\n        return 0;\n    /* Crutial block end */\n    current_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (tgid_from_offset == current_tgid)   // cannot be deleted\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "runtime_test_failed",
+    "failed_stage_result_path": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/deploy/deploy_1/runtime_result.json",
+    "failed_stage_result": {
+      "stage": "runtime_test",
+      "case_dir": "/host/data/kernel_struct/field_offset_change",
+      "workload": "/host/data/kernel_struct/field_offset_change/workload.sh",
+      "validator": "/host/data/kernel_struct/field_offset_change/validator.yaml",
+      "pin_path": "/sys/fs/bpf/ebpf_agent_field_offset_change",
+      "maps_dir": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps",
+      "success": false,
+      "skipped": false,
+      "reason": "validator_mismatch",
+      "validator_payload": {
+        "type": "min",
+        "map": "counter",
+        "key": 0,
+        "value": 3
+      },
+      "scheme_a": {
+        "enabled": true,
+        "cfg_map_pin": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/cfg",
+        "workload_pid": 1385,
+        "cfg_update_command": [
+          "sudo",
+          "/host/src/ebpf/utils/mapctl",
+          "update-u32",
+          "--map-pin",
+          "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/cfg",
+          "--key-u32",
+          "0",
+          "--value-u32",
+          "1385"
+        ],
+        "cfg_update_stdout": "{\"key\":0,\"value\":1385}\n",
+        "cfg_update_stderr": "",
+        "cfg_update_timed_out": false,
+        "cfg_update_returncode": 0,
+        "status": "applied"
+      },
+      "map_pin_path": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/counter",
+      "actual_value": 0,
+      "expected": ">= 3",
+      "mapctl_command": [
+        "sudo",
+        "/host/src/ebpf/utils/mapctl",
+        "lookup-u64",
+        "--map-pin",
+        "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/counter",
+        "--key-u32",
+        "0"
+      ]
+    },
+    "deploy_summary_path": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/deploy/deploy_1/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "runtime_test_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "load": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "attach": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "runtime": {
+          "status": "failed",
+          "success": false,
+          "error_log": "validator_mismatch"
+        }
+      }
+    },
+    "shared_history": [],
+    "error_signature": "runtime_test_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  core_requires_btf:\n    summary: 当前源码依赖 CO-RE/BTF 能力，但部署目标缺少对应 BTF 支持。\n    aliases:\n    - core_requires_btf\n    - helper_not_in_probe\n    stage_hints:\n    - static_check_failed\n    - runtime_test_failed\n    can_fix: true\n    evidence_hint:\n    - source code has vmlinux.h dependency\n    - no /sys/kernel/btf/vmlinux\n    - co-re\n    - btf\n    repair_methods:\n    - 删除vmlinux.h头文件依赖，增加`<linux/types.h>`和`<linux/bpf.h>`头文件依赖。为字段读取提供非 CO-RE 降级路径，确保在缺少\n      BTF 的目标内核上仍可维持原始观测语义。\n    - 删除 `vmlinux.h` 头文件依赖，增加 `<linux/types.h>` 和 `<linux/bpf.h>` 头文件依赖。\n    - 将所有 CO-RE 字段访问（如 `BPF_CORE_READ`）替换为 `bpf_probe_read` 配合硬编码偏移量，并手动计算偏移，完全消除\n      CO-RE 特征。\n    - 移除 `vmlinux.h` 和 `bpf_core_read.h` 头文件依赖，替换为 `<linux/types.h>` 和 `<linux/bpf.h>`\n      等基础头文件。\n    - 分析原始 CO-RE 字段访问（如 `BPF_CORE_READ`）的实际语义，若该字段在目标内核中不存在或访问逻辑仅为条件判断，可直接移除该访问并保留核心业务逻辑。\n    - 将不支持的 BTF 相关 helper 函数（如 `bpf_get_current_task_btf`）替换为功能等价的早期兼容版本（如 `bpf_get_current_task`）。\n    - 删除 `vmlinux.h` 和 `bpf/bpf_core_read.h` 头文件依赖，增加 `<linux/types.h>` 和 `<linux/bpf.h>`\n      等基础头文件。\n    - 将所有 CO-RE 字段访问（如 `BPF_CORE_READ`）替换为 `bpf_probe_read` 配合硬编码偏移量，完全消除 CO-RE 特征。\n    - 修改代码：1) 将 bpf_get_current_task_btf 替换为更兼容的 bpf_get_current_task。2) 删除 vmlinux.h\n      头文件依赖，增加 <linux/types.h> 和 <linux/bpf.h> 头文件依赖。\n  external_runtime_dependency_missing:\n    summary: 运行时测试依赖的 workload、validator 或外部条件不存在。\n    aliases:\n    - workload_not_found\n    - validator_not_found\n    stage_hints:\n    - runtime_test_failed\n    can_fix: false\n    evidence_hint: []\n    repair_methods: []\n    handoff: 失败根因来自运行时依赖缺失，而非源码错误。应补齐 workload 或 validator 后再复测，停止自动源码修复。\n  kernel_struct_offset_mismatch:\n    summary: 读取内核结构体字段时依赖硬编码偏移或错误字段布局，导致运行时语义不匹配。\n    aliases:\n    - hardcoded_offset_read\n    - field_offset_mismatch\n    - kernel_struct_offset_mismatch\n    stage_hints:\n    - runtime_test_failed\n    - load_failed\n    can_fix: true\n    evidence_hint:\n    - 硬编码 offset\n    - field offset\n    - 读取字段值异常\n    - 结构体布局变化\n    repair_methods:\n    - 将硬编码字段偏移访问替换为 CO-RE 感知的字段读取。若目标环境缺少 BTF，再实现受控的非 CO-RE 兼容路径。\n    - 统一收敛到 `BPF_CORE_READ` 或等价安全读取接口，避免直接依赖 `task_struct` 等内核结构体的固定布局。\n    - 修改代码：将硬编码偏移量 0x5e0 替换为更兼容的字段读取方式。由于目标内核缺少 BTF，无法使用 CO-RE，建议采用以下方法之一：1) 使用 bpf_probe_read_kernel\n      配合 sizeof 和 offsetof 宏（如果可用）来动态计算偏移。\n    - 当目标内核不支持 CO-RE 宏时，应避免引入它们，转而使用经过验证的、适用于目标内核版本的硬编码偏移量。\n    - 当硬编码偏移量不匹配导致运行时语义错误时，应通过试错法（如尝试0x5e0、0x5e8、0x5d8、0x5f0等常见偏移量）找到适用于目标内核版本的偏移量，并保留所有原始业务逻辑。",
+    "error_signal": {
+      "stage": "runtime_test_failed",
+      "error_types": [
+        "runtime_test_failed"
+      ],
+      "key_lines": [
+        "validator_mismatch"
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"kernel_struct_offset_mismatch\",\n  \"analysis_report\": \"本次部署在 runtime_test 阶段失败，失败原因为 validator_mismatch。具体表现为：验证器期望在 map 'counter' 中 key 0 对应的值 >= 3，但实际读取到的值为 0。结合案例目录名 'field_offset_change' 和部署摘要（编译、加载、附加均成功）分析，问题根源在于 eBPF 程序在运行时读取内核结构体（如 task_struct）的某个字段时，使用了硬编码的偏移量。由于目标内核版本的结构体布局与源码中预设的偏移量不同，导致字段读取失败或读取到错误的值，进而使得核心的业务逻辑（如条件判断和计数器递增）无法触发，最终 map 中的计数器保持为 0，与预期不符。这符合知识库中 'kernel_struct_offset_mismatch' 模式的特征：运行时语义因硬编码偏移不匹配而失败。\",\n  \"repair_method\": \"修改代码：将硬编码偏移量替换为更兼容的字段读取方式。由于目标内核缺少 BTF，无法使用 CO-RE，建议采用以下方法之一：1) 使用 bpf_probe_read_kernel 配合 sizeof 和 offsetof 宏（如果可用）来动态计算偏移。2) 当目标内核不支持 CO-RE 宏时，应避免引入它们，转而使用经过验证的、适用于目标内核版本的硬编码偏移量。3) 当硬编码偏移量不匹配导致运行时语义错误时，应通过试错法（如尝试0x5e0、0x5e8、0x5d8、0x5f0等常见偏移量）找到适用于目标内核版本的偏移量，并保留所有原始业务逻辑（特别是与计数器递增相关的条件判断）。\"\n}\n```",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "本次部署在 runtime_test 阶段失败，失败原因为 validator_mismatch。具体表现为：验证器期望在 map 'counter' 中 key 0 对应的值 >= 3，但实际读取到的值为 0。结合案例目录名 'field_offset_change' 和部署摘要（编译、加载、附加均成功）分析，问题根源在于 eBPF 程序在运行时读取内核结构体（如 task_struct）的某个字段时，使用了硬编码的偏移量。由于目标内核版本的结构体布局与源码中预设的偏移量不同，导致字段读取失败或读取到错误的值，进而使得核心的业务逻辑（如条件判断和计数器递增）无法触发，最终 map 中的计数器保持为 0，与预期不符。这符合知识库中 'kernel_struct_offset_mismatch' 模式的特征：运行时语义因硬编码偏移不匹配而失败。",
+    "repair_action": {
+      "error_type": "kernel_struct_offset_mismatch",
+      "repair_method": "修改代码：将硬编码偏移量替换为更兼容的字段读取方式。由于目标内核缺少 BTF，无法使用 CO-RE，建议采用以下方法之一：1) 使用 bpf_probe_read_kernel 配合 sizeof 和 offsetof 宏（如果可用）来动态计算偏移。2) 当目标内核不支持 CO-RE 宏时，应避免引入它们，转而使用经过验证的、适用于目标内核版本的硬编码偏移量。3) 当硬编码偏移量不匹配导致运行时语义错误时，应通过试错法（如尝试0x5e0、0x5e8、0x5d8、0x5f0等常见偏移量）找到适用于目标内核版本的偏移量，并保留所有原始业务逻辑（特别是与计数器递增相关的条件判断）。",
+      "key_lines": [
+        "validator_mismatch"
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 0,
+    "max_fix_time": 4
+  }
+}

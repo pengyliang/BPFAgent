@@ -1,0 +1,8 @@
+status: SUCCESS
+source_file: /host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/data/helper_func/helper_bpf_strncmp -I/usr/include/x86_64-linux-gnu /host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c
+stderr:
+/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c:23:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]
+int helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)
+                               ^
+1 warning generated.

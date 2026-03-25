@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "stage": "compile",
+  "source_file": "/host/data/verifier/state_explosion/state_explosion.bpf.c",
+  "object_file": "/host/output/5.15/build/verifier/state_explosion/state_explosion.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/data/verifier/state_explosion/state_explosion.bpf.c",
+    "-o",
+    "/host/output/5.15/build/verifier/state_explosion/state_explosion.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "/host/data/verifier/state_explosion/state_explosion.bpf.c:83:29: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n                            ^\n1 warning generated.\n",
+  "returncode": 0,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": [
+    "/host/data/verifier/state_explosion/state_explosion.bpf.c:83:29: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]",
+    "int bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)",
+    "                            ^",
+    "1 warning generated."
+  ]
+}

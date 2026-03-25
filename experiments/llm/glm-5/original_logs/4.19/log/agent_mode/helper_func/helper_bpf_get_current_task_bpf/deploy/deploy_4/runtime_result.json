@@ -1,0 +1,50 @@
+{
+  "stage": "runtime_test",
+  "case_dir": "/host/data/helper_func/helper_bpf_get_current_task_bpf",
+  "workload": "/host/data/helper_func/helper_bpf_get_current_task_bpf/workload.sh",
+  "validator": "/host/data/helper_func/helper_bpf_get_current_task_bpf/validator.yaml",
+  "pin_path": "/sys/fs/bpf/ebpf_agent_helper_bpf_get_current_task_btf",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_helper_bpf_get_current_task_btf_maps",
+  "success": false,
+  "skipped": false,
+  "reason": "validator_mismatch",
+  "validator_payload": {
+    "type": "min",
+    "map": "counter",
+    "key": 0,
+    "value": 3
+  },
+  "scheme_a": {
+    "enabled": true,
+    "cfg_map_pin": "/sys/fs/bpf/ebpf_agent_helper_bpf_get_current_task_btf_maps/cfg",
+    "workload_pid": 5850,
+    "cfg_update_command": [
+      "sudo",
+      "/host/src/ebpf/utils/mapctl",
+      "update-u32",
+      "--map-pin",
+      "/sys/fs/bpf/ebpf_agent_helper_bpf_get_current_task_btf_maps/cfg",
+      "--key-u32",
+      "0",
+      "--value-u32",
+      "5850"
+    ],
+    "cfg_update_stdout": "{\"key\":0,\"value\":5850}\n",
+    "cfg_update_stderr": "",
+    "cfg_update_timed_out": false,
+    "cfg_update_returncode": 0,
+    "status": "applied"
+  },
+  "map_pin_path": "/sys/fs/bpf/ebpf_agent_helper_bpf_get_current_task_btf_maps/counter",
+  "actual_value": 0,
+  "expected": ">= 3",
+  "mapctl_command": [
+    "sudo",
+    "/host/src/ebpf/utils/mapctl",
+    "lookup-u64",
+    "--map-pin",
+    "/sys/fs/bpf/ebpf_agent_helper_bpf_get_current_task_btf_maps/counter",
+    "--key-u32",
+    "0"
+  ]
+}

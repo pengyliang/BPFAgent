@@ -1,0 +1,8 @@
+status: SUCCESS
+source_file: /host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1 -I/usr/include/x86_64-linux-gnu /host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c
+stderr:
+/host/output/5.15/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c:43:28: warning: incompatible pointer to integer conversion passing 'char[32]' to parameter of type '__u32' (aka 'unsigned int') [-Wint-conversion]
+    bpf_trace_printk("%s", out);
+                           ^~~
+1 warning generated.

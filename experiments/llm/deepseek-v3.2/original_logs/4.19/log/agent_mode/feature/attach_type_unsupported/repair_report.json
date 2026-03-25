@@ -1,0 +1,10 @@
+{
+  "generated_at": "2026-03-23T15:57:20.811832+00:00",
+  "case_display": "feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+  "final_stage": "static_check_failed",
+  "same_error_threshold": 3,
+  "error_signature_counts": {
+    "static_check_failed": 1
+  },
+  "attempts": []
+}

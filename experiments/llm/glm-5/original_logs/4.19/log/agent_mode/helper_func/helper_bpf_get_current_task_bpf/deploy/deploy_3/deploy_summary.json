@@ -1,0 +1,34 @@
+{
+  "success": false,
+  "stage": "compile_failed",
+  "steps": {
+    "static_check": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null
+    },
+    "compile": {
+      "status": "failed",
+      "success": false,
+      "error_log": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:9:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n                 ^\n/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:15:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n                 ^\n2 errors generated."
+    },
+    "load": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "attach": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "runtime": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    }
+  }
+}

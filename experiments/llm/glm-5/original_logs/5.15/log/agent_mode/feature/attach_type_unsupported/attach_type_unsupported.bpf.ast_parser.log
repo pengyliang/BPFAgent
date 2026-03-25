@@ -1,0 +1,5 @@
+status: SUCCESS
+source_file: /host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/data/feature/attach_type_unsupported -I/usr/include/x86_64-linux-gnu -D__TARGET_ARCH_x86 -I/host/output/5.15/log /host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c
+stderr:
+<empty>

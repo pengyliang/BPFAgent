@@ -1,0 +1,31 @@
+{
+  "success": true,
+  "stage": "success",
+  "steps": {
+    "static_check": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "compile": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "load": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "attach": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "runtime": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    }
+  }
+}

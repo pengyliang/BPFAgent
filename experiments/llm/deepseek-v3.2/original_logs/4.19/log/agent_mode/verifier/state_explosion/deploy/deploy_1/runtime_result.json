@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "stage": "runtime_test",
+  "skipped": true,
+  "reason": "load_or_attach_failed"
+}

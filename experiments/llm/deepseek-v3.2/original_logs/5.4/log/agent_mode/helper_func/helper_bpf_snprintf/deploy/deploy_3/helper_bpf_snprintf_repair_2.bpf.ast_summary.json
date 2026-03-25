@@ -1,0 +1,50 @@
+{
+  "source_file": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_2/helper_bpf_snprintf_repair_2.bpf.c",
+  "ast_fallback": false,
+  "bpf_helper_calls": [
+    {
+      "helper": "bpf_map_lookup_elem",
+      "line": null,
+      "column": 18
+    },
+    {
+      "helper": "bpf_map_lookup_elem",
+      "line": null,
+      "column": 26
+    },
+    {
+      "helper": "bpf_get_current_pid_tgid",
+      "line": null,
+      "column": 30
+    },
+    {
+      "helper": "bpf_get_current_pid_tgid",
+      "line": null,
+      "column": 23
+    },
+    {
+      "helper": "bpf_trace_printk",
+      "line": null,
+      "column": 9
+    }
+  ],
+  "struct_field_access_paths": [],
+  "map_operation_sequence": [
+    {
+      "step": 1,
+      "operation": "lookup",
+      "helper": "bpf_map_lookup_elem",
+      "map_symbol": "counter",
+      "line": null,
+      "column": 18
+    },
+    {
+      "step": 2,
+      "operation": "lookup",
+      "helper": "bpf_map_lookup_elem",
+      "map_symbol": "cfg",
+      "line": null,
+      "column": 26
+    }
+  ]
+}

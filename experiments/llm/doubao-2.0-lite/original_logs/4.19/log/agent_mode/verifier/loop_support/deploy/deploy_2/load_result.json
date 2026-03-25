@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "stage": "load",
+  "via_libbpf_loader_daemon": true,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/4.19/build/verifier/loop_support/loop_support.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_loop_support"
+  ],
+  "pid": 2313,
+  "ready_line": "READY pid=2314 maps_dir=/sys/fs/bpf/ebpf_agent_loop_support_maps attached=1",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_loop_support_maps",
+  "phase_details": {},
+  "error_message": "",
+  "stdout_lines": [],
+  "stderr_lines": []
+}

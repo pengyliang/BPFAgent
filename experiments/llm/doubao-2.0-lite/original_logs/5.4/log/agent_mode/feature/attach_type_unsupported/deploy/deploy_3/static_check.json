@@ -1,0 +1,81 @@
+{
+  "success": false,
+  "error_warning_count": {
+    "error": 1,
+    "warning": 1
+  },
+  "issues": [
+    {
+      "check": "program_type_attach_availability",
+      "level": "error",
+      "code": "program_type_not_supported",
+      "message": "Program type \"fexit\" from SEC(\"fexit/do_sys_openat2\") is not in bpftool program type support list for this kernel.",
+      "suggestion": "Use a program type listed in kernel_profile program_type_support, or upgrade the kernel / bpftool probe environment.",
+      "evidence": {
+        "sec": "fexit/do_sys_openat2",
+        "program_type": "fexit"
+      },
+      "source_file": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_2/attach_type_unsupported_repair_2.bpf.c"
+    },
+    {
+      "check": "program_type_attach_availability",
+      "level": "warning",
+      "code": "attach_target_not_found",
+      "message": "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+      "suggestion": "Verify target symbol on deployment kernel or adjust attach target.",
+      "evidence": {
+        "sec": "fexit/do_sys_openat2",
+        "target": "do_sys_openat2"
+      },
+      "source_file": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_2/attach_type_unsupported_repair_2.bpf.c"
+    }
+  ],
+  "results": [
+    {
+      "source_file": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_2/attach_type_unsupported_repair_2.bpf.c",
+      "program_sections": [
+        "fexit/do_sys_openat2"
+      ],
+      "program_types": [
+        "fexit"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_map_lookup_elem",
+        "bpf_map_lookup_elem",
+        "bpf_get_current_pid_tgid"
+      ],
+      "issues": [
+        {
+          "check": "program_type_attach_availability",
+          "level": "error",
+          "code": "program_type_not_supported",
+          "message": "Program type \"fexit\" from SEC(\"fexit/do_sys_openat2\") is not in bpftool program type support list for this kernel.",
+          "suggestion": "Use a program type listed in kernel_profile program_type_support, or upgrade the kernel / bpftool probe environment.",
+          "evidence": {
+            "sec": "fexit/do_sys_openat2",
+            "program_type": "fexit"
+          }
+        },
+        {
+          "check": "program_type_attach_availability",
+          "level": "warning",
+          "code": "attach_target_not_found",
+          "message": "Attach target do_sys_openat2 not found in /proc/kallsyms on current host.",
+          "suggestion": "Verify target symbol on deployment kernel or adjust attach target.",
+          "evidence": {
+            "sec": "fexit/do_sys_openat2",
+            "target": "do_sys_openat2"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "error_count": 1,
+    "warning_count": 1
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T03:58:50.115731+00:00",
+  "updated_at": "2026-03-24T03:59:08.579358+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 18.464,
+  "module_durations_s": {
+    "deploy_tool": 8.721,
+    "Analyzer": 6.231,
+    "Repairer": 2.628,
+    "Inspector": 0.883,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T03:58:50.115731+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 6.653
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T03:58:56.768785+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将不被支持的bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。",
+        "analysis_report": "当前静态检查阶段失败，原因是代码使用的eBPF辅助函数bpf_ktime_get_boot_ns不在当前内核的bpftool助手白名单中，该辅助函数通常仅在5.8及以上版本内核中支持，当前内核版本不兼容该辅助函数，该问题可通过替换为兼容性更好的等效辅助函数修复。"
+      },
+      "duration_s": 6.231
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-24T03:59:02.999710+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "bpf_ktime_get_ns在更早的内核版本中就得到支持，兼容性更好，替换后不改变原有程序的核心逻辑，满足最小修改要求，保留了原有的条件判断和计数逻辑。",
+        "next_deploy_index": 2
+      },
+      "duration_s": 2.628
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-24T03:59:05.628207+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修复按照Analyzer的建议将不兼容的辅助函数bpf_ktime_get_boot_ns替换为了兼容性更好的bpf_ktime_get_ns，原有程序的核心逻辑、条件判断和计数逻辑都完整保留，仅去掉了多余的空行，没有修改Analyzer建议之外的其他代码内容，符合修复要求。"
+      },
+      "duration_s": 0.883
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-24T03:59:06.511374+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 2.068
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-24T03:59:08.579296+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

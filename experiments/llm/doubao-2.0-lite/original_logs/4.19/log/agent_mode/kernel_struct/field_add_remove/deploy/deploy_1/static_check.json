@@ -1,0 +1,56 @@
+{
+  "success": false,
+  "error_warning_count": {
+    "error": 1,
+    "warning": 0
+  },
+  "issues": [
+    {
+      "check": "core_btf_precondition",
+      "level": "error",
+      "code": "core_requires_btf",
+      "message": "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.",
+      "suggestion": "Must switch to non-CO-RE downgrade path (e.g., bpf_probe_read_kernel with offsets).",
+      "evidence": {
+        "source_file": "/host/data/kernel_struct/field_add_remove/field_add_remove.bpf.c"
+      },
+      "source_file": "/host/data/kernel_struct/field_add_remove/field_add_remove.bpf.c"
+    }
+  ],
+  "results": [
+    {
+      "source_file": "/host/data/kernel_struct/field_add_remove/field_add_remove.bpf.c",
+      "program_sections": [
+        "tracepoint/syscalls/sys_enter_openat"
+      ],
+      "program_types": [
+        "tracepoint"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_get_current_pid_tgid",
+        "bpf_get_current_task",
+        "bpf_map_lookup_elem"
+      ],
+      "issues": [
+        {
+          "check": "core_btf_precondition",
+          "level": "error",
+          "code": "core_requires_btf",
+          "message": "CO-RE/BPF_CORE_READ path detected but target kernel has no /sys/kernel/btf/vmlinux.",
+          "suggestion": "Must switch to non-CO-RE downgrade path (e.g., bpf_probe_read_kernel with offsets).",
+          "evidence": {
+            "source_file": "/host/data/kernel_struct/field_add_remove/field_add_remove.bpf.c"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "error_count": 1,
+    "warning_count": 0
+  }
+}

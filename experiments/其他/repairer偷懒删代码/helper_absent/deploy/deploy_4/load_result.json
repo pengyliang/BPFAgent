@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "stage": "load",
+  "via_libbpf_loader_daemon": true,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/4.19/build/helper_func/helper_absent/helper_absent.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_helper_absent"
+  ],
+  "pid": 4099,
+  "ready_line": "READY pid=4100 maps_dir=/sys/fs/bpf/ebpf_agent_helper_absent_maps attached=1",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_helper_absent_maps",
+  "phase_details": {},
+  "error_message": "",
+  "stdout_lines": [],
+  "stderr_lines": []
+}

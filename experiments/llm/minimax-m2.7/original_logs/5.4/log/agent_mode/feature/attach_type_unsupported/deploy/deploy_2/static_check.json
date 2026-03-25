@@ -1,0 +1,33 @@
+{
+  "success": true,
+  "error_warning_count": {
+    "error": 0,
+    "warning": 0
+  },
+  "issues": [],
+  "results": [
+    {
+      "source_file": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_1/attach_type_unsupported_repair_1.bpf.c",
+      "program_sections": [
+        "kprobe/do_sys_open"
+      ],
+      "program_types": [
+        "kprobe"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_map_lookup_elem",
+        "bpf_map_lookup_elem",
+        "bpf_get_current_pid_tgid"
+      ],
+      "issues": []
+    }
+  ],
+  "summary": {
+    "error_count": 0,
+    "warning_count": 0
+  }
+}

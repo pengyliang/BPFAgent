@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "stage": "compile",
+  "source_file": "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c",
+  "object_file": "/host/output/5.15/build/feature/program_type_unsupported/program_type_unsupported.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c",
+    "-o",
+    "/host/output/5.15/build/feature/program_type_unsupported/program_type_unsupported.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "",
+  "returncode": 0,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": []
+}

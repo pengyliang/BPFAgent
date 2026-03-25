@@ -1,0 +1,36 @@
+{
+  "success": true,
+  "error_warning_count": {
+    "error": 0,
+    "warning": 0
+  },
+  "issues": [],
+  "results": [
+    {
+      "source_file": "/host/output/4.19/log/agent_mode/feature/map_type_unsupported/repair/repair_1/map_type_unsupported_repair_1.bpf.c",
+      "program_sections": [
+        "tracepoint/syscalls/sys_enter_openat"
+      ],
+      "program_types": [
+        "tracepoint"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY",
+        "BPF_MAP_TYPE_PERF_EVENT_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_map_lookup_elem",
+        "bpf_map_lookup_elem",
+        "bpf_get_current_pid_tgid",
+        "bpf_ktime_get_ns",
+        "bpf_perf_event_output"
+      ],
+      "issues": []
+    }
+  ],
+  "summary": {
+    "error_count": 0,
+    "warning_count": 0
+  }
+}

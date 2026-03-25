@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-03-24T03:12:31.458929+00:00",
+  "updated_at": "2026-03-24T03:12:31.487345+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 0.028,
+  "module_durations_s": {
+    "deploy_tool": 0.028,
+    "End": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-24T03:12:31.458929+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 0.028
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-24T03:12:31.487309+00:00",
+      "node": "End",
+      "node_index": 2,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": ""
+      }
+    }
+  ]
+}

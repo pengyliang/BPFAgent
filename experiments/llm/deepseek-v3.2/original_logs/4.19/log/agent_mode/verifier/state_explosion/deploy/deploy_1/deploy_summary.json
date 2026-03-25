@@ -1,0 +1,33 @@
+{
+  "success": false,
+  "stage": "load_failed",
+  "steps": {
+    "static_check": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null
+    },
+    "compile": {
+      "status": "success",
+      "success": true,
+      "error_log": null
+    },
+    "load": {
+      "status": "failed",
+      "success": false,
+      "error_log": "load failed: -7"
+    },
+    "attach": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "load_failed"
+    },
+    "runtime": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "load_or_attach_failed"
+    }
+  }
+}

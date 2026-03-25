@@ -1,0 +1,185 @@
+{
+  "generated_at": "2026-03-24T04:37:42.126272+00:00",
+  "node": "Analyzer",
+  "node_index": 1,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/data/verifier/loop_support/loop_support.bpf.c",
+    "source_code": "\n#include <linux/types.h>\n#include <linux/bpf.h>\n\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n\n\nconst __u32 pid_threshold = 0;\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint isa_upgrade_incompatible(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u32 pid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n\n    if (!val)\n        return 0;\n    \n    if (target_tgid && *target_tgid && pid != *target_tgid)\n        return 0;\n\n    __u32 i = 0;\n    /* Crutial block */\n    while (i < 100){    // bounded loop\n        i++;\n        if (i % 2 == 0)\n            pid += 1;\n        else\n            pid -= 1;\n    }\n    /* Crutial block end */\n    if (pid > pid_threshold)\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "load_failed",
+    "failed_stage_result_path": "/host/output/4.19/log/agent_mode/verifier/loop_support/deploy/deploy_1/load_result.json",
+    "failed_stage_result": {
+      "success": false,
+      "stage": "load",
+      "via_libbpf_loader_daemon": true,
+      "command": [
+        "sudo",
+        "/host/src/ebpf/utils/loader",
+        "--obj",
+        "/host/output/4.19/build/verifier/loop_support/loop_support.bpf.o",
+        "--pin-path",
+        "/sys/fs/bpf/ebpf_agent_loop_support"
+      ],
+      "pid": 3149,
+      "ready_line": null,
+      "stdout": "",
+      "stderr": "libbpf: loading object from /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 360, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'isa_upgrade_incompatible' at insn offset 0 (0 bytes), code size 45 insns (360 bytes)\nlibbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 32, link 27, flags 40, type=9\nlibbpf: elf: section(5) .rodata, size 4, link 0, flags 2, type=1\nlibbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1\nlibbpf: elf: section(7) license, size 4, link 0, flags 3, type=1\nlibbpf: license of /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o is GPL\nlibbpf: elf: section(17) .BTF, size 1330, link 0, flags 0, type=1\nlibbpf: elf: section(19) .BTF.ext, size 368, link 0, flags 0, type=1\nlibbpf: elf: section(27) .symtab, size 480, link 1, flags 0, type=2\nlibbpf: looking for externs among 20 symbols...\nlibbpf: collected 0 externs total\nlibbpf: map 'counter': at sec_idx 6, offset 0.\nlibbpf: map 'counter': found type = 2.\nlibbpf: map 'counter': found key [8], sz = 4.\nlibbpf: map 'counter': found value [11], sz = 8.\nlibbpf: map 'counter': found max_entries = 1.\nlibbpf: map 'cfg': at sec_idx 6, offset 32.\nlibbpf: map 'cfg': found type = 2.\nlibbpf: map 'cfg': found key [8], sz = 4.\nlibbpf: map 'cfg': found value [8], sz = 4.\nlibbpf: map 'cfg': found max_entries = 1.\nlibbpf: map 'loop_sup.rodata' (global data): at sec_idx 5, offset 0, flags 480.\nlibbpf: map 2 is \"loop_sup.rodata\"\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': collecting relocation for section(3) 'tracepoint/syscalls/sys_enter_openat'\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'\nlibbpf: prog 'isa_upgrade_incompatible': found map 0 (counter, sec 6, off 0) for insn #4\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'\nlibbpf: prog 'isa_upgrade_incompatible': found map 1 (cfg, sec 6, off 32) for insn #9\nlibbpf: map 'counter': created successfully, fd=4\nlibbpf: map 'cfg': created successfully, fd=5\nlibbpf: map 'loop_sup.rodata': skipped auto-creating...\nlibbpf: prog 'isa_upgrade_incompatible': BPF program load failed: Invalid argument\nlibbpf: prog 'isa_upgrade_incompatible': -- BEGIN PROG LOAD LOG --\nback-edge from insn 29 to 37\n-- END PROG LOAD LOG --\nlibbpf: prog 'isa_upgrade_incompatible': failed to load: -22\nlibbpf: failed to load object '/host/output/4.19/build/verifier/loop_support/loop_support.bpf.o'\nload failed: -22\n",
+      "returncode": 10,
+      "error_message": "load failed: -22",
+      "load_success": false,
+      "attach_success": false,
+      "phase_details": {
+        "load": {
+          "phase": "load",
+          "ok": false,
+          "stdout": "",
+          "stderr": "libbpf: loading object from /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 360, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'isa_upgrade_incompatible' at insn offset 0 (0 bytes), code size 45 insns (360 bytes)\nlibbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 32, link 27, flags 40, type=9\nlibbpf: elf: section(5) .rodata, size 4, link 0, flags 2, type=1\nlibbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1\nlibbpf: elf: section(7) license, size 4, link 0, flags 3, type=1\nlibbpf: license of /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o is GPL\nlibbpf: elf: section(17) .BTF, size 1330, link 0, flags 0, type=1\nlibbpf: elf: section(19) .BTF.ext, size 368, link 0, flags 0, type=1\nlibbpf: elf: section(27) .symtab, size 480, link 1, flags 0, type=2\nlibbpf: looking for externs among 20 symbols...\nlibbpf: collected 0 externs total\nlibbpf: map 'counter': at sec_idx 6, offset 0.\nlibbpf: map 'counter': found type = 2.\nlibbpf: map 'counter': found key [8], sz = 4.\nlibbpf: map 'counter': found value [11], sz = 8.\nlibbpf: map 'counter': found max_entries = 1.\nlibbpf: map 'cfg': at sec_idx 6, offset 32.\nlibbpf: map 'cfg': found type = 2.\nlibbpf: map 'cfg': found key [8], sz = 4.\nlibbpf: map 'cfg': found value [8], sz = 4.\nlibbpf: map 'cfg': found max_entries = 1.\nlibbpf: map 'loop_sup.rodata' (global data): at sec_idx 5, offset 0, flags 480.\nlibbpf: map 2 is \"loop_sup.rodata\"\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': collecting relocation for section(3) 'tracepoint/syscalls/sys_enter_openat'\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'\nlibbpf: prog 'isa_upgrade_incompatible': found map 0 (counter, sec 6, off 0) for insn #4\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'\nlibbpf: prog 'isa_upgrade_incompatible': found map 1 (cfg, sec 6, off 32) for insn #9\nlibbpf: map 'counter': created successfully, fd=4\nlibbpf: map 'cfg': created successfully, fd=5\nlibbpf: map 'loop_sup.rodata': skipped auto-creating...\nlibbpf: prog 'isa_upgrade_incompatible': BPF program load failed: Invalid argument\nlibbpf: prog 'isa_upgrade_incompatible': -- BEGIN PROG LOAD LOG --\nback-edge from insn 29 to 37\n-- END PROG LOAD LOG --\nlibbpf: prog 'isa_upgrade_incompatible': failed to load: -22\nlibbpf: failed to load object '/host/output/4.19/build/verifier/loop_support/loop_support.bpf.o'\nload failed: -22\n",
+          "error_message": "load failed: -22"
+        }
+      },
+      "stdout_lines": [],
+      "stderr_lines": [
+        "libbpf: loading object from /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o",
+        "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 360, link 0, flags 6, type=1",
+        "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'isa_upgrade_incompatible' at insn offset 0 (0 bytes), code size 45 insns (360 bytes)",
+        "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 32, link 27, flags 40, type=9",
+        "libbpf: elf: section(5) .rodata, size 4, link 0, flags 2, type=1",
+        "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+        "libbpf: elf: section(7) license, size 4, link 0, flags 3, type=1",
+        "libbpf: license of /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o is GPL",
+        "libbpf: elf: section(17) .BTF, size 1330, link 0, flags 0, type=1",
+        "libbpf: elf: section(19) .BTF.ext, size 368, link 0, flags 0, type=1",
+        "libbpf: elf: section(27) .symtab, size 480, link 1, flags 0, type=2",
+        "libbpf: looking for externs among 20 symbols...",
+        "libbpf: collected 0 externs total",
+        "libbpf: map 'counter': at sec_idx 6, offset 0.",
+        "libbpf: map 'counter': found type = 2.",
+        "libbpf: map 'counter': found key [8], sz = 4.",
+        "libbpf: map 'counter': found value [11], sz = 8.",
+        "libbpf: map 'counter': found max_entries = 1.",
+        "libbpf: map 'cfg': at sec_idx 6, offset 32.",
+        "libbpf: map 'cfg': found type = 2.",
+        "libbpf: map 'cfg': found key [8], sz = 4.",
+        "libbpf: map 'cfg': found value [8], sz = 4.",
+        "libbpf: map 'cfg': found max_entries = 1.",
+        "libbpf: map 'loop_sup.rodata' (global data): at sec_idx 5, offset 0, flags 480.",
+        "libbpf: map 2 is \"loop_sup.rodata\"",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': collecting relocation for section(3) 'tracepoint/syscalls/sys_enter_openat'",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'",
+        "libbpf: prog 'isa_upgrade_incompatible': found map 0 (counter, sec 6, off 0) for insn #4",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'",
+        "libbpf: prog 'isa_upgrade_incompatible': found map 1 (cfg, sec 6, off 32) for insn #9",
+        "libbpf: map 'counter': created successfully, fd=4",
+        "libbpf: map 'cfg': created successfully, fd=5",
+        "libbpf: map 'loop_sup.rodata': skipped auto-creating...",
+        "libbpf: prog 'isa_upgrade_incompatible': BPF program load failed: Invalid argument",
+        "libbpf: prog 'isa_upgrade_incompatible': -- BEGIN PROG LOAD LOG --",
+        "back-edge from insn 29 to 37",
+        "-- END PROG LOAD LOG --",
+        "libbpf: prog 'isa_upgrade_incompatible': failed to load: -22",
+        "libbpf: failed to load object '/host/output/4.19/build/verifier/loop_support/loop_support.bpf.o'",
+        "load failed: -22"
+      ]
+    },
+    "deploy_summary_path": "/host/output/4.19/log/agent_mode/verifier/loop_support/deploy/deploy_1/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "load_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "load": {
+          "status": "failed",
+          "success": false,
+          "error_log": "load failed: -22"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "load_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "load_or_attach_failed"
+        }
+      }
+    },
+    "shared_history": [],
+    "error_signature": "load_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  helper_api_compatibility:\n    summary: 使用的 BPF 辅助函数在当前内核版本或配置中不可用\n    aliases:\n    - helper_not_in_probe\n    - map_type_not_in_probe\n    - helper_bpf_probe_read_kernel_missing\n    - helper_bpf_strncmp_missing\n    - helper_bpf_get_current_task_btf_missing\n    - helper_bpf_snprintf_missing\n    - bpf_snprintf_rodata_relocation_failed\n    - helper_api_compatibility\n    stage_hints:\n    - static_check_failed\n    - compile_failed\n    - load_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 将不可用的辅助函数替换为功能等价且兼容性更好的替代实现（如使用 bpf_probe_read_kernel_str 配合手动循环比较替代 bpf_strncmp）。\n    - 若存在功能等价的旧版辅助函数，优先直接替换。若无直接等价函数，则通过组合其他可用辅助函数实现原语逻辑。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义。\n    - 将 bpf_ringbuf_output 替换为 bpf_perf_event_output，传入上下文 ctx、map 指针以及 BPF_F_CURRENT_CPU\n      标志（或结合 bpf_get_smp_processor_id）。\n    - 若目标内核不支持 bpf_ktime_get_boot_ns（常见于 < 5.8 内核），将其替换为兼容性更好的 bpf_ktime_get_ns。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），使用 `#pragma unroll` 展开的手动循环逐字节比较字符串，以兼容旧版本内核。\n    - 修改代码，移除对 bpf_snprintf 的调用。由于 bpf_snprintf 常用于格式化输出字符串到 map 或 ringbuf，在低版本内核中，应改用\n      bpf_probe_read_kernel_str 等可用函数读取字符串，并手动逐字节拷贝到目标 buffer 中，或者直接输出原始数据而避免在内核态进行格式化处理。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将 `BPF_CORE_READ` 宏调用替换为显式的 `bpf_probe_read`\n      调用。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义（通常为 4 字节）。\n    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+），将其替换为 bpf_get_current_task，并检查后续成员访问逻辑是否兼容。\n    - 若目标内核不支持 bpf_snprintf (Linux 5.13+)，应将其替换为 bpf_probe_read_kernel_str (Linux\n      5.5+) 或 bpf_probe_read (Linux 4.7+)，并适配返回值逻辑（如将 bpf_probe_read 的 0 返回值映射为正数）以保留原有的条件判断结构。\n    - 修改代码，将bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，移除对bpf_snprintf的调用，改用bpf_probe_read_kernel_str读取字符串，手动逐字节拷贝到目标buffer中，或直接输出原始数据避免在内核态进行格式化处理。\n    - 修改代码，将不被支持的bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容。将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 修改代码，使用`#pragma unroll`展开的手动循环逐字节比较字符串，替代不可用的bpf_strncmp函数，兼容低版本内核。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），直接在调用点展开使用 `#pragma unroll` 的手动循环逐字节比较实现，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。\n    - 修改代码，将BPF_MAP_TYPE_RINGBUF地图类型替换为BPF_MAP_TYPE_PERF_EVENT_ARRAY，并补全key_size和value_size定义（通常为4字节）。再将bpf_ringbuf_output替换为bpf_perf_event_output，传入上下文ctx、map指针以及BPF_F_CURRENT_CPU标志。\n    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+）且不支持CO-RE BTF，将其替换为 bpf_get_current_task，移除vmlinux.h引入并前向声明不完整struct\n      task_struct，使用对应架构内核版本的固定偏移量结合bpf_probe_read读取成员，彻底消除对CO-RE BTF的依赖。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），在调用点直接展开使用 `#pragma unroll` 的手动循环逐字节比较实现，显式保留最大比较长度参数，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。\n    - 在Linux 5.13以下内核使用bpf_snprintf时，需直接移除对bpf_snprintf的调用，若存在字符串常量输出仍导致.rodata.str1.1重定位失败，需彻底移除包含静态字符串常量的输出调用，保留原有核心业务逻辑。\n    - 修改代码，将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在 BPF_CORE_READ\n      宏调用则将其替换为显式的 bpf_probe_read 调用。\n    - 修改代码，将 `bpf_ktime_get_boot_ns` 替换为兼容性更好的 `bpf_ktime_get_ns`。具体修改：在源文件 /host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c\n      中，将所有对 `bpf_ktime_get_boot_ns()` 的调用替换为 `bpf_ktime_get_ns()`，并同步更新对应的头文件或函数声明。\n    - 修改代码，将所有 bpf_ktime_get_boot_ns 替换为 bpf_ktime_get_ns。bpf_ktime_get_ns 是更早期内核版本就支持的兼容函数，返回墙上时间（wall\n      clock time）纳秒数，功能等价且覆盖更广的内核版本。\n    - 修改代码，将 bpf_probe_read_kernel 替换为兼容性更好的 bpf_probe_read（Linux 4.7+ 支持）。具体为在 btf_unsupported.bpf.c\n      文件中，将所有 bpf_probe_read_kernel 调用替换为 bpf_probe_read。\n    - '修改代码，将 bpf_get_current_task_btf 替换为 bpf_get_current_task。具体做法： 1. 将所有 bpf_get_current_task_btf()\n      调用替换为 bpf_get_current_task() 2. 移除对 vmlinux.h 的 #include 引入 3. 移除所有 BPF_CORE_READ\n      宏调用，改用 bpf_probe_read() 配合固定偏移量读取 task_struct 成员 4. 前向声明 struct task_struct。'\n  state_explosion:\n    summary: 循环中频繁调用非内联子函数导致验证器状态爆炸\n    aliases:\n    - state_explosion\n    stage_hints:\n    - load_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 将循环内调用的子函数强制声明为 `static __always_inline`，消除 BPF-to-BPF 调用的上下文切换开销。\n    - 若内联后代码体积过大，应同步减少循环次数以降低验证路径复杂度。\n    - 修改代码，将循环内调用的子函数global_add_stress强制声明为static __always_inline，消除BPF-to-BPF调用的上下文切换开销，减少验证器的状态复杂度。\n    - 修改代码，将 `global_add_stress` 函数声明从 `static int global_add_stress(...)` 改为 `static\n      __always_inline int global_add_stress(...)`，强制编译器将函数体内联到所有调用点，从而消除 BPF-to-BPF\n      调用的上下文切换开销，大幅减少验证器的状态复杂度。若内联后代码体积仍然过大（单 BPF 程序总指令数接近验证器上限），应同步减少循环次数（如从 50 次减少到\n      20 次），以确保总指令数在验证器限制范围内。\n  unbounded_loop:\n    summary: 循环逻辑上虽有界但验证器无法证明，导致加载失败\n    aliases:\n    - unbounded_loop\n    stage_hints:\n    - load_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。\n    - 若编译器不支持 unroll 或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。\n    - 修改代码，在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令。若编译器不支持unroll或循环体过大，手动将循环逻辑展开为顺序执行的线性代码。\n    - 在循环前添加 `#pragma unroll` 指令，指示编译器展开循环以消除回跳指令，解决验证器无法证明循环有界的问题。",
+    "error_signal": {
+      "stage": "load_failed",
+      "error_types": [
+        "unbounded_loop"
+      ],
+      "key_lines": [
+        "libbpf: loading object from /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o",
+        "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 360, link 0, flags 6, type=1",
+        "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'isa_upgrade_incompatible' at insn offset 0 (0 bytes), code size 45 insns (360 bytes)",
+        "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 32, link 27, flags 40, type=9",
+        "libbpf: elf: section(5) .rodata, size 4, link 0, flags 2, type=1",
+        "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+        "libbpf: elf: section(7) license, size 4, link 0, flags 3, type=1",
+        "libbpf: license of /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o is GPL",
+        "libbpf: elf: section(17) .BTF, size 1330, link 0, flags 0, type=1",
+        "libbpf: elf: section(19) .BTF.ext, size 368, link 0, flags 0, type=1",
+        "libbpf: elf: section(27) .symtab, size 480, link 1, flags 0, type=2",
+        "libbpf: map 'counter': at sec_idx 6, offset 0.",
+        "libbpf: map 'counter': found type = 2.",
+        "libbpf: map 'counter': found key [8], sz = 4.",
+        "libbpf: map 'counter': found value [11], sz = 8.",
+        "libbpf: map 'counter': found max_entries = 1.",
+        "libbpf: map 'cfg': at sec_idx 6, offset 32.",
+        "libbpf: map 'cfg': found type = 2.",
+        "libbpf: map 'cfg': found key [8], sz = 4.",
+        "libbpf: map 'cfg': found value [8], sz = 4.",
+        "libbpf: map 'cfg': found max_entries = 1.",
+        "libbpf: map 'loop_sup.rodata' (global data): at sec_idx 5, offset 0, flags 480.",
+        "libbpf: map 2 is \"loop_sup.rodata\"",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'",
+        "libbpf: prog 'isa_upgrade_incompatible': found map 0 (counter, sec 6, off 0) for insn #4",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'",
+        "libbpf: prog 'isa_upgrade_incompatible': found map 1 (cfg, sec 6, off 32) for insn #9",
+        "libbpf: map 'counter': created successfully, fd=4",
+        "libbpf: map 'cfg': created successfully, fd=5",
+        "libbpf: map 'loop_sup.rodata': skipped auto-creating..."
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"unbounded_loop\",\n  \"analysis_report\": \"BPF verifier 在加载阶段报错 `back-edge from insn 29 to 37`，表示指令 29 到 37 之间存在一条回边（back-edge），即程序包含一个循环结构，而 BPF 验证器无法在 45 条指令的限制内证明该循环是有界的（loop bound must be known）。程序 `isa_upgrade_incompatible` 共 45 条指令（360 字节），编译通过但在加载阶段因验证器无法确认循环边界而失败。这是在 4.19 内核上运行的常见问题——验证器对循环有严格的限制，要求循环次数必须能在加载时静态确定。\",\n  \"repair_method\": \"修改代码，在 loop_support.bpf.c 中存在循环的函数内，于循环语句前添加 `#pragma unroll` 指令，指示编译器在编译时将该循环完全展开为顺序执行的线性代码，从而彻底消除指令流中的回跳指令（back-edge），使 BPF 验证器无需证明循环边界即可接受程序。若循环体较大导致单函数指令数超过验证器上限（约 100 万条指令的实际限制，但单 BPF 程序通常建议不超过几千条），可同步减少循环迭代次数。示例：在 for 循环前添加 `#pragma unroll` 使其变为 `for (...) { #pragma unroll\\n  ...\\n}` 或直接在循环体上方单独写 `#pragma unroll`。\"\n}\n```",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "BPF verifier 在加载阶段报错 `back-edge from insn 29 to 37`，表示指令 29 到 37 之间存在一条回边（back-edge），即程序包含一个循环结构，而 BPF 验证器无法在 45 条指令的限制内证明该循环是有界的（loop bound must be known）。程序 `isa_upgrade_incompatible` 共 45 条指令（360 字节），编译通过但在加载阶段因验证器无法确认循环边界而失败。这是在 4.19 内核上运行的常见问题——验证器对循环有严格的限制，要求循环次数必须能在加载时静态确定。",
+    "repair_action": {
+      "error_type": "unbounded_loop",
+      "repair_method": "修改代码，在 loop_support.bpf.c 中存在循环的函数内，于循环语句前添加 `#pragma unroll` 指令，指示编译器在编译时将该循环完全展开为顺序执行的线性代码，从而彻底消除指令流中的回跳指令（back-edge），使 BPF 验证器无需证明循环边界即可接受程序。若循环体较大导致单函数指令数超过验证器上限（约 100 万条指令的实际限制，但单 BPF 程序通常建议不超过几千条），可同步减少循环迭代次数。示例：在 for 循环前添加 `#pragma unroll` 使其变为 `for (...) { #pragma unroll\n  ...\n}` 或直接在循环体上方单独写 `#pragma unroll`。",
+      "key_lines": [
+        "libbpf: loading object from /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o",
+        "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 360, link 0, flags 6, type=1",
+        "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'isa_upgrade_incompatible' at insn offset 0 (0 bytes), code size 45 insns (360 bytes)",
+        "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 32, link 27, flags 40, type=9",
+        "libbpf: elf: section(5) .rodata, size 4, link 0, flags 2, type=1",
+        "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+        "libbpf: elf: section(7) license, size 4, link 0, flags 3, type=1",
+        "libbpf: license of /host/output/4.19/build/verifier/loop_support/loop_support.bpf.o is GPL",
+        "libbpf: elf: section(17) .BTF, size 1330, link 0, flags 0, type=1",
+        "libbpf: elf: section(19) .BTF.ext, size 368, link 0, flags 0, type=1"
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 0,
+    "max_fix_time": 4
+  }
+}

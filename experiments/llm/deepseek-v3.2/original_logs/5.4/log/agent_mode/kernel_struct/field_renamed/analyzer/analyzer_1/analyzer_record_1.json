@@ -1,0 +1,152 @@
+{
+  "generated_at": "2026-03-23T16:16:46.733870+00:00",
+  "node": "Analyzer",
+  "node_index": 1,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c",
+    "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint field_add_remove(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    struct task_struct *task;\n    __u64 task_state;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    task = (struct task_struct *)bpf_get_current_task();\n    if (!task)\n        return 0;\n    /* Crutial block */\n    task_state = BPF_CORE_READ(task, __state);\n    /* Crutial block end */\n    (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "compile_failed",
+    "failed_stage_result_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/deploy/deploy_1/compile_result.json",
+    "failed_stage_result": {
+      "success": false,
+      "stage": "compile",
+      "source_file": "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c",
+      "object_file": "/host/output/5.4/build/kernel_struct/field_renamed/field_renamed.bpf.o",
+      "compile_mode": "core",
+      "vmlinux_header": "/host/output/5.4/log/vmlinux.h",
+      "vmlinux_generation": null,
+      "command": [
+        "clang",
+        "-O3",
+        "-g",
+        "-target",
+        "bpf",
+        "-D__TARGET_ARCH_x86",
+        "-I/host/output/5.4/log",
+        "-I/host/data/kernel_struct/field_renamed",
+        "-c",
+        "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c",
+        "-o",
+        "/host/output/5.4/build/kernel_struct/field_renamed/field_renamed.bpf.o"
+      ],
+      "stdout": "",
+      "stderr": "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?\n    task_state = BPF_CORE_READ(task, __state);\n                                     ^~~~~~~\n                                     state\n/usr/include/bpf/bpf_core_read.h:443:17: note: expanded from macro 'BPF_CORE_READ'\n        ___type((src), a, ##__VA_ARGS__) __r;                               \\\n                       ^\n/usr/include/bpf/bpf_core_read.h:314:38: note: expanded from macro '___type'\n#define ___type(...) typeof(___arrow(__VA_ARGS__))\n                                     ^\n/usr/include/bpf/bpf_core_read.h:312:64: note: expanded from macro '___arrow'\n#define ___arrow(...) ___apply(___arrow, ___narg(__VA_ARGS__))(__VA_ARGS__)\n                                                               ^\n/usr/include/bpf/bpf_core_read.h:303:28: note: expanded from macro '___arrow2'\n#define ___arrow2(a, b) a->b\n                           ^\n/host/output/5.4/log/vmlinux.h:830:20: note: 'state' declared here\n        volatile long int state;\n                          ^\n/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?\n    task_state = BPF_CORE_READ(task, __state);\n                                     ^~~~~~~\n                                     state\n/usr/include/bpf/bpf_core_read.h:444:34: note: expanded from macro 'BPF_CORE_READ'\n        BPF_CORE_READ_INTO(&__r, (src), a, ##__VA_ARGS__);                  \\\n                                        ^\n/usr/include/bpf/bpf_core_read.h:352:20: note: expanded from macro 'BPF_CORE_READ_INTO'\n                     dst, (src), a, ##__VA_ARGS__)                          \\\n                                 ^\n/usr/include/bpf/bpf_core_read.h:343:18: note: expanded from macro '___core_read'\n                                                      src, a, ##__VA_ARGS__)\n                                                           ^\n/usr/include/bpf/bpf_core_read.h:336:38: note: expanded from macro '___core_read0'\n        ___read(fn, dst, ___type(src), src, a);\n                                            ^\n/usr/include/bpf/bpf_core_read.h:317:61: note: expanded from macro '___read'\n        read_fn((void *)(dst), sizeof(*(dst)), &((src_type)(src))->accessor)\n                                                                   ^\n/usr/include/bpf/bpf_core_read.h:246:79: note: expanded from macro 'bpf_core_read'\n        bpf_probe_read_kernel(dst, sz, (const void *)__builtin_preserve_access_index(src))\n                                                                                     ^\n/host/output/5.4/log/vmlinux.h:830:20: note: 'state' declared here\n        volatile long int state;\n                          ^\n2 errors generated.\n",
+      "returncode": 1,
+      "timed_out": false,
+      "stdout_lines": [],
+      "stderr_lines": [
+        "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?",
+        "    task_state = BPF_CORE_READ(task, __state);",
+        "                                     ^~~~~~~",
+        "                                     state",
+        "/usr/include/bpf/bpf_core_read.h:443:17: note: expanded from macro 'BPF_CORE_READ'",
+        "        ___type((src), a, ##__VA_ARGS__) __r;                               \\",
+        "                       ^",
+        "/usr/include/bpf/bpf_core_read.h:314:38: note: expanded from macro '___type'",
+        "#define ___type(...) typeof(___arrow(__VA_ARGS__))",
+        "                                     ^",
+        "/usr/include/bpf/bpf_core_read.h:312:64: note: expanded from macro '___arrow'",
+        "#define ___arrow(...) ___apply(___arrow, ___narg(__VA_ARGS__))(__VA_ARGS__)",
+        "                                                               ^",
+        "/usr/include/bpf/bpf_core_read.h:303:28: note: expanded from macro '___arrow2'",
+        "#define ___arrow2(a, b) a->b",
+        "                           ^",
+        "/host/output/5.4/log/vmlinux.h:830:20: note: 'state' declared here",
+        "        volatile long int state;",
+        "                          ^",
+        "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?",
+        "    task_state = BPF_CORE_READ(task, __state);",
+        "                                     ^~~~~~~",
+        "                                     state",
+        "/usr/include/bpf/bpf_core_read.h:444:34: note: expanded from macro 'BPF_CORE_READ'",
+        "        BPF_CORE_READ_INTO(&__r, (src), a, ##__VA_ARGS__);                  \\",
+        "                                        ^",
+        "/usr/include/bpf/bpf_core_read.h:352:20: note: expanded from macro 'BPF_CORE_READ_INTO'",
+        "                     dst, (src), a, ##__VA_ARGS__)                          \\",
+        "                                 ^",
+        "/usr/include/bpf/bpf_core_read.h:343:18: note: expanded from macro '___core_read'",
+        "                                                      src, a, ##__VA_ARGS__)",
+        "                                                           ^",
+        "/usr/include/bpf/bpf_core_read.h:336:38: note: expanded from macro '___core_read0'",
+        "        ___read(fn, dst, ___type(src), src, a);",
+        "                                            ^",
+        "/usr/include/bpf/bpf_core_read.h:317:61: note: expanded from macro '___read'",
+        "        read_fn((void *)(dst), sizeof(*(dst)), &((src_type)(src))->accessor)",
+        "                                                                   ^",
+        "/usr/include/bpf/bpf_core_read.h:246:79: note: expanded from macro 'bpf_core_read'",
+        "        bpf_probe_read_kernel(dst, sz, (const void *)__builtin_preserve_access_index(src))",
+        "                                                                                     ^",
+        "/host/output/5.4/log/vmlinux.h:830:20: note: 'state' declared here",
+        "        volatile long int state;",
+        "                          ^",
+        "2 errors generated."
+      ]
+    },
+    "deploy_summary_path": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/deploy/deploy_1/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "compile_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "failed",
+          "success": false,
+          "error_log": "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?\n    task_state = BPF_CORE_READ(task, __state);\n                                     ^~~~~~~\n                                     state\n/usr/include/bpf/bpf_core_read.h:443:17: note: expanded from macro 'BPF_CORE_READ'\n        ___type((src), a, ##__VA_ARGS__) __r;                               \\\n                       ^\n/usr/include/bpf/bpf_core_read.h:314:38: note: expanded from macro '___type'\n#define ___type(...) typeof(___arrow(__VA_ARGS__))\n                                     ^\n/usr/include/bpf/bpf_core_read.h:312:64: note: expanded from macro '___arrow'\n#define ___arrow(...) ___apply(___arrow, ___narg(__VA_ARGS__))(__VA_ARGS__)\n                                                               ^\n/usr/include/bpf/bpf_core_read.h:303:28: note: expanded from macro '___arrow2'\n#define ___arrow2(a, b) a->b\n                           ^\n/host/output/5.4/log/vmlinux.h:830:20: note: 'state' declared here\n        volatile long int state;\n                          ^\n/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?\n    task_state = BPF_CORE_READ(task, __state);\n                                     ^~~~~~~\n                                     state\n/usr/include/bpf/bpf_core_read.h:444:34: note: expanded from macro 'BPF_CORE_READ'\n        BPF_CORE_READ_INTO(&__r, (src), a, ##__VA_ARGS__);                  \\\n                                        ^\n/usr/include/bpf/bpf_core_read.h:352:20: note: expanded from macro 'BPF_CORE_READ_INTO'\n                     dst, (src), a, ##__VA_ARGS__)                          \\\n                                 ^\n/usr/include/bpf/bpf_core_read.h:343:18: note: expanded from macro '___core_read'\n                                                      src, a, ##__VA_ARGS__)\n                                                           ^\n/usr/include/bpf/bpf_core_read.h:336:38: note: expanded from macro '___core_read0'\n        ___read(fn, dst, ___type(src), src, a);\n                                            ^\n/usr/include/bpf/bpf_core_read.h:317:61: note: expanded from macro '___read'\n        read_fn((void *)(dst), sizeof(*(dst)), &((src_type)(src))->accessor)\n                                                                   ^\n/usr/include/bpf/bpf_core_read.h:246:79: note: expanded from macro 'bpf_core_read'\n        bpf_probe_read_kernel(dst, sz, (const void *)__builtin_preserve_access_index(src))\n                                                                                     ^\n/host/output/5.4/log/vmlinux.h:830:20: note: 'state' declared here\n        volatile long int state;\n                          ^\n2 errors generated."
+        },
+        "load": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "compile_failed"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "compile_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "compile_failed"
+        }
+      }
+    },
+    "shared_history": [],
+    "error_signature": "compile_failed:/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?",
+    "knowledge_rules": "version: 2\npatterns:\n  bpf_map_constant_missing:\n    summary: BPF map 常量或类型定义缺失，通常来自 `linux/bpf.h` 依赖未正确引入。\n    aliases:\n    - missing_bpf_map_type_definition\n    stage_hints:\n    - compile_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 补充 `<linux/bpf.h>` 或等价定义来源，恢复 `BPF_MAP_TYPE_*` 等常量与结构声明。\n  header_dependency_missing:\n    summary: 缺失头文件或声明依赖，导致编译阶段无法解析宏、结构体或函数声明。\n    aliases:\n    - missing_header_dependency\n    - missing_header_include\n    - field_renamed\n    stage_hints:\n    - compile_failed\n    can_fix: true\n    evidence_hint:\n    - fatal error\n    - no such file\n    - undeclared\n    - bpf_core_read\n    repair_methods:\n    - 补齐当前源码实际依赖的头文件，并按依赖顺序放在 BPF 程序所需的最小集合内，避免额外引入无关头文件。\n    - 使用 `BPF_CORE_READ` 或相关 CO-RE 宏时，显式引入 `<bpf/bpf_core_read.h>`。\n    - 将源码中引用的内核结构体字段名替换为当前内核版本中实际存在的字段名，以解决因内核版本差异导致的字段名不匹配问题。\n  helper_signature_mismatch:\n    summary: helper 或辅助宏的声明、参数类型或返回值用法与当前源码不匹配。\n    aliases:\n    - missing_declaration\n    - implicit_function_declaration\n    - helper_mismatch\n    - verifier_reject\n    stage_hints:\n    - compile_failed\n    - load_failed\n    can_fix: true\n    evidence_hint:\n    - implicit declaration\n    - incompatible function\n    - too many arguments\n    - passing argument\n    repair_methods:\n    - 对齐 helper 的声明、参数类型和调用方式，优先采用当前头文件和 helper 约束下的最小兼容写法。\n    - 若问题来自 CO-RE 相关辅助宏，先补齐必要头文件，再校正调用签名和目标字段类型。\n    - 将对 `__builtin_memcmp` 等内置函数的调用替换为显式的、verifier 可验证的逐字节比较循环，以消除对任何外部或内置函数的依赖。\n  linux_types_definition_missing:\n    summary: 基础 Linux 类型定义缺失，导致 `__u32`、`__u64` 等类型不可用。\n    aliases:\n    - missing_linux_types_header\n    stage_hints:\n    - compile_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 在 BPF 相关头文件之前补充 `<linux/types.h>`，先恢复基础类型定义，再保留其余修复逻辑不变。",
+    "error_signal": {
+      "stage": "compile_failed",
+      "error_types": [
+        "compile_error"
+      ],
+      "key_lines": [
+        "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?",
+        "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?"
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"header_dependency_missing\",\n  \"analysis_report\": \"编译失败的原因是源码中引用的内核结构体字段名与当前内核版本不匹配。具体来说，在文件 field_renamed.bpf.c 的第42行，代码尝试通过 BPF_CORE_READ 宏读取 struct task_struct 的 __state 字段，但当前内核版本（基于生成的 vmlinux.h 文件）中该结构体只有名为 state 的字段，没有 __state 字段。编译器提示 'did you mean 'state'' 进一步确认了字段名不匹配的问题。这属于典型的内核版本差异导致的字段重命名或结构体布局变化问题，可以通过修改源码中的字段引用来解决。\",\n  \"repair_method\": \"修改代码，将第42行中对 task->__state 的引用替换为 task->state，即将 BPF_CORE_READ(task, __state) 改为 BPF_CORE_READ(task, state)，以匹配当前内核版本中 struct task_struct 的实际字段名。\"\n}\n```",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "编译失败的原因是源码中引用的内核结构体字段名与当前内核版本不匹配。具体来说，在文件 field_renamed.bpf.c 的第42行，代码尝试通过 BPF_CORE_READ 宏读取 struct task_struct 的 __state 字段，但当前内核版本（基于生成的 vmlinux.h 文件）中该结构体只有名为 state 的字段，没有 __state 字段。编译器提示 'did you mean 'state'' 进一步确认了字段名不匹配的问题。这属于典型的内核版本差异导致的字段重命名或结构体布局变化问题，可以通过修改源码中的字段引用来解决。",
+    "repair_action": {
+      "error_type": "header_dependency_missing",
+      "repair_method": "修改代码，将第42行中对 task->__state 的引用替换为 task->state，即将 BPF_CORE_READ(task, __state) 改为 BPF_CORE_READ(task, state)，以匹配当前内核版本中 struct task_struct 的实际字段名。",
+      "key_lines": [
+        "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?",
+        "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c:42:38: error: no member named '__state' in 'struct task_struct'; did you mean 'state'?"
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 0,
+    "max_fix_time": 4
+  }
+}

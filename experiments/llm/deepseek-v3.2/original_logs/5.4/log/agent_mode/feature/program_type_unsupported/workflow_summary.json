@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-03-23T16:12:06.861626+00:00",
+  "updated_at": "2026-03-23T16:12:40.862553+00:00",
+  "final_decision": "failed_refine",
+  "deploy_state": false,
+  "failed_stage": "static_check_failed",
+  "total_duration_s": 34.001,
+  "module_durations_s": {
+    "deploy_tool": 28.719,
+    "Analyzer": 5.282,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T16:12:06.861626+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 28.719
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T16:12:35.580738+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": false,
+        "failed_stage": "static_check_failed",
+        "error_type": "attach_type_unsupported",
+        "repair_method": "不要继续自动修复源码；直接报告目标内核/attach 目标不支持，结束修复流程。",
+        "analysis_report": "静态检查失败，错误签名 static_check_failed。关键报错信息显示：Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel。这表明当前部署内核不支持 fentry 类型的 eBPF 程序。根据知识库规则，此错误匹配 'attach_type_unsupported' 模式（别名包含 'program_type_not_supported'），且失败阶段 static_check_failed 符合其 stage_hints。...(truncated)"
+      },
+      "duration_s": 5.282
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T16:12:40.862509+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "failed_refine",
+        "deploy_state": false,
+        "failed_stage": "static_check_failed",
+        "has_repaired": false,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

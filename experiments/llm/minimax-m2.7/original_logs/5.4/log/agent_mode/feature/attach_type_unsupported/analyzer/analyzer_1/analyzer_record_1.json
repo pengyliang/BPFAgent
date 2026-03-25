@@ -1,0 +1,119 @@
+{
+  "generated_at": "2026-03-24T04:30:43.664859+00:00",
+  "node": "Analyzer",
+  "node_index": 1,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+    "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\n/* Crutial block */\nSEC(\"kprobe/do_sys_openat2\")\n/* Crutial block end */\nint attach_type_unsupported(struct pt_regs *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    (*val)++;\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "attach_failed",
+    "failed_stage_result_path": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/deploy/deploy_1/attach_result.json",
+    "failed_stage_result": {
+      "success": false,
+      "stage": "attach",
+      "attached": false,
+      "skipped": false,
+      "reason": "libbpf_loader_attach_failed",
+      "error_log": "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2",
+      "error_message": "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2",
+      "daemon_stdout": "loaded obj=/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o\npinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps\n",
+      "daemon_stderr": "libbpf: prog 'attach_type_unsupported': failed to create kprobe 'do_sys_openat2+0x0' perf event: No such file or directory\nattach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2\n",
+      "daemon_returncode": 20,
+      "command": [
+        "sudo",
+        "/host/src/ebpf/utils/loader",
+        "--obj",
+        "/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+        "--pin-path",
+        "/sys/fs/bpf/ebpf_agent_attach_type_unsupported"
+      ],
+      "plan": {
+        "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+        "section": "kprobe/do_sys_openat2",
+        "program_type": "kprobe",
+        "attach_target": "do_sys_openat2",
+        "autoattach_supported": true,
+        "autoattach_requested": true
+      },
+      "pid": 1024,
+      "maps_dir": null,
+      "ready_line": null,
+      "via_libbpf_loader_daemon": true,
+      "error_log_lines": [
+        "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2"
+      ],
+      "error_message_lines": [
+        "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2"
+      ],
+      "daemon_stdout_lines": [
+        "loaded obj=/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+        "pinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps"
+      ],
+      "daemon_stderr_lines": [
+        "libbpf: prog 'attach_type_unsupported': failed to create kprobe 'do_sys_openat2+0x0' perf event: No such file or directory",
+        "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2"
+      ]
+    },
+    "deploy_summary_path": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/deploy/deploy_1/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "attach_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "load": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "attach": {
+          "status": "failed",
+          "success": false,
+          "error_log": "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "load_or_attach_failed"
+        }
+      }
+    },
+    "shared_history": [],
+    "error_signature": "attach_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  attach_type_unsupported:\n    summary: 目标内核不支持当前选择的attach类型，或目标符号未以允许对应探针类型挂载的形式导出\n    aliases:\n    - program_type_not_supported\n    - attach_target_not_found\n    stage_hints:\n    - attach_failed\n    - static_check_failed\n    can_fix: false\n    evidence_hint: []\n    repair_methods: []\n    handoff: 当前内核不支持所有尝试过的attach类型，且目标符号不存在于/proc/kallsyms，停止自动修复，请检查目标符号或更换兼容的内核环境。",
+    "error_signal": {
+      "stage": "attach_failed",
+      "error_types": [
+        "verifier_reject"
+      ],
+      "key_lines": [
+        "pinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps"
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": false,\n  \"error_type\": \"attach_type_unsupported\",\n  \"analysis_report\": \"本次失败发生在 attach 阶段。编译和加载阶段均成功，但 attach 阶段在尝试为 kprobe 程序挂载到符号 `do_sys_openat2` 时失败。libbpf 返回错误 `No such file or directory`（errno=-2, ENOENT），表明目标内核的 /proc/kallsyms 中不存在 `do_sys_openat2` 符号，或者该符号被内核配置禁止用于 kprobe 探针挂载。结合路径中的 `5.4` 和错误现象，最可能的原因是：该内核版本或内核配置下，`do_sys_openat2` 属于内部 syscall 实现，不对 kprobe 导出，或者内核版本较新已将部分 syscall 符号移至不透明层（如 5.11+ 的 fs/openat2.c 重构）。这不是源码逻辑错误，无法通过修改 eBPF 源码解决。\",\n  \"repair_method\": \"停止自动源码修复。目标符号 `do_sys_openat2` 在当前内核环境中不可用于 kprobe 挂载。请检查 /proc/kallsyms 确认该符号是否存在；如不存在，需更换为提供该符号的内核环境，或将 BPF 程序",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "阶段 `attach_failed` 失败；识别到错误类型：verifier_reject；建议优先做最小必要修复。",
+    "repair_action": {
+      "error_type": "verifier_reject",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "key_lines": [
+        "pinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps"
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 0,
+    "max_fix_time": 4
+  }
+}

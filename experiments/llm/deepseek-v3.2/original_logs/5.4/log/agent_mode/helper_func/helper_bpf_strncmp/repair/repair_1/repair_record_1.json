@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-23T16:13:51.387168+00:00",
+  "node": "Repairer",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-23T16:13:23.880925+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码：将不支持的字符串比较 helper `bpf_strncmp` 替换为手动实现：使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。将自定义的兼容实现函数重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免被静态检查器误识别为内核 helper。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_strncmp is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel supportin...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"hel...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "静态检查失败，错误签名 'static_check_failed'，具体原因为 'helper_not_in_probe'。关键报错信息显示：'Helper bpf_strncmp is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 `bpf_strncmp` 这个 helper 函数。根据知识库规则，'helper_unsupported' 模式匹配此错误（其别名包含 'helper_not_in_probe'...(truncated)",
+          "repair_action": {
+            "error_type": "helper_unsupported",
+            "repair_method": "修改代码：将不支持的字符串比较 helper `bpf_strncmp` 替换为手动实现：使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。将自定义的兼容实现函数重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免被静态检查器误识别为内核 helper。",
+            "key_lines": [
+              "Helper bpf_strncmp is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_unsupported\",\n  \"analysis_report\": \"静态检查失败，错误签名 'static_check_failed'，具体原因为 'helper_not_in_probe'。关键报错信息显示：'Helper bpf_strncmp is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 `bpf_strncmp` 这个 helper 函数。根据知识库规则，'helper_unsupported' 模式匹配此错误（其别名包含 'helper_not_...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c",
+      "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nconst char expected_str[] = \"ok\";\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    const char s1[] = \"ok\";\n    long ret;\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n    /* Crutial block */\n    ret = bpf_strncmp(s1, sizeof(s1), expected_str);\n    /* Crutial block end */\n    if (ret == 0)\n        (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "静态检查失败，错误签名 'static_check_failed'，具体原因为 'helper_not_in_probe'。关键报错信息显示：'Helper bpf_strncmp is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 `bpf_strncmp` 这个 helper 函数。根据知识库规则，'helper_unsupported' 模式匹配此错误（其别名包含 'helper_not_in_probe'），且该模式在 'static_check_failed' 阶段出现时，'can_fix' 为 true。统一历史摘要为空，表明这是首次分析此问题。因此，根因是目标内核版本较低，不支持较新的 `bpf_strncmp` helper，需要通过修改源码，将其替换为兼容的实现。",
+      "repair_action": {
+        "error_type": "helper_unsupported",
+        "repair_method": "修改代码：将不支持的字符串比较 helper `bpf_strncmp` 替换为手动实现：使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。将自定义的兼容实现函数重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免被静态检查器误识别为内核 helper。",
+        "key_lines": [
+          "Helper bpf_strncmp is not present in bpftool helper whitelist."
+        ]
+      },
+      "error_signal": {
+        "stage": "static_check_failed",
+        "error_types": [
+          "helper_not_in_probe"
+        ],
+        "key_lines": [
+          "Helper bpf_strncmp is not present in bpftool helper whitelist."
+        ]
+      }
+    }
+  },
+  "thought_process": "```json\n{\n  \"thought\": \"依据 Analyzer 的分析报告，静态检查失败的原因是目标内核不支持 bpf_strncmp helper。根据 repair_action 的指导，需要将 bpf_strncmp 替换为手动实现的字符串比较函数，并重命名以避免被静态检查器误识别。原始代码中 bpf_strncmp 用于比较 s1 和 expected_str 两个字符串，如果相等则递增计数器。需要实现一个兼容的字符串比较函数，保留原始业务逻辑。\",\n  \"rationale\": \"1. 添加一个静态内联函数 my_strncmp 来替代 bpf_strncmp，使用循环逐字节比较字符串，遇到空字符或达到指定长度时停止。2. 函数返回 0 表示字符串相等，非 0 表示不相等，这与 bpf_strncmp 的语义一致。3. 函数名不以 bpf_ 开头，避免静态检查器误报。4. 保持原始代码的其他逻辑不变，特别是 (*val)++ 的条件判断。\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <linux/bpf.h>\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\nconst char expected_str[] = \\\"ok\\\";\\nstatic __always_inline long my_strncmp(const char *s1, __u32 n, const char *s2)\\n{\\n    for (__u32 i = 0; i < n; i++) {\\n        char c1 = 0, c2 = 0;\\n        bpf_probe_read(&c1, 1, s1 + i);\\n        bpf_probe_read(&c2, 1, s2 + i);\\n        if (c1 != c2)\\n            return (long)(c1 - c2);\\n        if (c1 == '\\\\0')\\n            break;\\n    }\\n    return 0;\\n}\\nSEC(\\\"tracepoint/syscalls/sys_enter_openat\\\")\\nint helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n    const char s1[] = \\\"ok\\\";\\n    long ret;\\n    if (!val)\\n        return 0;\\n    if (target_tgid && *target_tgid) {\\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n        if (tgid != *target_tgid)\\n            return 0;\\n    }\\n    /* Crutial block */\\n    ret = my_strncmp(s1, sizeof(s1), expected_str);\\n    /* Crutial block end */\\n    if (ret == 0)\\n        (*val)++;\\n    return 0;\\n}\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+    "code_change_summary": "新增 14 行，删除 9 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } counter SEC(\".maps\");\n-\n struct {",
+    "patched_code_file": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+    "rationale": "1. 添加一个静态内联函数 my_strncmp 来替代 bpf_strncmp，使用循环逐字节比较字符串，遇到空字符或达到指定长度时停止。2. 函数返回 0 表示字符串相等，非 0 表示不相等，这与 bpf_strncmp 的语义一致。3. 函数名不以 bpf_ 开头，避免静态检查器误报。4. 保持原始代码的其他逻辑不变，特别是 (*val)++ 的条件判断。"
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "next_deploy_index": 2
+  }
+}

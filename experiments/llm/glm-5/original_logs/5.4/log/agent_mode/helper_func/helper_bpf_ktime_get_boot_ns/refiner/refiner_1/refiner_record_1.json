@@ -1,0 +1,249 @@
+{
+  "generated_at": "2026-03-23T17:06:42.035225+00:00",
+  "node": "Refiner",
+  "node_index": 1,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "deploy_state": true,
+    "failed_stage": "",
+    "deploy": {
+      "success": true,
+      "stage": "success",
+      "compile": {
+        "success": true,
+        "stage": "compile",
+        "source_file": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c",
+        "object_file": "/host/output/5.4/build/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.o",
+        "compile_mode": "non-core",
+        "vmlinux_header": null,
+        "vmlinux_generation": null,
+        "command": [
+          "clang",
+          "-O3",
+          "-g",
+          "-target",
+          "bpf",
+          "-I/usr/include/x86_64-linux-gnu",
+          "-c",
+          "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c",
+          "-o",
+          "/host/output/5.4/build/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.o"
+        ],
+        "stdout": "",
+        "stderr": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c:18:27: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint helper_renamed(struct trace_event_raw_sys_enter *ctx)\n                          ^\n1 warning generated.\n",
+        "returncode": 0,
+        "timed_out": false,
+        "stdout_lines": [],
+        "stderr_lines": [
+          "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c:18:27: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]",
+          "int helper_renamed(struct trace_event_raw_sys_enter *ctx)",
+          "                          ^",
+          "1 warning generated."
+        ]
+      },
+      "load": {
+        "success": true,
+        "stage": "load",
+        "via_libbpf_loader_daemon": true,
+        "command": [
+          "sudo",
+          "/host/src/ebpf/utils/loader",
+          "--obj",
+          "/host/output/5.4/build/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.o",
+          "--pin-path",
+          "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns"
+        ],
+        "pid": 3039,
+        "ready_line": "READY pid=3040 maps_dir=/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps attached=1",
+        "maps_dir": "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps",
+        "phase_details": {},
+        "error_message": "",
+        "stdout_lines": [],
+        "stderr_lines": []
+      },
+      "attach": {
+        "success": true,
+        "stage": "attach",
+        "attached": true,
+        "skipped": false,
+        "reason": "attached_with_libbpf_loader_daemon",
+        "error_log": null,
+        "error_message": null,
+        "daemon_stdout": null,
+        "daemon_stderr": null,
+        "daemon_returncode": null,
+        "command": [
+          "sudo",
+          "/host/src/ebpf/utils/loader",
+          "--obj",
+          "/host/output/5.4/build/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.o",
+          "--pin-path",
+          "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns"
+        ],
+        "plan": {
+          "source_file": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c",
+          "section": "tracepoint/syscalls/sys_enter_openat",
+          "program_type": "tracepoint",
+          "attach_target": "syscalls/sys_enter_openat",
+          "autoattach_supported": true,
+          "autoattach_requested": true
+        },
+        "pid": 3039,
+        "maps_dir": "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps",
+        "ready_line": "READY pid=3040 maps_dir=/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps attached=1",
+        "via_libbpf_loader_daemon": true,
+        "error_log_lines": [],
+        "error_message_lines": []
+      },
+      "runtime": {
+        "stage": "runtime_test",
+        "case_dir": "/host/data/helper_func/helper_bpf_ktime_get_boot_ns",
+        "workload": "/host/data/helper_func/helper_bpf_ktime_get_boot_ns/workload.sh",
+        "validator": "/host/data/helper_func/helper_bpf_ktime_get_boot_ns/validator.yaml",
+        "pin_path": "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns",
+        "maps_dir": "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps",
+        "success": true,
+        "skipped": false,
+        "reason": "validator_passed",
+        "validator_payload": {
+          "type": "min",
+          "map": "counter",
+          "key": 0,
+          "value": 3
+        },
+        "scheme_a": {
+          "enabled": true,
+          "cfg_map_pin": "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps/cfg",
+          "workload_pid": 3041,
+          "cfg_update_command": [
+            "sudo",
+            "/host/src/ebpf/utils/mapctl",
+            "update-u32",
+            "--map-pin",
+            "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps/cfg",
+            "--key-u32",
+            "0",
+            "--value-u32",
+            "3041"
+          ],
+          "cfg_update_stdout": "{\"key\":0,\"value\":3041}\n",
+          "cfg_update_stderr": "",
+          "cfg_update_timed_out": false,
+          "cfg_update_returncode": 0,
+          "status": "applied"
+        },
+        "map_pin_path": "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps/counter",
+        "actual_value": 201,
+        "expected": ">= 3",
+        "mapctl_command": [
+          "sudo",
+          "/host/src/ebpf/utils/mapctl",
+          "lookup-u64",
+          "--map-pin",
+          "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns_maps/counter",
+          "--key-u32",
+          "0"
+        ]
+      },
+      "detach": {
+        "success": true,
+        "stage": "detach",
+        "detached": true,
+        "skipped": false,
+        "reason": "loader_terminated",
+        "pin_path": "/sys/fs/bpf/ebpf_agent_helper_bpf_ktime_get_boot_ns",
+        "pid": 3039
+      }
+    },
+    "repair_attempts": [
+      {
+        "attempt_index": 1,
+        "stage": "static_check_failed",
+        "error_type": "helper_api_compatibility",
+        "can_fix": true,
+        "source_before": "/host/data/helper_func/helper_bpf_ktime_get_boot_ns/helper_bpf_ktime_get_boot_ns.bpf.c",
+        "patched": true,
+        "patched_path": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_ktime_get_boot_ns/repair/repair_1/helper_bpf_ktime_get_boot_ns_repair_1.bpf.c",
+        "analysis_report": "静态检查阶段失败，根因是代码使用了 BPF 辅助函数 `bpf_ktime_get_boot_ns`，该函数在当前目标内核的 bpftool 白名单中不存在。这通常发生在内核版本低于 5.8 的环境中。根据知识库规则，该问题属于 `helper_api_compatibility` 模式，存在功能等价且兼容性更好的替代函数 `bpf_ktime_get_ns`，可以通过修改源码解决。",
+        "repair_method": "修改代码，将 `bpf_ktime_get_boot_ns` 函数调用替换为 `bpf_ktime_get_ns`。",
+        "rationale": "将 `bpf_ktime_get_boot_ns()` 替换为 `bpf_ktime_get_ns()`。这两个函数在获取系统运行时间的语义上非常接近，后者具有更广泛的内核版本兼容性。修改仅涉及函数名称，完全保留了原有的变量赋值、条件判断 `if (ts)` 以及计数器自增 `(*val)++` 的逻辑，符合最小必要修改原则。"
+      }
+    ],
+    "workflow_events": [
+      {
+        "seq": 1,
+        "ts": "2026-03-23T17:06:21.545497+00:00",
+        "node": "deploy_tool",
+        "node_index": 1,
+        "key_results": {
+          "deploy_state": false,
+          "failed_stage": "static_check_failed"
+        },
+        "duration_s": 4.554
+      },
+      {
+        "seq": 2,
+        "ts": "2026-03-23T17:06:26.099675+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "key_results": {
+          "can_fix": true,
+          "failed_stage": "static_check_failed",
+          "error_type": "helper_api_compatibility",
+          "repair_method": "修改代码，将 `bpf_ktime_get_boot_ns` 函数调用替换为 `bpf_ktime_get_ns`。",
+          "analysis_report": "静态检查阶段失败，根因是代码使用了 BPF 辅助函数 `bpf_ktime_get_boot_ns`，该函数在当前目标内核的 bpftool 白名单中不存在。这通常发生在内核版本低于 5.8 的环境中。根据知识库规则，该问题属于 `helper_api_compatibility` 模式，存在功能等价且兼容性更好的替代函数 `bpf_ktime_get_ns`，可以通过修改源码解决。"
+        },
+        "duration_s": 10.895
+      },
+      {
+        "seq": 3,
+        "ts": "2026-03-23T17:06:36.995144+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "key_results": {
+          "outcome": "patched",
+          "reason": "patch_written",
+          "llm_enabled": true,
+          "patched": true,
+          "note": "将 `bpf_ktime_get_boot_ns()` 替换为 `bpf_ktime_get_ns()`。这两个函数在获取系统运行时间的语义上非常接近，后者具有更广泛的内核版本兼容性。修改仅涉及函数名称，完全保留了原有的变量赋值、条件判断 `if (ts)` 以及计数器自增 `(*val)++` 的逻辑，符合最小必要修改原则。",
+          "next_deploy_index": 2
+        },
+        "duration_s": 4.134
+      },
+      {
+        "seq": 4,
+        "ts": "2026-03-23T17:06:41.129182+00:00",
+        "node": "Inspector",
+        "node_index": 1,
+        "key_results": {
+          "semantic_equivalent": true,
+          "inspector_report": "对比修改前后的代码，核心变更位于 `helper_renamed` 函数内部：将 `ts = bpf_ktime_get_boot_ns();` 修改为 `ts = bpf_ktime_get_ns();`。此修改完全符合 Analyzer 提出的修复建议（将不兼容的 `bpf_ktime_get_boot_ns` 替换为兼容的 `bpf_ktime_get_ns`）。同时，原有的业务逻辑 `if (ts) (*val)++;` 被完整保留，未做任何删减或改动。代码其他部分的格式调整（如空行删除）不影响程序语义。因此，判定修改符合预期且语义等价。"
+        },
+        "duration_s": 0.869
+      },
+      {
+        "seq": 5,
+        "ts": "2026-03-23T17:06:41.997924+00:00",
+        "node": "deploy_tool",
+        "node_index": 2,
+        "key_results": {
+          "deploy_state": true,
+          "failed_stage": ""
+        }
+      }
+    ]
+  },
+  "thought_process": "```yaml\npatterns:\n  helper_api_compatibility:\n    aliases:\n      - helper_not_in_probe\n    stage_hints:\n      - static_check_failed\n```",
+  "outputs": {
+    "final_decision": "success",
+    "reflect_record_path": null,
+    "repair_report_path": null,
+    "knowledge_base_path": "/host/knowledge_base/repair/repair_method.yaml",
+    "applied_updates": {}
+  },
+  "result_params": {
+    "has_repaired": true,
+    "fixed_time": 1,
+    "last_error_signature": "static_check_failed"
+  }
+}

@@ -1,0 +1,8 @@
+status: SUCCESS
+source_file: /host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1 -I/usr/include/x86_64-linux-gnu /host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c
+stderr:
+/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c:42:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]
+int helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)
+                               ^
+1 warning generated.

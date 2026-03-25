@@ -1,0 +1,160 @@
+{
+  "generated_at": "2026-03-23T16:12:06.640865+00:00",
+  "updated_at": "2026-03-23T16:16:31.587641+00:00",
+  "final_decision": "failed_refine",
+  "deploy_state": false,
+  "failed_stage": "static_check_failed",
+  "total_duration_s": 264.947,
+  "module_durations_s": {
+    "deploy_tool": 28.96,
+    "Analyzer": 26.427,
+    "Repairer": 61.995999999999995,
+    "Inspector": 147.563,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T16:12:06.640865+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 28.96
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T16:12:35.600535+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "map_type_unsupported",
+        "repair_method": "修改代码：将不支持的映射类型 BPF_MAP_TYPE_RINGBUF 替换为兼容的映射类型 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并同步替换其配套的 helper 调用，将 bpf_ringbuf_output 替换为 bpf_perf_event_output。同时需要调整映射的定义、初始化和数据输出逻辑以适应新的映射类型。",
+        "analysis_report": "静态检查失败，根因是目标内核不支持 BPF_MAP_TYPE_RINGBUF 映射类型及其配套的 bpf_ringbuf_output helper 函数。根据知识库规则，map_type_unsupported 模式匹配此场景（aliases 包含 map_type_not_in_probe，stage_hints 包含 static_check_failed），且 can_fix 为 true。错误信息明确指出 BPF_MAP_TYPE_RINGBUF 不在支持列表中，且 bpf_ringbuf_output helper 也不在允许列表中。这是典型的新内核特性（ringbuf）在老内核上不兼容的问题，可以通过修改源码替换为兼容...(truncated)"
+      },
+      "duration_s": 26.427
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T16:13:02.027751+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "BPF_MAP_TYPE_PERF_EVENT_ARRAY 是广泛支持的映射类型，bpf_perf_event_output 也是老内核支持的 helper。将环形缓冲区替换为性能事件数组可以保持事件从内核态到用户态的传输能力。需要为 PERF_EVENT_ARRAY 映射定义 key 和 value 类型（通常为 int 和 u32），并调整 bpf_perf_event_output 的调用参...(truncated)",
+        "next_deploy_index": 2
+      },
+      "duration_s": 14.256
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-23T16:13:16.284236+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": false,
+        "inspector_report": "修改后的代码完全符合 Analyzer 的修复建议。1) 将不支持的 BPF_MAP_TYPE_RINGBUF 映射类型替换为兼容的 BPF_MAP_TYPE_PERF_EVENT_ARRAY。2) 将不支持的 bpf_ringbuf_output helper 调用替换为 bpf_perf_event_output。3) 调整了 PERF_EVENT_ARRAY 映射的定义，添加了 key/value 类型（int 和 __u32）并调整了 max_entries。4) 保留了原始的业务逻辑：事件结构体、时间戳记录、条件判断（target_tgid 过滤）、计数器递增（(*val)++）等核心语义均未改变。修复仅针对不支持的映射类...(truncated)"
+      },
+      "duration_s": 54.214
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-23T16:14:10.498400+00:00",
+      "node": "Repairer",
+      "node_index": 2,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERCPU_ARRAY，将 bpf_ringbuf_output 替换为 bpf_map_update_elem。PERCPU_ARRAY 是广泛支持的映射类型，bpf_map_update_elem 也是老内核支持的 helper。修改后的事件映射将使用 PERCPU_ARRAY 来存储事件数据，通过 bpf_ma...(truncated)",
+        "next_deploy_index": 3
+      },
+      "duration_s": 17.053
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-23T16:14:27.551825+00:00",
+      "node": "Inspector",
+      "node_index": 2,
+      "key_results": {
+        "semantic_equivalent": false,
+        "inspector_report": "修改后的代码不符合 Analyzer 的修复建议。Analyzer 明确建议将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并将 bpf_ringbuf_output 替换为 bpf_perf_event_output。然而，本轮修改将映射类型改为 BPF_MAP_TYPE_PERCPU_ARRAY，并将 helper 调用改为 bpf_map_update_elem，这与建议的修复方向不一致。虽然 PERCPU_ARRAY 和 bpf_map_update_elem 也是兼容的映射类型和 helper，但这不是 Analyzer 指定的修复方案。此外，修改后的代码将...(truncated)"
+      },
+      "duration_s": 31.412
+    },
+    {
+      "seq": 7,
+      "ts": "2026-03-23T16:14:58.963870+00:00",
+      "node": "Repairer",
+      "node_index": 3,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "Inspector 明确指出必须严格按照 Analyzer 的建议进行修复。Analyzer 建议的修复方案是：将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，将 bpf_ringbuf_output 替换为 bpf_perf_event_output。PERF_EVENT_ARRAY 是广泛支持的映射类型，bpf_perf_eve...(truncated)",
+        "next_deploy_index": 4
+      },
+      "duration_s": 13.752
+    },
+    {
+      "seq": 8,
+      "ts": "2026-03-23T16:15:12.716365+00:00",
+      "node": "Inspector",
+      "node_index": 3,
+      "key_results": {
+        "semantic_equivalent": false,
+        "inspector_report": "修改后的代码完全符合 Analyzer 的修复建议。1) 将不支持的 BPF_MAP_TYPE_PERCPU_ARRAY 映射类型替换为 Analyzer 建议的 BPF_MAP_TYPE_PERF_EVENT_ARRAY。2) 将不兼容的 bpf_map_update_elem helper 调用替换为 Analyzer 建议的 bpf_perf_event_output。3) 调整了 PERF_EVENT_ARRAY 映射的定义，添加了 key/value 类型（int 和 __u32）并调整了 max_entries 为 1024。4) 保留了原始的业务逻辑：事件结构体、时间戳记录、条件判断（target_tgid 过滤）、计...(truncated)"
+      },
+      "duration_s": 54.672
+    },
+    {
+      "seq": 9,
+      "ts": "2026-03-23T16:16:07.388017+00:00",
+      "node": "Repairer",
+      "node_index": 4,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERCPU_ARRAY，将 bpf_ringbuf_output 替换为 bpf_map_update_elem。PERCPU_ARRAY 是广泛支持的映射类型，bpf_map_update_elem 也是老内核支持的 helper。修改后的事件映射将使用 PERCPU_ARRAY 来存储事件数据，通过 bpf_ma...(truncated)",
+        "next_deploy_index": 5
+      },
+      "duration_s": 16.935
+    },
+    {
+      "seq": 10,
+      "ts": "2026-03-23T16:16:24.322775+00:00",
+      "node": "Inspector",
+      "node_index": 4,
+      "key_results": {
+        "semantic_equivalent": false,
+        "inspector_report": "修改后的代码不符合 Analyzer 的修复建议。Analyzer 明确建议将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并将 bpf_ringbuf_output 替换为 bpf_perf_event_output。然而，本轮修改将映射类型改为 BPF_MAP_TYPE_PERCPU_ARRAY，并将 helper 调用改为 bpf_map_update_elem，这与建议的修复方向不一致。虽然 PERCPU_ARRAY 和 bpf_map_update_elem 也是兼容的映射类型和 helper，但这不是 Analyzer 指定的修复方案。从历史演进看，Rep...(truncated)"
+      },
+      "duration_s": 7.265
+    },
+    {
+      "seq": 11,
+      "ts": "2026-03-23T16:16:31.587587+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "failed_refine",
+        "deploy_state": false,
+        "failed_stage": "static_check_failed",
+        "has_repaired": true,
+        "applied_updates_patterns": 0,
+        "applied_updates_total_methods": 0
+      }
+    }
+  ]
+}

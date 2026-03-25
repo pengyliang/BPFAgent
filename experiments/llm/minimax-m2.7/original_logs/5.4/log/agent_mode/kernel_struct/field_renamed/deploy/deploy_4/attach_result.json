@@ -1,0 +1,38 @@
+{
+  "success": false,
+  "stage": "attach",
+  "attached": false,
+  "skipped": true,
+  "reason": "load_failed",
+  "error_log": "load failed: -13",
+  "error_message": "load failed: -13",
+  "daemon_stdout": null,
+  "daemon_stderr": null,
+  "daemon_returncode": null,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/5.4/build/kernel_struct/field_renamed/field_renamed.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_field_renamed"
+  ],
+  "plan": {
+    "source_file": "/host/output/5.4/log/agent_mode/kernel_struct/field_renamed/repair/repair_3/field_renamed_repair_3.bpf.c",
+    "section": "tracepoint/syscalls/sys_enter_openat",
+    "program_type": "tracepoint",
+    "attach_target": "syscalls/sys_enter_openat",
+    "autoattach_supported": true,
+    "autoattach_requested": true
+  },
+  "pid": 1363,
+  "maps_dir": null,
+  "ready_line": null,
+  "via_libbpf_loader_daemon": true,
+  "error_log_lines": [
+    "load failed: -13"
+  ],
+  "error_message_lines": [
+    "load failed: -13"
+  ]
+}

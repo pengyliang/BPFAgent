@@ -1,0 +1,14 @@
+status: FAILED
+source_file: /host/output/4.19/log/agent_mode/helper_func/helper_absent/repair/repair_1/helper_absent_repair_1.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/4.19/log/agent_mode/helper_func/helper_absent/repair/repair_1 -I/usr/include/x86_64-linux-gnu /host/output/4.19/log/agent_mode/helper_func/helper_absent/repair/repair_1/helper_absent_repair_1.bpf.c
+stderr:
+/host/output/4.19/log/agent_mode/helper_func/helper_absent/repair/repair_1/helper_absent_repair_1.bpf.c:5:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+                 ^
+/host/output/4.19/log/agent_mode/helper_func/helper_absent/repair/repair_1/helper_absent_repair_1.bpf.c:11:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+                 ^
+/host/output/4.19/log/agent_mode/helper_func/helper_absent/repair/repair_1/helper_absent_repair_1.bpf.c:17:26: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]
+int helper_absent(struct trace_event_raw_sys_enter *ctx)
+                         ^
+1 warning and 2 errors generated.

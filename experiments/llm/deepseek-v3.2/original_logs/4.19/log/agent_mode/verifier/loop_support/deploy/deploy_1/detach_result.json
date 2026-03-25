@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "stage": "detach",
+  "detached": true,
+  "skipped": false,
+  "reason": "loader_terminated",
+  "pin_path": "/sys/fs/bpf/ebpf_agent_loop_support",
+  "pid": 5241
+}

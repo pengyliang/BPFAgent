@@ -1,0 +1,254 @@
+{
+  "generated_at": "2026-03-24T03:14:19.910183+00:00",
+  "node": "Inspector",
+  "node_index": 3,
+  "from_node": "Repairer",
+  "inputs": {
+    "source_before": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_2/btf_unsupported_repair_2.bpf.c",
+    "source_after": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c",
+    "analyzer_context": {
+      "analysis_report": "当前eBPF程序使用了bpf_probe_read_kernel辅助函数，该辅助函数在当前目标内核中不存在（该函数通常在5.5及以上内核才支持），静态检查阶段检测到该辅助函数不在白名单中，因此静态检查失败，该问题可以通过替换为兼容性更好的旧版辅助函数解决。",
+      "repair_action": {
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将bpf_probe_read_kernel替换为bpf_probe_read。",
+        "key_lines": [
+          "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+        ]
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T03:12:10.111989+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码，将bpf_probe_read_kernel替换为bpf_probe_read。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/feature/btf_unsupported/btf_unsupported.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"helper_calls\"...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "当前eBPF程序使用了bpf_probe_read_kernel辅助函数，该辅助函数在当前目标内核中不存在（该函数通常在5.5及以上内核才支持），静态检查阶段检测到该辅助函数不在白名单中，因此静态检查失败，该问题可以通过替换为兼容性更好的旧版辅助函数解决。",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，将bpf_probe_read_kernel替换为bpf_probe_read。",
+            "key_lines": [
+              "Helper bpf_probe_read_kernel is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"当前eBPF程序使用了bpf_probe_read_kernel辅助函数，该辅助函数在当前目标内核中不存在（该函数通常在5.5及以上内核才支持），静态检查阶段检测到该辅助函数不在白名单中，因此静态检查失败，该问题可以通过替换为兼容性更好的旧版辅助函数解决。\",\n  \"repair_method\": \"修改代码，将bpf_probe_read_kernel替换为bpf_probe_read。\"\n}\n```"
+      },
+      {
+        "ts": "2026-03-24T03:12:19.199147+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/feature/btf_unsupported/btf_unsupported.bpf.c",
+            "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} co...(truncated)",
+            "analysis_report": "当前eBPF程序使用了bpf_probe_read_kernel辅助函数，该辅助函数在当前目标内核中不存在（该函数通常在5.5及以上内核才支持），静态检查阶段检测到该辅助函数不在白名单中，因此静态检查失败，该问题可以通过替换为兼容性更好的旧版辅助函数解决。",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将bpf_probe_read_kernel替换为bpf_probe_read。",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            },
+            "error_signal": {
+              "stage": "static_check_failed",
+              "error_types": "[\"helper_not_in_probe\"]",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_1/btf_unsupported_repair_1.bpf.c",
+          "code_change_summary": "新增 1 行，删除 8 行。\n #include <bpf/bpf_core_read.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n ...(truncated)",
+          "patched_code_file": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_1/btf_unsupported_repair_1.bpf.c",
+          "rationale": "BPF_CORE_READ在不支持BTF/CO-RE的旧内核会依赖bpf_probe_read_kernel，将其替换为直接使用bpf_probe_read可以解决兼容性问题，同时完全保留原有业务逻辑，符合最小修改要求。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"根据Analyzer分析结果，当前eBPF代码静态检查失败是因为使用了不存在于白名单的bpf_probe_read_kernel，需要替换为兼容性更好的bpf_probe_read。当前源码实际使用BPF_CORE_READ宏，该宏在旧内核上会展开为bpf_probe_read_kernel，因此我们将BPF_CORE_READ替换为直接使用bpf_probe_read读取ctx的id字段，保留原有业务逻辑不变。\",\n  \"rationale\": \"BPF_CORE_READ在不支持BTF/CO-RE的旧内核会依赖bpf_probe_read_kernel，将其替换为直接使用bpf_p...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T03:12:22.083574+00:00",
+        "node": "Inspector",
+        "node_index": 1,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=False，结论=修改前代码使用的BPF_CORE_READ宏在旧内核会展开依赖bpf_probe_read_kernel，本次修改将依赖bpf_probe_read_kernel的BPF_CORE_READ替换为直接使用bpf_probe_read读取ctx的id字段，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向，同时完全保留了原有业务逻辑，计数相关的条件判断逻辑也完整保留，没有额外修改，符合修复要求。\n\nCritical block check failed: 启发式不通过：关键块相似度=0.404 <= 0.65",
+        "inputs": {
+          "source_before": "/host/data/feature/btf_unsupported/btf_unsupported.bpf.c",
+          "source_after": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_1/btf_unsupported_repair_1.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "当前eBPF程序使用了bpf_probe_read_kernel辅助函数，该辅助函数在当前目标内核中不存在（该函数通常在5.5及以上内核才支持），静态检查阶段检测到该辅助函数不在白名单中，因此静态检查失败，该问题可以通过替换为兼容性更好的旧版辅助函数解决。",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将bpf_probe_read_kernel替换为bpf_probe_read。",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          },
+          "code_change_summary": "新增 1 行，删除 8 行。\n #include <bpf/bpf_core_read.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n ...(truncated)"
+        },
+        "outputs": {
+          "semantic_equivalent": false,
+          "inspector_report": "修改前代码使用的BPF_CORE_READ宏在旧内核会展开依赖bpf_probe_read_kernel，本次修改将依赖bpf_probe_read_kernel的BPF_CORE_READ替换为直接使用bpf_probe_read读取ctx的id字段，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向，同时完全保留了原有业务逻辑，计数相关的条件判断逻辑也完整保留，没有额外修改，符合修复要求。\n\nCritical ...(truncated)"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改前代码使用的BPF_CORE_READ宏在旧内核会展开依赖bpf_probe_read_kernel，本次修改将依赖bpf_probe_read_kernel的BPF_CORE_READ替换为直接使用bpf_probe_read读取ctx的id字段，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向，同时完全保留了原有业务逻辑，计数相关的条件判断逻辑也完整保留，没有额外修改，符合修复要求。\",\n  \"suggestion\": \"\"\n}\n```"
+      },
+      {
+        "ts": "2026-03-24T03:14:04.803128+00:00",
+        "node": "Repairer",
+        "node_index": 2,
+        "from_node": "Inspector",
+        "summary": "生成修复补丁，patched=True，next=3",
+        "inputs": {
+          "previous_node": "Inspector",
+          "repair_context": {
+            "source_file": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_1/btf_unsupported_repair_1.bpf.c",
+            "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} cou...(truncated)",
+            "inspector_input": {
+              "source_before": "/host/data/feature/btf_unsupported/btf_unsupported.bpf.c",
+              "source_after": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_1/btf_unsupported_repair_1.bpf.c",
+              "critical_before": "syscall_id = BPF_CORE_READ(ctx, id);",
+              "critical_after": "bpf_probe_read(&syscall_id, sizeof(syscall_id), &ctx->id);",
+              "critical_ok": "",
+              "critical_reason": "启发式不通过：关键块相似度=0.404 <= 0.65",
+              "analyzer_context": "{\"analysis_report\": \"当前eBPF程序使用了bpf_probe_read_kernel辅助函数，该辅助函数在当前目标内核中不存在（该函数通常在5.5及以上内核才支持），静态检查阶段检测到该辅助函数不在白名单中，因此静态检查失败，该问题可以通过替换为兼容性更好的旧版辅助函数解决。\", \"repair_action\": {\"error_type\": \"helper_api_compatibility\", \"repair_method\": \"修改代码，将bpf_...(truncated)",
+              "before_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} co...(truncated)",
+              "after_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} cou...(truncated)",
+              "code_change_summary": "新增 1 行，删除 8 行。\n #include <bpf/bpf_core_read.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n ...(truncated)",
+              "inspector_report": "修改前代码使用的BPF_CORE_READ宏在旧内核会展开依赖bpf_probe_read_kernel，本次修改将依赖bpf_probe_read_kernel的BPF_CORE_READ替换为直接使用bpf_probe_read读取ctx的id字段，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向，同时完全保留了原有业务逻辑，计数相关的条件判断逻辑也完整保留，没有额外修改，符合修复要求。\n\nCritical ...(truncated)",
+              "semantic_equivalent": ""
+            },
+            "inspector_report": "修改前代码使用的BPF_CORE_READ宏在旧内核会展开依赖bpf_probe_read_kernel，本次修改将依赖bpf_probe_read_kernel的BPF_CORE_READ替换为直接使用bpf_probe_read读取ctx的id字段，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向，同时完全保留了原有业务逻辑，计数相关的条件判断逻辑也完整保留，没有额外修改，符合修复要求。\n\nCritical ...(truncated)",
+            "last_code_change_summary": "新增 1 行，删除 8 行。\n #include <bpf/bpf_core_read.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n ...(truncated)",
+            "previous_node": "Inspector",
+            "error_signal": {
+              "stage": "static_check_failed",
+              "error_types": "[\"helper_not_in_probe\"]",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_2/btf_unsupported_repair_2.bpf.c",
+          "code_change_summary": "新增 4 行，删除 0 行。\n     if (target_tgid && *target_tgid && tgid != *target_tgid)\n         return 0;\n     /* Crutial block */\n+#ifdef bpf_core_field\n+    syscall_id = BPF_CORE_READ(ctx, id);\n+#else\n     bpf_probe_read(&syscall_id, sizeof(syscall...(truncated)",
+          "patched_code_file": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_2/btf_unsupported_repair_2.bpf.c",
+          "rationale": "使用条件编译检测是否支持BPF_CORE，在不支持BTF/CO-RE的旧内核下直接使用bpf_probe_read读取ctx->id，消除了对bpf_probe_read_kernel的依赖，同时最大程度保留原始代码结构和业务逻辑，满足静态检查要求，解决了关键块相似度问题。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"Inspector指出关键块相似度不达标，上一轮修改仅替换了BPF_CORE_READ为bpf_probe_read，但删除了原有空行导致启发式判定相似度不足。本次修改仅解决bpf_probe_read_kernel依赖问题，通过条件编译保留BPF_CORE_READ在新内核的使用，旧内核下直接使用bpf_probe_read，既消除了对bpf_probe_read_kernel的依赖，又更贴近原始代码结构，满足语义等价和可观测差异要求，同时保留所有原有业务逻辑。\",\n  \"rationale\": \"使用条件编译检测是否支持BPF_CORE，在不支持BTF/CO-RE的旧内核下直接使用...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T03:14:08.271200+00:00",
+        "node": "Inspector",
+        "node_index": 2,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=False，结论=原问题是代码依赖bpf_probe_read_kernel（原BPF_CORE_READ在旧内核展开会依赖该函数），当前修改通过条件编译实现：当支持BPF_CORE时保留原BPF_CORE_READ，不支持时使用bpf_probe_read读取字段，完全消除了旧内核下对bpf_probe_read_kernel的依赖，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向。同时完整保留了原有业务逻辑，包括计数相关的条件判断逻辑，没有额外修改，符合修复要求。\n\nCritical block check failed: 启发式...(truncated)",
+        "inputs": {
+          "source_before": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_1/btf_unsupported_repair_1.bpf.c",
+          "source_after": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_2/btf_unsupported_repair_2.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "当前eBPF程序使用了bpf_probe_read_kernel辅助函数，该辅助函数在当前目标内核中不存在（该函数通常在5.5及以上内核才支持），静态检查阶段检测到该辅助函数不在白名单中，因此静态检查失败，该问题可以通过替换为兼容性更好的旧版辅助函数解决。",
+            "repair_action": {
+              "error_type": "helper_api_compatibility",
+              "repair_method": "修改代码，将bpf_probe_read_kernel替换为bpf_probe_read。",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          },
+          "code_change_summary": "新增 4 行，删除 0 行。\n     if (target_tgid && *target_tgid && tgid != *target_tgid)\n         return 0;\n     /* Crutial block */\n+#ifdef bpf_core_field\n+    syscall_id = BPF_CORE_READ(ctx, id);\n+#else\n     bpf_probe_read(&syscall_id, sizeof(syscall...(truncated)"
+        },
+        "outputs": {
+          "semantic_equivalent": false,
+          "inspector_report": "原问题是代码依赖bpf_probe_read_kernel（原BPF_CORE_READ在旧内核展开会依赖该函数），当前修改通过条件编译实现：当支持BPF_CORE时保留原BPF_CORE_READ，不支持时使用bpf_probe_read读取字段，完全消除了旧内核下对bpf_probe_read_kernel的依赖，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向。同时完整保留了原有业务逻辑，包括计数相关的条件...(truncated)"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"原问题是代码依赖bpf_probe_read_kernel（原BPF_CORE_READ在旧内核展开会依赖该函数），当前修改通过条件编译实现：当支持BPF_CORE时保留原BPF_CORE_READ，不支持时使用bpf_probe_read读取字段，完全消除了旧内核下对bpf_probe_read_kernel的依赖，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向。同时完整保留了原有业务逻辑，包括计数相关的条件判断逻辑，没有额外修改，符合修复要求。\",\n  \"suggestion...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T03:14:17.013552+00:00",
+        "node": "Repairer",
+        "node_index": 3,
+        "from_node": "Inspector",
+        "summary": "生成修复补丁，patched=True，next=4",
+        "inputs": {
+          "previous_node": "Inspector",
+          "repair_context": {
+            "source_file": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_2/btf_unsupported_repair_2.bpf.c",
+            "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} cou...(truncated)",
+            "inspector_input": {
+              "source_before": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_1/btf_unsupported_repair_1.bpf.c",
+              "source_after": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_2/btf_unsupported_repair_2.bpf.c",
+              "critical_before": "syscall_id = BPF_CORE_READ(ctx, id);",
+              "critical_after": "#ifdef bpf_core_field\n    syscall_id = BPF_CORE_READ(ctx, id);\n#else\n    bpf_probe_read(&syscall_id, sizeof(syscall_id), &ctx->id);\n#endif",
+              "critical_ok": "",
+              "critical_reason": "启发式不通过：关键块相似度=0.434 <= 0.65",
+              "analyzer_context": "{\"analysis_report\": \"当前eBPF程序使用了bpf_probe_read_kernel辅助函数，该辅助函数在当前目标内核中不存在（该函数通常在5.5及以上内核才支持），静态检查阶段检测到该辅助函数不在白名单中，因此静态检查失败，该问题可以通过替换为兼容性更好的旧版辅助函数解决。\", \"repair_action\": {\"error_type\": \"helper_api_compatibility\", \"repair_method\": \"修改代码，将bpf_...(truncated)",
+              "before_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} cou...(truncated)",
+              "after_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} cou...(truncated)",
+              "code_change_summary": "新增 4 行，删除 0 行。\n     if (target_tgid && *target_tgid && tgid != *target_tgid)\n         return 0;\n     /* Crutial block */\n+#ifdef bpf_core_field\n+    syscall_id = BPF_CORE_READ(ctx, id);\n+#else\n     bpf_probe_read(&syscall_id, sizeof(syscall...(truncated)",
+              "inspector_report": "原问题是代码依赖bpf_probe_read_kernel（原BPF_CORE_READ在旧内核展开会依赖该函数），当前修改通过条件编译实现：当支持BPF_CORE时保留原BPF_CORE_READ，不支持时使用bpf_probe_read读取字段，完全消除了旧内核下对bpf_probe_read_kernel的依赖，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向。同时完整保留了原有业务逻辑，包括计数相关的条件...(truncated)",
+              "semantic_equivalent": ""
+            },
+            "inspector_report": "原问题是代码依赖bpf_probe_read_kernel（原BPF_CORE_READ在旧内核展开会依赖该函数），当前修改通过条件编译实现：当支持BPF_CORE时保留原BPF_CORE_READ，不支持时使用bpf_probe_read读取字段，完全消除了旧内核下对bpf_probe_read_kernel的依赖，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向。同时完整保留了原有业务逻辑，包括计数相关的条件...(truncated)",
+            "last_code_change_summary": "新增 4 行，删除 0 行。\n     if (target_tgid && *target_tgid && tgid != *target_tgid)\n         return 0;\n     /* Crutial block */\n+#ifdef bpf_core_field\n+    syscall_id = BPF_CORE_READ(ctx, id);\n+#else\n     bpf_probe_read(&syscall_id, sizeof(syscall...(truncated)",
+            "previous_node": "Inspector",
+            "error_signal": {
+              "stage": "static_check_failed",
+              "error_types": "[\"helper_not_in_probe\"]",
+              "key_lines": "[\"Helper bpf_probe_read_kernel is not present in bpftool helper whitelist.\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c",
+          "code_change_summary": "新增 0 行，删除 4 行。\n     if (target_tgid && *target_tgid && tgid != *target_tgid)\n         return 0;\n     /* Crutial block */\n-#ifdef bpf_core_field\n-    syscall_id = BPF_CORE_READ(ctx, id);\n-#else\n     bpf_probe_read(&syscall_id, sizeof(syscall...(truncated)",
+          "patched_code_file": "/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c",
+          "rationale": "仅将原始的syscall_id = BPF_CORE_READ(ctx, id);替换为直接使用bpf_probe_read，保留原始代码所有空行和结构不变，既消除了对bpf_probe_read_kernel的依赖，满足静态检查要求，又最大限度保留原始代码结构，解决关键块相似度不足的问题，同时完整保留原有业务逻辑和计数判断。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"依据Inspector反馈，前两轮修改分别因删除原始代码导致关键块相似度不足，新增条件编译仍然相似度不达标。问题根源是原始代码的BPF_CORE_READ在旧内核依赖bpf_probe_read_kernel，我们可以直接替换BPF_CORE_READ为bpf_probe_read，同时保留原始代码的空行和结构，只修改关键行本身，最大化提升关键块相似度，同时消除对bpf_probe_read_kernel的依赖，保留所有原有业务逻辑。\",\n  \"rationale\": \"仅将原始的syscall_id = BPF_CORE_READ(ctx, id);替换为直接使用bpf_probe_...(truncated)"
+      }
+    ],
+    "before_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint btf_unsupported(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u32 tgid;\n    long syscall_id;\n    if (!val)\n        return 0;\n    tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (target_tgid && *target_tgid && tgid != *target_tgid)\n        return 0;\n    /* Crutial block */\n#ifdef bpf_core_field\n    syscall_id = BPF_CORE_READ(ctx, id);\n#else\n    bpf_probe_read(&syscall_id, sizeof(syscall_id), &ctx->id);\n#endif\n    /* Crutial block end */\n    if (syscall_id >= 0) {\n        (*val)++;\n    }\n    return 0;\n}\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "after_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_core_read.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint btf_unsupported(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    __u32 tgid;\n    long syscall_id;\n    if (!val)\n        return 0;\n    tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (target_tgid && *target_tgid && tgid != *target_tgid)\n        return 0;\n    /* Crutial block */\n    bpf_probe_read(&syscall_id, sizeof(syscall_id), &ctx->id);\n    /* Crutial block end */\n    if (syscall_id >= 0) {\n        (*val)++;\n    }\n    return 0;\n}\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "code_change_summary": "新增 0 行，删除 4 行。\n     if (target_tgid && *target_tgid && tgid != *target_tgid)\n         return 0;\n     /* Crutial block */\n-#ifdef bpf_core_field\n-    syscall_id = BPF_CORE_READ(ctx, id);\n-#else\n     bpf_probe_read(&syscall_id, sizeof(syscall_id), &ctx->id);\n-#endif\n     /* Crutial block end */\n     if (syscall_id >= 0) {\n         (*val)++;"
+  },
+  "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"原问题是代码依赖bpf_probe_read_kernel，原始的BPF_CORE_READ在不支持BTF/CO-RE的旧内核会展开依赖该函数。本次修改直接将条件编译块替换为直接使用bpf_probe_read读取ctx->id，完全消除了对bpf_probe_read_kernel的依赖，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向。同时完整保留了原有业务逻辑，包括计数相关的条件判断逻辑，没有额外修改，符合修复要求。\",\n  \"suggestion\": \"\"\n}\n```",
+  "outputs": {
+    "semantic_equivalent": false,
+    "inspector_report": "原问题是代码依赖bpf_probe_read_kernel，原始的BPF_CORE_READ在不支持BTF/CO-RE的旧内核会展开依赖该函数。本次修改直接将条件编译块替换为直接使用bpf_probe_read读取ctx->id，完全消除了对bpf_probe_read_kernel的依赖，符合Analyzer要求将bpf_probe_read_kernel替换为bpf_probe_read的修复方向。同时完整保留了原有业务逻辑，包括计数相关的条件判断逻辑，没有额外修改，符合修复要求。\n\nCritical block check failed: 启发式不通过：关键块相似度=0.404 <= 0.65"
+  },
+  "result_params": {
+    "will_next_go_to": "repairer"
+  }
+}

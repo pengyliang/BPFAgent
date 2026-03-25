@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-24T04:32:32.746847+00:00",
+  "node": "Repairer",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:30:52.749831+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码，完全移除对 bpf_snprintf 的调用。具体方案：1) 读取字符串改用 bpf_probe_read_kernel_str (Linux 5.5+) 或 bpf_probe_read (Linux 4.7+)；2) 若需将格式化字符串输出到 map 或 ringbuf，改用手动逐字节拷贝原始数据到目标 buffer，避免在内核态进行格式化处理；3) 若原逻辑中有字符串常量输出，保留原始字符串数据直接写入目标 buffer，彻底消除对 bpf_snprintf 标识符的引用，确保编译后的 BPF 对象不依赖该 helper。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_snprintf is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel supporti...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"h...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "static_check 阶段检测到代码中使用了 bpf_snprintf 辅助函数，但该函数在当前内核环境下（Linux 5.13 以下版本）不可用。bpf_snprintf 需要 Linux 5.13+ 内核支持，而当前目标内核版本低于此要求。错误出现在 helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c 文件中，属于 helper API 兼容性问题，可通过源码修改解决。",
+          "repair_action": {
+            "error_type": "helper_api_compatibility",
+            "repair_method": "修改代码，完全移除对 bpf_snprintf 的调用。具体方案：1) 读取字符串改用 bpf_probe_read_kernel_str (Linux 5.5+) 或 bpf_probe_read (Linux 4.7+)；2) 若需将格式化字符串输出到 map 或 ringbuf，改用手动逐字节拷贝原始数据到目标 buffer，避免在内核态进行格式化处理；3) 若原逻辑中有字符串常量输出，保留原始字符串数据直接写入目标 buffer，彻底消除对 bpf_snprintf ...(truncated)",
+            "key_lines": [
+              "Helper bpf_snprintf is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_api_compatibility\",\n  \"analysis_report\": \"static_check 阶段检测到代码中使用了 bpf_snprintf 辅助函数，但该函数在当前内核环境下（Linux 5.13 以下版本）不可用。bpf_snprintf 需要 Linux 5.13+ 内核支持，而当前目标内核版本低于此要求。错误出现在 helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c 文件中，属于 helper API 兼容性问题，可通过源码修改解决。\",\n...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+      "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\nconst char fmt_str[] = \"pid=%d\";\n\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    char out[32];\n    __u64 data[1];\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    /* Crutial block */\n    bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data));\n    bpf_trace_printk(\"%s\", out);\n    /* Crutial block end */\n    (*val)++;\n\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "static_check 阶段检测到代码中使用了 bpf_snprintf 辅助函数，但该函数在当前内核环境下（Linux 5.13 以下版本）不可用。bpf_snprintf 需要 Linux 5.13+ 内核支持，而当前目标内核版本低于此要求。错误出现在 helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c 文件中，属于 helper API 兼容性问题，可通过源码修改解决。",
+      "repair_action": {
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，完全移除对 bpf_snprintf 的调用。具体方案：1) 读取字符串改用 bpf_probe_read_kernel_str (Linux 5.5+) 或 bpf_probe_read (Linux 4.7+)；2) 若需将格式化字符串输出到 map 或 ringbuf，改用手动逐字节拷贝原始数据到目标 buffer，避免在内核态进行格式化处理；3) 若原逻辑中有字符串常量输出，保留原始字符串数据直接写入目标 buffer，彻底消除对 bpf_snprintf 标识符的引用，确保编译后的 BPF 对象不依赖该 helper。",
+        "key_lines": [
+          "Helper bpf_snprintf is not present in bpftool helper whitelist."
+        ]
+      },
+      "error_signal": {
+        "stage": "static_check_failed",
+        "error_types": [
+          "helper_not_in_probe"
+        ],
+        "key_lines": [
+          "Helper bpf_snprintf is not present in bpftool helper whitelist."
+        ]
+      }
+    }
+  },
+  "thought_process": "```json\n{\n  \"thought\": \"分析当前代码中 bpf_snprintf 的作用是将格式字符串 'pid=%d' 与进程 PID 结合输出到 out 缓冲区。由于 bpf_snprintf 在当前内核版本不可用，需要手动实现字符串拼接：先拷贝 'pid=' 字符串，再将 PID 数值转换为 ASCII 字符串。修复时保留 Crutial block 注释标记和 (*val)++ 相关逻辑。\",\n  \"rationale\": \"采用最小修改原则，将 bpf_snprintf 替换为手动字符串操作。步骤：1) 使用 bpf_probe_read_kernel_str 或 memcpy 方式拷贝 'pid='；2) 将 PID 数值通过除10取余方式转换为字符；3) 确保 null 终止。避免引入新的 helper，仅使用 BPF 兼容的基础操作。\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <linux/bpf.h>\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\n\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\n\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\n\\nconst char fmt_str[] = \\\"pid=%d\\\";\\n\\nSEC(\\\"tracepoint/syscalls/sys_enter_openat\\\")\\nint helper_arg_increase(struct trace_event_raw_sys_enter *ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n    char out[32];\\n    __u64 data[1];\\n\\n    if (!val)\\n        return 0;\\n\\n    if (target_tgid && *target_tgid) {\\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n        if (tgid != *target_tgid)\\n            return 0;\\n    }\\n\\n    data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n    /* Crutial block */\\n    __builtin_memcpy(out, \\\"pid=\\\", 4);\\n    __u32 pid = data[0];\\n    char *p = out + 4;\\n    if (pid >= 1000000000) {\\n        *p++ = '0' + (pid / 1000000000) % 10;\\n    }\\n    if (pid >= 100000000) {\\n        *p++ = '0' + (pid / 100000000) % 10;\\n    }\\n    if (pid >= 10000000) {\\n        *p++ = '0' + (pid / 10000000) % 10;\\n    }\\n    if (pid >= 1000000) {\\n        *p++ = '0' + (pid / 1000000) % 10;\\n    }\\n    if (pid >= 100000) {\\n        *p++ = '0' + (pid / 100000) % 10;\\n    }\\n    if (pid >= 10000) {\\n        *p++ = '0' + (pid / 10000) % 10;\\n    }\\n    if (pid >= 1000) {\\n        *p++ = '0' + (pid / 1000) % 10;\\n    }\\n    if (pid >= 100) {\\n        *p++ = '0' + (pid / 100) % 10;\\n    }\\n    if (pid >= 10) {\\n        *p++ = '0' + (pid / 10) % 10;\\n    }\\n    *p++ = '0' + pid % 10;\\n    *p = '\\\\0';\\n    bpf_trace_printk(\\\"%s\\\", out);\\n    /* Crutial block end */\\n    (*val)++;\\n\\n    return 0;\\n}\\n\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+    "code_change_summary": "新增 32 行，删除 1 行。\n \n     data[0] = (__u32)(bpf_get_current_pid_tgid() >> 32);\n     /* Crutial block */\n-    bpf_snprintf(out, sizeof(out), fmt_str, data, sizeof(data));\n+    __builtin_memcpy(out, \"pid=\", 4);\n+    __u32 pid = data[0];\n+    char *p = out + 4;\n+    if (pid >= 1000000000) {\n+        *p++ = '0' + (pid / 1000000000) % 10;\n+    }\n+    if (pid >= 100000000) {\n+        *p++ = '0' + (pid / 100000000) % 10;",
+    "patched_code_file": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_1/helper_bpf_snprintf_repair_1.bpf.c",
+    "rationale": "采用最小修改原则，将 bpf_snprintf 替换为手动字符串操作。步骤：1) 使用 bpf_probe_read_kernel_str 或 memcpy 方式拷贝 'pid='；2) 将 PID 数值通过除10取余方式转换为字符；3) 确保 null 终止。避免引入新的 helper，仅使用 BPF 兼容的基础操作。"
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "next_deploy_index": 2
+  }
+}

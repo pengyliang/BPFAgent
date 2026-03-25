@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "stage": "runtime_test",
+  "skipped": true,
+  "reason": "compile_failed"
+}

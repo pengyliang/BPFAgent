@@ -1,0 +1,8 @@
+{
+  "source_file": "/host/data/feature/btf_unsupported/btf_unsupported.bpf.c",
+  "ast_fallback": true,
+  "ast_fallback_reason": "clang_exit_135",
+  "bpf_helper_calls": [],
+  "struct_field_access_paths": [],
+  "map_operation_sequence": []
+}

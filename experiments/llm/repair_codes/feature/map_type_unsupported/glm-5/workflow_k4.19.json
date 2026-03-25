@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-23T16:45:16.747006+00:00",
+  "updated_at": "2026-03-23T16:45:58.368834+00:00",
+  "final_decision": "success",
+  "deploy_state": true,
+  "failed_stage": "",
+  "total_duration_s": 41.622,
+  "module_durations_s": {
+    "deploy_tool": 9.673,
+    "Analyzer": 21.92,
+    "Repairer": 9.116,
+    "Inspector": 0.913,
+    "Refiner": 0.0
+  },
+  "events": [
+    {
+      "seq": 1,
+      "ts": "2026-03-23T16:45:16.747006+00:00",
+      "node": "deploy_tool",
+      "node_index": 1,
+      "key_results": {
+        "deploy_state": false,
+        "failed_stage": "static_check_failed"
+      },
+      "duration_s": 6.517
+    },
+    {
+      "seq": 2,
+      "ts": "2026-03-23T16:45:23.263667+00:00",
+      "node": "Analyzer",
+      "node_index": 1,
+      "key_results": {
+        "can_fix": true,
+        "failed_stage": "static_check_failed",
+        "error_type": "helper_api_compatibility",
+        "repair_method": "修改代码，将 BPF_MAP_TYPE_RINGBUF 类型的地图定义替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并将 bpf_ringbuf_output 辅助函数调用替换为 bpf_perf_event_output。同时需要调整相关上下文参数（如 ctx 指针），以适配 Perf Event 输出的接口要求。",
+        "analysis_report": "部署失败于静态检查阶段（static_check_failed）。根本原因是目标内核环境不支持 BPF_MAP_TYPE_RINGBUF 地图类型以及 bpf_ringbuf_output 辅助函数。这通常发生在较旧版本的内核（< 5.8）中。由于 Ring Buffer 是较新的 BPF 特性，在旧内核上必须回退到兼容性更好的 Perf Buffer（BPF_MAP_TYPE_PERF_EVENT_ARRAY）机制来实现数据向用户态的传输。"
+      },
+      "duration_s": 21.92
+    },
+    {
+      "seq": 3,
+      "ts": "2026-03-23T16:45:45.184081+00:00",
+      "node": "Repairer",
+      "node_index": 1,
+      "key_results": {
+        "outcome": "patched",
+        "reason": "patch_written",
+        "llm_enabled": true,
+        "patched": true,
+        "note": "Analyzer 明确指出失败原因是内核不支持 Ringbuf 特性。修复方法是将 Ringbuf 替换为 Perf Event Array。Perf Event Array 需要指定 key_size 和 value_size。bpf_perf_event_output 的签名是 long bpf_perf_event_output(struct pt_regs *ctx, struct bpf...(truncated)",
+        "next_deploy_index": 2
+      },
+      "duration_s": 9.116
+    },
+    {
+      "seq": 4,
+      "ts": "2026-03-23T16:45:54.299908+00:00",
+      "node": "Inspector",
+      "node_index": 1,
+      "key_results": {
+        "semantic_equivalent": true,
+        "inspector_report": "修改后的代码完全符合 Analyzer 的修复建议。Analyzer 指出目标内核不支持 BPF_MAP_TYPE_RINGBUF 和 bpf_ringbuf_output，建议替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY 和 bpf_perf_event_output。对比修改前后：1. Map 定义已从 BPF_MAP_TYPE_RINGBUF 修改为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并正确添加了 key_size 和 value_size 属性；2. 数据输出函数已从 bpf_ringbuf_output(&events, &e, sizeof(e), 0) 替换为 bpf_p...(truncated)"
+      },
+      "duration_s": 0.913
+    },
+    {
+      "seq": 5,
+      "ts": "2026-03-23T16:45:55.212857+00:00",
+      "node": "deploy_tool",
+      "node_index": 2,
+      "key_results": {
+        "deploy_state": true,
+        "failed_stage": ""
+      },
+      "duration_s": 3.156
+    },
+    {
+      "seq": 6,
+      "ts": "2026-03-23T16:45:58.368689+00:00",
+      "node": "Refiner",
+      "node_index": 1,
+      "key_results": {
+        "final_decision": "success",
+        "deploy_state": true,
+        "failed_stage": "",
+        "has_repaired": true,
+        "applied_updates_patterns": 1,
+        "applied_updates_total_methods": 4
+      }
+    }
+  ]
+}

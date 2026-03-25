@@ -1,0 +1,58 @@
+{
+  "success": false,
+  "error_warning_count": {
+    "error": 1,
+    "warning": 0
+  },
+  "issues": [
+    {
+      "check": "helper_availability",
+      "level": "error",
+      "code": "helper_not_in_probe",
+      "message": "Helper bpf_probe_read_kernel_str is not present in bpftool helper whitelist.",
+      "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+      "evidence": {
+        "helper": "bpf_probe_read_kernel_str"
+      },
+      "source_file": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_3/helper_bpf_snprintf_repair_3.bpf.c"
+    }
+  ],
+  "results": [
+    {
+      "source_file": "/host/output/5.4/log/agent_mode/helper_func/helper_bpf_snprintf/repair/repair_3/helper_bpf_snprintf_repair_3.bpf.c",
+      "program_sections": [
+        "tracepoint/syscalls/sys_enter_openat"
+      ],
+      "program_types": [
+        "tracepoint"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_map_lookup_elem",
+        "bpf_map_lookup_elem",
+        "bpf_get_current_pid_tgid",
+        "bpf_get_current_pid_tgid",
+        "bpf_probe_read_kernel_str"
+      ],
+      "issues": [
+        {
+          "check": "helper_availability",
+          "level": "error",
+          "code": "helper_not_in_probe",
+          "message": "Helper bpf_probe_read_kernel_str is not present in bpftool helper whitelist.",
+          "suggestion": "Replace helper with compatible one or deploy to a kernel supporting this helper.",
+          "evidence": {
+            "helper": "bpf_probe_read_kernel_str"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "error_count": 1,
+    "warning_count": 0
+  }
+}

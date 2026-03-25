@@ -1,0 +1,238 @@
+{
+  "generated_at": "2026-03-24T04:21:29.810663+00:00",
+  "node": "Analyzer",
+  "node_index": 2,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+    "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <linux/sched.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u32 tgid_from_offset = 0;\n    __u32 current_tgid;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    void *task;\n    if (!val)\n        return 0;\n    if (target_tgid && *target_tgid) {\n        __u32 cur = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (cur != *target_tgid)\n            return 0;\n    }\n    task = (void *)bpf_get_current_task();\n    if (!task)\n        return 0;\n    /* Crutial block */\n    if (bpf_probe_read_kernel(&tgid_from_offset, sizeof(tgid_from_offset),\n                              (const void *)((const char *)task + offsetof(struct task_struct, tgid))) != 0)\n        return 0;\n    /* Crutial block end */\n    current_tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n    if (tgid_from_offset == current_tgid)   // cannot be deleted\n        (*val)++;\n    return 0;\n}\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "compile_failed",
+    "failed_stage_result_path": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/deploy/deploy_2/compile_result.json",
+    "failed_stage_result": {
+      "success": false,
+      "stage": "compile",
+      "source_file": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+      "object_file": "/host/output/5.15/build/kernel_struct/field_offset_change/field_offset_change.bpf.o",
+      "compile_mode": "non-core",
+      "vmlinux_header": null,
+      "vmlinux_generation": null,
+      "command": [
+        "clang",
+        "-O3",
+        "-g",
+        "-target",
+        "bpf",
+        "-I/usr/include/x86_64-linux-gnu",
+        "-c",
+        "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+        "-o",
+        "/host/output/5.15/build/kernel_struct/field_offset_change/field_offset_change.bpf.o"
+      ],
+      "stdout": "",
+      "stderr": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:19:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n                               ^\n/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:39:67: error: incomplete definition of type 'struct task_struct'\n                              (const void *)((const char *)task + offsetof(struct task_struct, tgid))) != 0)\n                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/usr/include/bpf/bpf_helpers.h:81:60: note: expanded from macro 'offsetof'\n#define offsetof(TYPE, MEMBER)  ((unsigned long)&((TYPE *)0)->MEMBER)\n                                                 ~~~~~~~~~~~^\n/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'\nstruct task_struct;\n       ^\n1 warning and 1 error generated.\n",
+      "returncode": 1,
+      "timed_out": false,
+      "stdout_lines": [],
+      "stderr_lines": [
+        "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:19:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]",
+        "int field_offset_change(struct trace_event_raw_sys_enter *ctx)",
+        "                               ^",
+        "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:39:67: error: incomplete definition of type 'struct task_struct'",
+        "                              (const void *)((const char *)task + offsetof(struct task_struct, tgid))) != 0)",
+        "                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+        "/usr/include/bpf/bpf_helpers.h:81:60: note: expanded from macro 'offsetof'",
+        "#define offsetof(TYPE, MEMBER)  ((unsigned long)&((TYPE *)0)->MEMBER)",
+        "                                                 ~~~~~~~~~~~^",
+        "/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'",
+        "struct task_struct;",
+        "       ^",
+        "1 warning and 1 error generated."
+      ]
+    },
+    "deploy_summary_path": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/deploy/deploy_2/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "compile_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "failed",
+          "success": false,
+          "error_log": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:19:32: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint field_offset_change(struct trace_event_raw_sys_enter *ctx)\n                               ^\n/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:39:67: error: incomplete definition of type 'struct task_struct'\n                              (const void *)((const char *)task + offsetof(struct task_struct, tgid))) != 0)\n                                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/usr/include/bpf/bpf_helpers.h:81:60: note: expanded from macro 'offsetof'\n#define offsetof(TYPE, MEMBER)  ((unsigned long)&((TYPE *)0)->MEMBER)\n                                                 ~~~~~~~~~~~^\n/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'\nstruct task_struct;\n       ^\n1 warning and 1 error generated."
+        },
+        "load": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "compile_failed"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "compile_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "compile_failed"
+        }
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-24T04:21:09.573108+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 runtime_test_failed，can_fix=True，建议=修改代码，移除手动定义的精简结构体和硬编码偏移，优先尝试包含对应内核头文件，使用标准offsetof宏获取正确偏移；若无法获得完整结构体定义，则移除硬编码偏移的读取逻辑，改用bpf_get_current_pid_tgid等稳定的辅助函数直接获取目标数据，保留原有业务判断逻辑。",
+        "inputs": {
+          "failed_stage": "runtime_test_failed",
+          "failed_stage_result": {
+            "stage": "runtime_test",
+            "case_dir": "/host/data/kernel_struct/field_offset_change",
+            "workload": "/host/data/kernel_struct/field_offset_change/workload.sh",
+            "validator": "/host/data/kernel_struct/field_offset_change/validator.yaml",
+            "pin_path": "/sys/fs/bpf/ebpf_agent_field_offset_change",
+            "maps_dir": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps",
+            "success": false,
+            "skipped": false,
+            "reason": "validator_mismatch",
+            "validator_payload": {
+              "type": "min",
+              "map": "counter",
+              "key": "",
+              "value": "3"
+            },
+            "scheme_a": {
+              "enabled": "True",
+              "cfg_map_pin": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/cfg",
+              "workload_pid": "1770",
+              "cfg_update_command": "[\"sudo\", \"/host/src/ebpf/utils/mapctl\", \"update-u32\", \"--map-pin\", \"/sys/fs/bpf/ebpf_agent_field_offset_change_maps/cfg\", \"--key-u32\", \"0\", \"--value-u32\", \"1770\"]",
+              "cfg_update_stdout": "{\"key\":0,\"value\":1770}",
+              "cfg_update_stderr": "",
+              "cfg_update_timed_out": "",
+              "cfg_update_returncode": "",
+              "status": "applied"
+            },
+            "map_pin_path": "/sys/fs/bpf/ebpf_agent_field_offset_change_maps/counter",
+            "...": "trimmed 3 fields"
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "runtime_test_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "load": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "attach": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "runtime": "{\"status\": \"failed\", \"success\": false, \"error_log\": \"validator_mismatch\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "当前运行时测试验证不匹配，错误签名包含validator_mismatch，符合struct_member_offset_mismatch规则，是手动定义的结构体内存布局与当前内核实际布局不一致，导致eBPF程序无法正确读取目标数据，最终统计结果不符合预期，该问题可以通过修改源码修复。",
+          "repair_action": {
+            "error_type": "struct_member_offset_mismatch",
+            "repair_method": "修改代码，移除手动定义的精简结构体和硬编码偏移，优先尝试包含对应内核头文件，使用标准offsetof宏获取正确偏移；若无法获得完整结构体定义，则移除硬编码偏移的读取逻辑，改用bpf_get_current_pid_tgid等稳定的辅助函数直接获取目标数据，保留原有业务判断逻辑。",
+            "key_lines": [
+              "validator_mismatch"
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"struct_member_offset_mismatch\",\n  \"analysis_report\": \"当前运行时测试验证不匹配，错误签名包含validator_mismatch，符合struct_member_offset_mismatch规则，是手动定义的结构体内存布局与当前内核实际布局不一致，导致eBPF程序无法正确读取目标数据，最终统计结果不符合预期，该问题可以通过修改源码修复。\",\n  \"repair_method\": \"修改代码，移除手动定义的精简结构体和硬编码偏移，优先尝试包含对应内核头文件，使用标准offsetof宏获取正...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:21:19.378486+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\n#ifndef TASK_TGID_OFFSET\n#define TASK_TGID_OFFSET 0x574\n#endif\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries...(truncated)",
+            "analysis_report": "当前运行时测试验证不匹配，错误签名包含validator_mismatch，符合struct_member_offset_mismatch规则，是手动定义的结构体内存布局与当前内核实际布局不一致，导致eBPF程序无法正确读取目标数据，最终统计结果不符合预期，该问题可以通过修改源码修复。",
+            "repair_action": {
+              "error_type": "struct_member_offset_mismatch",
+              "repair_method": "修改代码，移除手动定义的精简结构体和硬编码偏移，优先尝试包含对应内核头文件，使用标准offsetof宏获取正确偏移；若无法获得完整结构体定义，则移除硬编码偏移的读取逻辑，改用bpf_get_current_pid_tgid等稳定的辅助函数直接获取目标数据，保留原有业务判断逻辑。",
+              "key_lines": "[\"validator_mismatch\"]"
+            },
+            "error_signal": {
+              "stage": "runtime_test_failed",
+              "error_types": "[\"runtime_test_failed\"]",
+              "key_lines": "[\"validator_mismatch\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "code_change_summary": "新增 2 行，删除 14 行。\n #include <linux/types.h>\n #include <linux/bpf.h>\n+#include <linux/sched.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n-#ifndef TASK_TGID_OFFSET\n-#define TASK_TGID_OFFSET 0x574\n-#endif\n-\n struct {\n     __u...(truncated)",
+          "patched_code_file": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "rationale": "添加linux/sched.h头文件获取完整task_struct结构体定义，使用offsetof宏替换硬编码偏移，保留原有业务判断逻辑和要求的注释，满足最小修改原则"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"依据分析报告，当前问题是硬编码的TASK_TGID_OFFSET和当前内核实际偏移不匹配，需要按照修复建议移除硬编码，优先使用内核头文件和标准offsetof宏获取正确偏移\",\n  \"rationale\": \"添加linux/sched.h头文件获取完整task_struct结构体定义，使用offsetof宏替换硬编码偏移，保留原有业务判断逻辑和要求的注释，满足最小修改原则\",\n  \"patched_code\": \"#include <linux/types.h>\\n#include <linux/bpf.h>\\n#include <linux/sched.h>\\n#include <...(truncated)"
+      },
+      {
+        "ts": "2026-03-24T04:21:25.217061+00:00",
+        "node": "Inspector",
+        "node_index": 1,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=True，结论=当前修改完全符合Analyzer的修复建议：移除了手动定义的硬编码偏移TASK_TGID_OFFSET，新增包含了内核头文件linux/sched.h获取完整结构体定义，使用标准offsetof宏获取正确偏移，同时完整保留了原有业务判断逻辑，包括要求不能删除的tgid比较和(*val)++计数逻辑，没有额外修改，符合修复方向要求。",
+        "inputs": {
+          "source_before": "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+          "source_after": "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "当前运行时测试验证不匹配，错误签名包含validator_mismatch，符合struct_member_offset_mismatch规则，是手动定义的结构体内存布局与当前内核实际布局不一致，导致eBPF程序无法正确读取目标数据，最终统计结果不符合预期，该问题可以通过修改源码修复。",
+            "repair_action": {
+              "error_type": "struct_member_offset_mismatch",
+              "repair_method": "修改代码，移除手动定义的精简结构体和硬编码偏移，优先尝试包含对应内核头文件，使用标准offsetof宏获取正确偏移；若无法获得完整结构体定义，则移除硬编码偏移的读取逻辑，改用bpf_get_current_pid_tgid等稳定的辅助函数直接获取目标数据，保留原有业务判断逻辑。",
+              "key_lines": "[\"validator_mismatch\"]"
+            }
+          },
+          "code_change_summary": "新增 2 行，删除 14 行。\n #include <linux/types.h>\n #include <linux/bpf.h>\n+#include <linux/sched.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n-#ifndef TASK_TGID_OFFSET\n-#define TASK_TGID_OFFSET 0x574\n-#endif\n-\n struct {\n     __u...(truncated)"
+        },
+        "outputs": {
+          "semantic_equivalent": true,
+          "inspector_report": "当前修改完全符合Analyzer的修复建议：移除了手动定义的硬编码偏移TASK_TGID_OFFSET，新增包含了内核头文件linux/sched.h获取完整结构体定义，使用标准offsetof宏获取正确偏移，同时完整保留了原有业务判断逻辑，包括要求不能删除的tgid比较和(*val)++计数逻辑，没有额外修改，符合修复方向要求。"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"当前修改完全符合Analyzer的修复建议：移除了手动定义的硬编码偏移TASK_TGID_OFFSET，新增包含了内核头文件linux/sched.h获取完整结构体定义，使用标准offsetof宏获取正确偏移，同时完整保留了原有业务判断逻辑，包括要求不能删除的tgid比较和(*val)++计数逻辑，没有额外修改，符合修复方向要求。\",\n  \"suggestion\": \"\"\n}\n```"
+      }
+    ],
+    "error_signature": "compile_failed:/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:39:67: error: incomplete definition of typ",
+    "knowledge_rules": "version: 2\npatterns:\n  helper_api_compatibility:\n    summary: 使用的 BPF 辅助函数在当前内核版本或配置中不可用\n    aliases:\n    - helper_not_in_probe\n    - map_type_not_in_probe\n    - helper_bpf_probe_read_kernel_missing\n    - helper_bpf_strncmp_missing\n    - helper_bpf_get_current_task_btf_missing\n    - helper_bpf_snprintf_missing\n    - bpf_snprintf_rodata_relocation_failed\n    stage_hints:\n    - static_check_failed\n    - compile_failed\n    - load_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 将不可用的辅助函数替换为功能等价且兼容性更好的替代实现（如使用 bpf_probe_read_kernel_str 配合手动循环比较替代 bpf_strncmp）。\n    - 若存在功能等价的旧版辅助函数，优先直接替换。若无直接等价函数，则通过组合其他可用辅助函数实现原语逻辑。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义。\n    - 将 bpf_ringbuf_output 替换为 bpf_perf_event_output，传入上下文 ctx、map 指针以及 BPF_F_CURRENT_CPU\n      标志（或结合 bpf_get_smp_processor_id）。\n    - 若目标内核不支持 bpf_ktime_get_boot_ns（常见于 < 5.8 内核），将其替换为兼容性更好的 bpf_ktime_get_ns。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），使用 `#pragma unroll` 展开的手动循环逐字节比较字符串，以兼容旧版本内核。\n    - 修改代码，移除对 bpf_snprintf 的调用。由于 bpf_snprintf 常用于格式化输出字符串到 map 或 ringbuf，在低版本内核中，应改用\n      bpf_probe_read_kernel_str 等可用函数读取字符串，并手动逐字节拷贝到目标 buffer 中，或者直接输出原始数据而避免在内核态进行格式化处理。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将 `BPF_CORE_READ` 宏调用替换为显式的 `bpf_probe_read`\n      调用。\n    - 若目标内核不支持 BPF_MAP_TYPE_RINGBUF（常见于 < 5.8 内核），需将地图类型替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      并补全 key_size/value_size 定义（通常为 4 字节）。\n    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+），将其替换为 bpf_get_current_task，并检查后续成员访问逻辑是否兼容。\n    - 若目标内核不支持 bpf_snprintf (Linux 5.13+)，应将其替换为 bpf_probe_read_kernel_str (Linux\n      5.5+) 或 bpf_probe_read (Linux 4.7+)，并适配返回值逻辑（如将 bpf_probe_read 的 0 返回值映射为正数）以保留原有的条件判断结构。\n    - 修改代码，将bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，移除对bpf_snprintf的调用，改用bpf_probe_read_kernel_str读取字符串，手动逐字节拷贝到目标buffer中，或直接输出原始数据避免在内核态进行格式化处理。\n    - 修改代码，将不被支持的bpf_ktime_get_boot_ns替换为兼容性更好的bpf_ktime_get_ns。\n    - 修改代码，将bpf_get_current_task_btf替换为bpf_get_current_task，并检查后续成员访问逻辑是否兼容。将bpf_probe_read_kernel替换为bpf_probe_read，如果存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 若目标内核不支持 bpf_probe_read_kernel（常见于 < 5.5 内核），将其替换为 bpf_probe_read，若存在BPF_CORE_READ宏调用则将其替换为显式的bpf_probe_read调用。\n    - 修改代码，使用`#pragma unroll`展开的手动循环逐字节比较字符串，替代不可用的bpf_strncmp函数，兼容低版本内核。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），直接在调用点展开使用 `#pragma unroll` 的手动循环逐字节比较实现，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。\n    - 修改代码，将BPF_MAP_TYPE_RINGBUF地图类型替换为BPF_MAP_TYPE_PERF_EVENT_ARRAY，并补全key_size和value_size定义（通常为4字节）。再将bpf_ringbuf_output替换为bpf_perf_event_output，传入上下文ctx、map指针以及BPF_F_CURRENT_CPU标志。\n    - 若目标内核不支持 bpf_get_current_task_btf（Linux 5.7+）且不支持CO-RE BTF，将其替换为 bpf_get_current_task，移除vmlinux.h引入并前向声明不完整struct\n      task_struct，使用对应架构内核版本的固定偏移量结合bpf_probe_read读取成员，彻底消除对CO-RE BTF的依赖。\n    - 若目标内核不支持 bpf_strncmp（Linux 5.17+），在调用点直接展开使用 `#pragma unroll` 的手动循环逐字节比较实现，显式保留最大比较长度参数，完全移除对bpf_strncmp标识符的引用，以兼容旧版本内核。\n    - 在Linux 5.13以下内核使用bpf_snprintf时，需直接移除对bpf_snprintf的调用，若存在字符串常量输出仍导致.rodata.str1.1重定位失败，需彻底移除包含静态字符串常量的输出调用，保留原有核心业务逻辑。\n  missing_type_definition:\n    summary: 移除 vmlinux.h 后导致基础类型或枚举定义缺失\n    aliases:\n    - missing_type_definition\n    stage_hints:\n    - compile_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 在包含 `bpf_helpers.h` 之前，手动定义 `bpf_helper_defs.h` 依赖的基础类型（如 `__u16`, `__be16`,\n      `__wsum` 等）。\n    - 手动定义源码中使用的枚举类型（如 `enum bpf_map_type`），或包含对应的内核头文件（如 `<linux/bpf.h>`）。\n  stack_overflow:\n    summary: 循环强制展开后累积栈空间占用超过eBPF 512字节限制，导致编译失败\n    aliases:\n    - stack_overflow\n    stage_hints:\n    - compile_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 若因 `#pragma unroll` 强制展开循环导致栈溢出，应减少循环次数以降低展开后的栈空间占用。\n    - 若循环体逻辑复杂，需优先尝试减少迭代次数，而非直接移除 unroll 指令，以兼顾旧内核对循环结构的验证限制。\n    - 若因 `#pragma unroll` 强制展开复杂循环体导致栈溢出，逐步减少循环最大迭代次数以降低展开后的累积栈空间占用，满足512字节限制。\n    - 优先尝试减少迭代次数而非移除unroll指令，兼顾旧内核对循环结构的验证要求。\n  struct_member_offset_mismatch:\n    summary: 手动定义的结构体内存布局与内核实际布局不一致，导致运行时数据读取错误\n    aliases:\n    - incomplete_definition_of_type\n    - struct_member_offset_mismatch\n    - validator_mismatch\n    stage_hints:\n    - compile_failed\n    - runtime_test_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 移除手动定义的精简结构体，改为包含对应的内核头文件（如。\n    - 若需兼容无 BTF 的旧内核，应包含内核头文件而非手动定义结构体，确保编译器使用正确的内存布局。\n    - 若需在无 BTF 环境下通过成员计算偏移量，必须包含完整的内核头文件（如 `<linux/sched.h>`）以获取结构体定义，避免仅有前向声明导致的编译错误。\n    - 若无法包含完整头文件或结构体定义对用户不可见，应放弃偏移量计算逻辑，改用 `bpf_get_current_pid_tgid` 等辅助函数直接获取目标数据。\n    - 若硬编码的偏移量读取逻辑失效，应移除该逻辑，改用 bpf_get_current_pid_tgid 等稳定的辅助函数直接获取目标数据。\n    - 移除手动定义的精简结构体和硬编码偏移，优先尝试包含对应内核头文件，使用标准offsetof宏获取正确偏移。\n    - 若包含头文件后仅能得到结构体前向声明、无法获得完整定义，则移除偏移计算逻辑，改用bpf_get_current_pid_tgid等价辅助函数直接获取目标数据，保留原有业务逻辑。\n    - 若硬编码的task_struct中tgid字段偏移量读取逻辑失效，移除硬编码偏移量的读取逻辑，改用bpf_get_current_pid_tgid辅助函数直接获取当前进程tgid，保留原有业务判断逻辑。\n  struct_member_renamed_in_vmlinux:\n    summary: 结构体成员名称在当前内核vmlinux.h中被重命名，导致编译失败\n    aliases: []\n    stage_hints:\n    - compile_failed\n    can_fix: true\n    evidence_hint: []\n    repair_methods:\n    - 修改代码，将 `/host/data/kernel_struct/field_renamed/field_renamed.bpf.c` 文件第 42 行的\n      `BPF_CORE_READ(task, __state)` 修改为 `BPF_CORE_READ(task, state)`，以匹配当前内核 vmlinux.h\n      中的结构体成员定义。\n    - 修改代码，将引用的旧结构体成员名称替换为当前内核vmlinux.h中定义的新名称，保留原有业务逻辑和代码结构。",
+    "error_signal": {
+      "stage": "compile_failed",
+      "error_types": [
+        "compile_error"
+      ],
+      "key_lines": [
+        "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:39:67: error: incomplete definition of type 'struct task_struct'"
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"struct_member_offset_mismatch\",\n  \"analysis_report\": \"当前编译失败是因为在non-CORE编译环境下，包含linux/sched.h后仍然只得到了struct task_struct的前向声明，没有获取到完整的结构体定义，导致使用offsetof宏计算tgid字段偏移时触发不完整类型定义错误，符合struct_member_offset_mismatch规则中'仅有前向声明无法完成偏移计算'的场景，该问题可以通过修改源码修复。\",\n  \"repair_method\": \"修改代码，移除偏移计算逻辑和对linux/sched.h的引用，改用bpf_get_current_pid_tgid辅助函数直接获取当前进程tgid，保留原有业务判断逻辑和计数逻辑。\"\n}\n```",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "当前编译失败是因为在non-CORE编译环境下，包含linux/sched.h后仍然只得到了struct task_struct的前向声明，没有获取到完整的结构体定义，导致使用offsetof宏计算tgid字段偏移时触发不完整类型定义错误，符合struct_member_offset_mismatch规则中'仅有前向声明无法完成偏移计算'的场景，该问题可以通过修改源码修复。",
+    "repair_action": {
+      "error_type": "struct_member_offset_mismatch",
+      "repair_method": "修改代码，移除偏移计算逻辑和对linux/sched.h的引用，改用bpf_get_current_pid_tgid辅助函数直接获取当前进程tgid，保留原有业务判断逻辑和计数逻辑。",
+      "key_lines": [
+        "/host/output/5.15/log/agent_mode/kernel_struct/field_offset_change/repair/repair_1/field_offset_change_repair_1.bpf.c:39:67: error: incomplete definition of type 'struct task_struct'"
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "max_fix_time": 4
+  }
+}

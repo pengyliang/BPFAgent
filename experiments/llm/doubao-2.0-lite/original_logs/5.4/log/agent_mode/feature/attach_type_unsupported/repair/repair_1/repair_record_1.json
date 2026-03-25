@@ -1,0 +1,105 @@
+{
+  "generated_at": "2026-03-24T03:13:26.178741+00:00",
+  "node": "Repairer",
+  "node_index": 1,
+  "from_node": "Analyzer",
+  "inputs": {
+    "shared_history": [
+      {
+        "ts": "2026-03-24T03:12:18.550390+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 attach_failed，can_fix=True，建议=修改代码，将kprobe类型替换为kretprobe，若该内核符号仅允许kretprobe挂载或导出符号命名存在差异，调整section声明为kretprobe/do_sys_openat2并适配对应probe逻辑。",
+        "inputs": {
+          "failed_stage": "attach_failed",
+          "failed_stage_result": {
+            "success": false,
+            "stage": "attach",
+            "attached": false,
+            "skipped": false,
+            "reason": "libbpf_loader_attach_failed",
+            "error_log": "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2",
+            "error_message": "attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2",
+            "daemon_stdout": "loaded obj=/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o\npinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps",
+            "daemon_stderr": "libbpf: prog 'attach_type_unsupported': failed to create kprobe 'do_sys_openat2+0x0' perf event: No such file or directory\nattach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2",
+            "daemon_returncode": 20,
+            "command": [
+              "sudo",
+              "/host/src/ebpf/utils/loader",
+              "--obj",
+              "/host/output/5.4/build/feature/attach_type_unsupported/attach_type_unsupported.bpf.o",
+              "--pin-path",
+              "/sys/fs/bpf/ebpf_agent_attach_type_unsupported"
+            ],
+            "plan": {
+              "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+              "section": "kprobe/do_sys_openat2",
+              "program_type": "kprobe",
+              "attach_target": "do_sys_openat2",
+              "autoattach_supported": "True",
+              "autoattach_requested": "True"
+            },
+            "...": "trimmed 8 fields"
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "attach_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "load": "{\"status\": \"success\", \"success\": true, \"error_log\": null}",
+              "attach": "{\"status\": \"failed\", \"success\": false, \"error_log\": \"attach failed: attach_type_unsupported section=kprobe/do_sys_openat2 err=-2\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"load_or_attach_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "本次attach失败原因为当前内核不支持对目标符号do_sys_openat2的kprobeattach类型，尝试创建kprobe perf event时找不到对应内核符号，返回No such file or directory错误，问题出在eBPF程序的attach类型选择与当前内核环境不兼容，属于可通过修改源码调整attach类型解决的问题。",
+          "repair_action": {
+            "error_type": "attach_type_unsupported",
+            "repair_method": "修改代码，将kprobe类型替换为kretprobe，若该内核符号仅允许kretprobe挂载或导出符号命名存在差异，调整section声明为kretprobe/do_sys_openat2并适配对应probe逻辑。",
+            "key_lines": [
+              "pinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps"
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"attach_type_unsupported\",\n  \"analysis_report\": \"本次attach失败原因为当前内核不支持对目标符号do_sys_openat2的kprobeattach类型，尝试创建kprobe perf event时找不到对应内核符号，返回No such file or directory错误，问题出在eBPF程序的attach类型选择与当前内核环境不兼容，属于可通过修改源码调整attach类型解决的问题。\",\n  \"repair_method\": \"修改代码，将kprobe类型替换为kretprobe，若该...(truncated)"
+      }
+    ],
+    "repair_context": {
+      "source_file": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+      "source_code": "#include \"vmlinux.h\"\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\n\n/* Crutial block */\nSEC(\"kprobe/do_sys_openat2\")\n/* Crutial block end */\nint attach_type_unsupported(struct pt_regs *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n\n    if (!val)\n        return 0;\n\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n\n    (*val)++;\n    return 0;\n}\n\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+      "analysis_report": "本次attach失败原因为当前内核不支持对目标符号do_sys_openat2的kprobeattach类型，尝试创建kprobe perf event时找不到对应内核符号，返回No such file or directory错误，问题出在eBPF程序的attach类型选择与当前内核环境不兼容，属于可通过修改源码调整attach类型解决的问题。",
+      "repair_action": {
+        "error_type": "attach_type_unsupported",
+        "repair_method": "修改代码，将kprobe类型替换为kretprobe，若该内核符号仅允许kretprobe挂载或导出符号命名存在差异，调整section声明为kretprobe/do_sys_openat2并适配对应probe逻辑。",
+        "key_lines": [
+          "pinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps"
+        ]
+      },
+      "error_signal": {
+        "stage": "attach_failed",
+        "error_types": [
+          "verifier_reject"
+        ],
+        "key_lines": [
+          "pinned maps_dir=/sys/fs/bpf/ebpf_agent_attach_type_unsupported_maps"
+        ]
+      }
+    }
+  },
+  "thought_process": "```json\n{\n  \"thought\": \"根据分析结果，当前错误为attach失败，内核不支持对do_sys_openat2进行kprobe挂载，需要按照建议将kprobe修改为kretprobe，保留原有业务逻辑不变\",\n  \"rationale\": \"修改SEC声明的attach类型为kretprobe即可解决attach类型不支持的问题，原有计数逻辑和条件判断都保留，不改变原始语义\",\n  \"patched_code\": \"#include \\\"vmlinux.h\\\"\\n#include <bpf/bpf_helpers.h>\\n#include <bpf/bpf_tracing.h>\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u64);\\n} counter SEC(\\\".maps\\\");\\nstruct {\\n    __uint(type, BPF_MAP_TYPE_ARRAY);\\n    __uint(max_entries, 1);\\n    __type(key, __u32);\\n    __type(value, __u32); /* target tgid */\\n} cfg SEC(\\\".maps\\\");\\n/* Crutial block */\\nSEC(\\\"kretprobe/do_sys_openat2\\\")\\n/* Crutial block end */\\nint attach_type_unsupported(struct pt_regs *ctx)\\n{\\n    __u32 key = 0;\\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\\n    if (!val)\\n        return 0;\\n    if (target_tgid && *target_tgid) {\\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\\n        if (tgid != *target_tgid)\\n            return 0;\\n    }\\n    (*val)++;\\n    return 0;\\n}\\nchar LICENSE[] SEC(\\\"license\\\") = \\\"GPL\\\";\\n\"\n}\n```",
+  "outputs": {
+    "patched": true,
+    "patched_path": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_1/attach_type_unsupported_repair_1.bpf.c",
+    "code_change_summary": "新增 1 行，删除 8 行。\n #include \"vmlinux.h\"\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } counter SEC(\".maps\");\n-\n struct {",
+    "patched_code_file": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_1/attach_type_unsupported_repair_1.bpf.c",
+    "rationale": "修改SEC声明的attach类型为kretprobe即可解决attach类型不支持的问题，原有计数逻辑和条件判断都保留，不改变原始语义"
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "next_deploy_index": 2
+  }
+}

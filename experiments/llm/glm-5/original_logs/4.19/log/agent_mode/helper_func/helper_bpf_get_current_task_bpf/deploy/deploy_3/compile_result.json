@@ -1,0 +1,35 @@
+{
+  "success": false,
+  "stage": "compile",
+  "source_file": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c",
+  "object_file": "/host/output/4.19/build/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.o",
+  "compile_mode": "non-core",
+  "vmlinux_header": null,
+  "vmlinux_generation": null,
+  "command": [
+    "clang",
+    "-O3",
+    "-g",
+    "-target",
+    "bpf",
+    "-I/usr/include/x86_64-linux-gnu",
+    "-c",
+    "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c",
+    "-o",
+    "/host/output/4.19/build/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.o"
+  ],
+  "stdout": "",
+  "stderr": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:9:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n                 ^\n/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:15:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n                 ^\n2 errors generated.\n",
+  "returncode": 1,
+  "timed_out": false,
+  "stdout_lines": [],
+  "stderr_lines": [
+    "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:9:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'",
+    "    __uint(type, BPF_MAP_TYPE_ARRAY);",
+    "                 ^",
+    "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:15:18: error: use of undeclared identifier 'BPF_MAP_TYPE_ARRAY'",
+    "    __uint(type, BPF_MAP_TYPE_ARRAY);",
+    "                 ^",
+    "2 errors generated."
+  ]
+}

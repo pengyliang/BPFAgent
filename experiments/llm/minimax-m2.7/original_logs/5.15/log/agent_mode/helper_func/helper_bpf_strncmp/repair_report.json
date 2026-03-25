@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-03-24T04:39:15.761541+00:00",
+  "case_display": "helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c",
+  "final_stage": "static_check_failed",
+  "same_error_threshold": 3,
+  "error_signature_counts": {
+    "static_check_failed": 2
+  },
+  "attempts": [
+    {
+      "attempt_index": 1,
+      "stage": "static_check_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+      "analysis_report": "BPF 程序在 static_check 阶段失败，错误为 'Helper bpf_strncmp is not present in bpftool helper whitelist'。bpf_strncmp 是 Linux 5.17+ 才引入的 BPF 辅助函数，目标内核版本低于 5.17，不支持此函数。错误发生在源文件 helper_bpf_strncmp.bpf.c 中，程序类型为 tracepoint (tracepoint/syscalls/sys_enter_openat)。由于 can_fix=true 且存在已知修复方案（使用手动循环替代），可以通过修改源码来解决兼容性问题。",
+      "repair_method": "修改代码，将 bpf_strncmp 替换为使用 #pragma unroll 展开的手动循环逐字节比较字符串。假设原调用为 bpf_strncmp(str, len, target)，则替换为：unsigned char *s = (unsigned char *)str; unsigned char *t = (unsigned char *)target; int i; unsigned char c1, c2; int result = 0; #pragma unroll for (i = 0; i < MAX_LEN; i++) { if (i >= len) break; bpf_probe_read(&c1, 1, s + i); bpf_probe_read(&c2, 1, t + i); if (c1 != c2) { result = c1 - c2; break; } if (c1 == 0) break; } 其中 MAX_LEN 为最大比较长度，len 为要比较的字节数，s 和 t 分别指向待比较字符串和目标字符串。完全移除对 bpf_strncmp 标识符的引用，以兼容旧版本内核。",
+      "rationale": "由于目标内核版本低于5.17，不支持bpf_strncmp辅助函数，因此必须用BPF兼容的旧API替代。使用bpf_probe_read逐字节读取，手动比较两个字符串，保持ret=0表示相等的语义，从而保留if(ret==0)的条件判断逻辑不变。"
+    },
+    {
+      "attempt_index": 2,
+      "stage": "static_check_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_2/helper_bpf_strncmp_repair_2.bpf.c",
+      "analysis_report": "BPF 程序在 static_check 阶段失败，错误为 'Helper bpf_strncmp is not present in bpftool helper whitelist'。bpf_strncmp 是 Linux 5.17+ 才引入的 BPF 辅助函数，目标内核版本低于 5.17，不支持此函数。错误发生在源文件 helper_bpf_strncmp.bpf.c 中，程序类型为 tracepoint (tracepoint/syscalls/sys_enter_openat)。由于 can_fix=true 且存在已知修复方案（使用手动循环替代），可以通过修改源码来解决兼容性问题。",
+      "repair_method": "修改代码，将 bpf_strncmp 替换为使用 #pragma unroll 展开的手动循环逐字节比较字符串。假设原调用为 bpf_strncmp(str, len, target)，则替换为：unsigned char *s = (unsigned char *)str; unsigned char *t = (unsigned char *)target; int i; unsigned char c1, c2; int result = 0; #pragma unroll for (i = 0; i < MAX_LEN; i++) { if (i >= len) break; bpf_probe_read(&c1, 1, s + i); bpf_probe_read(&c2, 1, t + i); if (c1 != c2) { result = c1 - c2; break; } if (c1 == 0) break; } 其中 MAX_LEN 为最大比较长度，len 为要比较的字节数，s 和 t 分别指向待比较字符串和目标字符串。完全移除对 bpf_strncmp 标识符的引用，以兼容旧版本内核。",
+      "rationale": "采用最小化修改策略：(1) 循环次数固定为 3 (字符串 'ok' 长度+1用于检测终止符)；(2) 用 bpf_probe_read_user 替代 bpf_probe_read 提高可移植性；(3) 精简代码结构，合并变量声明；(4) 完全移除 bpf_strncmp 函数调用，替换为手动逐字节比较并返回 result；(5) 保留关键 if(ret == 0) (*val)++ 判断逻辑不变。"
+    },
+    {
+      "attempt_index": 3,
+      "stage": "static_check_failed",
+      "error_type": "helper_api_compatibility",
+      "can_fix": true,
+      "source_before": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_2/helper_bpf_strncmp_repair_2.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_3/helper_bpf_strncmp_repair_3.bpf.c",
+      "analysis_report": "BPF 程序在 static_check 阶段失败，错误为 'Helper bpf_strncmp is not present in bpftool helper whitelist'。bpf_strncmp 是 Linux 5.17+ 才引入的 BPF 辅助函数，目标内核版本低于 5.17，不支持此函数。错误发生在源文件 helper_bpf_strncmp.bpf.c 中，程序类型为 tracepoint (tracepoint/syscalls/sys_enter_openat)。由于 can_fix=true 且存在已知修复方案（使用手动循环替代），可以通过修改源码来解决兼容性问题。",
+      "repair_method": "修改代码，将 bpf_strncmp 替换为使用 #pragma unroll 展开的手动循环逐字节比较字符串。假设原调用为 bpf_strncmp(str, len, target)，则替换为：unsigned char *s = (unsigned char *)str; unsigned char *t = (unsigned char *)target; int i; unsigned char c1, c2; int result = 0; #pragma unroll for (i = 0; i < MAX_LEN; i++) { if (i >= len) break; bpf_probe_read(&c1, 1, s + i); bpf_probe_read(&c2, 1, t + i); if (c1 != c2) { result = c1 - c2; break; } if (c1 == 0) break; } 其中 MAX_LEN 为最大比较长度，len 为要比较的字节数，s 和 t 分别指向待比较字符串和目标字符串。完全移除对 bpf_strncmp 标识符的引用，以兼容旧版本内核。",
+      "rationale": "采用最小化修改策略：(1) 保留原调用语句位置，仅替换函数体内容；(2) 使用 #define 内联替换避免引入额外代码块结构；(3) 完全移除 bpf_strncmp 标识符以通过静态检查；(4) 保持 if(ret == 0) (*val)++ 逻辑完整。"
+    },
+    {
+      "attempt_index": 4,
+      "stage": "static_check_failed",
+      "error_type": "helper_not_in_probe",
+      "can_fix": true,
+      "source_before": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_3/helper_bpf_strncmp_repair_3.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.15/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_4/helper_bpf_strncmp_repair_4.bpf.c",
+      "analysis_report": "阶段 `static_check_failed` 失败；识别到错误类型：helper_not_in_probe；建议优先做最小必要修复。",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "rationale": "完全移除 bpf_strncmp 调用，改用 #pragma unroll 展开的手动循环逐字节比较。保留 ret 变量声明和赋值结构，只修改赋值右边的表达式内容。保持字符串长度 3（'ok' + '\\0'），逐字节比较逻辑与 bpf_strncmp 语义一致（相等返回0）。"
+    }
+  ]
+}

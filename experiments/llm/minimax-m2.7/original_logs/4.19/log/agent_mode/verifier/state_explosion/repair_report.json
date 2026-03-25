@@ -1,0 +1,62 @@
+{
+  "generated_at": "2026-03-24T04:48:00.572476+00:00",
+  "case_display": "verifier/state_explosion/state_explosion.bpf.c",
+  "final_stage": "compile_failed",
+  "same_error_threshold": 3,
+  "error_signature_counts": {
+    "load_failed": 2,
+    "compile_failed:/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:82:5: error: Looks like the BPF stack limit of 512 byte": 1,
+    "compile_failed:/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:82:5: error: Looks like the BPF stack limit of 512 byte": 1,
+    "compile_failed:/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_4/state_explosion_repair_4.bpf.c:82:5: error: Looks like the BPF stack limit of 512 byte": 1
+  },
+  "attempts": [
+    {
+      "attempt_index": 1,
+      "stage": "load_failed",
+      "error_type": "state_explosion",
+      "can_fix": true,
+      "source_before": "/host/data/verifier/state_explosion/state_explosion.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+      "analysis_report": "程序 bpf_to_bpf_fault 在 tracepoint handler 内循环调用了 51 次 global_add_stress 函数。libbpf 加载日志明确显示：'added 73 insns from sub-prog global_add_stress'，说明 global_add_stress 被编译为独立的 BPF sub-program 而非内联展开。每次 BPF-to-BPF 调用都会触发验证器的状态切换开销，51 次重复调用导致验证路径指数级增长，最终触发内核验证器的 'Argument list too long' 错误。这是典型的 state_explosion 根因：循环中调用非内联子函数导致验证器状态爆炸。",
+      "repair_method": "修改代码，将 global_add_stress 函数的声明从 'static int global_add_stress(...)' 改为 'static __always_inline int global_add_stress(...)'，强制编译器在编译时将函数体内联到所有调用点，消除所有 BPF-to-BPF 调用指令，从而彻底消除验证器的状态爆炸问题。",
+      "rationale": "仅修改函数声明关键字，将 __noinline 替换为 __always_inline，函数签名、返回类型、参数类型及全部逻辑保持不变。此修改强制 clang 在编译时将 global_add_stress 函数体内联到所有调用点（循环内的 50 次调用），消除所有 BPF-to-BPF 调用指令，从而消除验证器的状态爆炸问题。保留 /* Crutial block */ 和 /* Crutial block end */ 注释，保留所有 bit 判断和 (*val) 修改逻辑。"
+    },
+    {
+      "attempt_index": 2,
+      "stage": "load_failed",
+      "error_type": "unbounded_loop",
+      "can_fix": true,
+      "source_before": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_1/state_explosion_repair_1.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c",
+      "analysis_report": "当前加载失败的根本原因是：BPF 验证器检测到程序中存在未界定的回边（back-edge from insn 44 to 48）。这是不同于第一轮的另一个问题。第一轮修复（将 `__noinline` 改为 `__always_inline`）已成功将 `global_add_stress` 函数内联到主程序中，不再产生 BPF-to-BPF 调用和独立 subprog，ELF 输出中已无 `.text` 段（subprog 的特征），主程序大小为 105 条指令（840 字节）。但内联展开后，循环体（调用 global_add_stress 的循环）被完整展开并保留下来，形成了一个验证器无法证明有界的控制流回边。libbpf 日志明确显示 `back-edge from insn 44 to 48`，即指令 44 处存在一条跳转到指令 48 的反向边，验证器因此拒绝加载。问题出在循环结构本身，而非子函数调用。修复思路：在该循环前添加 `#pragma unroll` 指令，强制编译器将循环完全展开为线性顺序代码，消除回边，从根本上消除验证器的有界性检查障碍。",
+      "repair_method": "修改代码，在循环调用 global_add_stress 的 `for` 循环声明之前添加 `#pragma unroll` 指令，将其改为 `#pragma unroll\\nfor (...)`，强制 clang 将该循环在编译时完全展开为线性顺序执行的指令序列，从而消除指令级别的回跳（back-edge）边，绕过 BPF 验证器的有界性检查。此修改不影响 global_add_stress 的任何业务逻辑（所有 bit 判断及 (*val) 增量累加均完整保留），仅改变循环的编译展开行为。",
+      "rationale": "在 `/* Crutial block */` 与 `for` 循环之间插入 `#pragma unroll` 指令，强制 clang 将循环在编译时完全展开为 50 次线性顺序的 global_add_stress 调用序列，消除指令级别的 back-edge（insn 44→48），使 BPF 验证器无需做有界性检查即可接受程序。global_add_stress 函数的全部 bit 判断和 (*val) 增量累加逻辑完整保留，`/* Crutial block */` 和 `/* Crutial block end */` 注释及目标程序过滤逻辑不变。"
+    },
+    {
+      "attempt_index": 3,
+      "stage": "compile_failed",
+      "error_type": "compile_error",
+      "can_fix": true,
+      "source_before": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c",
+      "analysis_report": "阶段 `compile_failed` 失败；识别到错误类型：compile_error；建议优先做最小必要修复。",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "rationale": "Replace the runtime variable `max_time` with the literal constant `50` in both the `#pragma unroll 50` directive and the `for` loop condition `i < 50`. This enables clang to recognize the loop as statically bounded and perform complete unrolling at compile time, eliminating the back-edge instruction that caused the verifier's unbounded-loop rejection in repair_2. The iteration count remains 50, `global_add_stress` is called 50 times with `x + i` (i=0..49), all bit-check logic and `(*val)` mutations are preserved, and `/* Crutial block */` / `/* Crutial block end */` comments are kept."
+    },
+    {
+      "attempt_index": 4,
+      "stage": "compile_failed",
+      "error_type": "compile_error",
+      "can_fix": true,
+      "source_before": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_4/state_explosion_repair_4.bpf.c",
+      "analysis_report": "阶段 `compile_failed` 失败；识别到错误类型：compile_error；建议优先做最小必要修复。",
+      "repair_method": "最小改动修复当前失败阶段，并避免改变原始语义。",
+      "rationale": "LLM 生成补丁（OpenAI-compatible chat.completions）。"
+    }
+  ]
+}

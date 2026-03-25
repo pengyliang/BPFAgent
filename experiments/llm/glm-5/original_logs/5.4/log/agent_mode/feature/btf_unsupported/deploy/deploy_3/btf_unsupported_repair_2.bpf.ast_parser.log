@@ -1,0 +1,5 @@
+status: SUCCESS
+source_file: /host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_2/btf_unsupported_repair_2.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_2 -I/usr/include/x86_64-linux-gnu -D__TARGET_ARCH_x86 -I/host/output/5.4/log /host/output/5.4/log/agent_mode/feature/btf_unsupported/repair/repair_2/btf_unsupported_repair_2.bpf.c
+stderr:
+<empty>

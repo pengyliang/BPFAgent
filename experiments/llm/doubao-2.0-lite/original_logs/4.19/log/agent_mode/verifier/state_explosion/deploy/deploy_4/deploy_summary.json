@@ -1,0 +1,34 @@
+{
+  "success": false,
+  "stage": "compile_failed",
+  "steps": {
+    "static_check": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null
+    },
+    "compile": {
+      "status": "failed",
+      "success": false,
+      "error_log": "/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:29: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n                            ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct trace_event_raw_sys_enter *ctx)\n    ^\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: note: could not determine the original source location for output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:0:0\n/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:68:5: error: Looks like the BPF stack limit of 512 bytes is exceeded. Please move large on stack variables into BPF per-cpu array map.\nint bpf_to_bpf_fault(struct tra\n...<truncated>"
+    },
+    "load": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "attach": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "runtime": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    }
+  }
+}

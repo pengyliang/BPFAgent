@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "stage": "load",
+  "via_libbpf_loader_daemon": true,
+  "command": [
+    "sudo",
+    "/host/src/ebpf/utils/loader",
+    "--obj",
+    "/host/output/5.15/build/kernel_struct/field_renamed/field_renamed.bpf.o",
+    "--pin-path",
+    "/sys/fs/bpf/ebpf_agent_field_renamed"
+  ],
+  "pid": 1555,
+  "ready_line": "READY pid=1556 maps_dir=/sys/fs/bpf/ebpf_agent_field_renamed_maps attached=1",
+  "maps_dir": "/sys/fs/bpf/ebpf_agent_field_renamed_maps",
+  "phase_details": {},
+  "error_message": "",
+  "stdout_lines": [],
+  "stderr_lines": []
+}

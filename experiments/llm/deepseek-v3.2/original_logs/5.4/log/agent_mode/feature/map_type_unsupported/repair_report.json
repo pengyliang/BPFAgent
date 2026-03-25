@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-03-23T16:16:24.383583+00:00",
+  "case_display": "feature/map_type_unsupported/map_type_unsupported.bpf.c",
+  "final_stage": "static_check_failed",
+  "same_error_threshold": 3,
+  "error_signature_counts": {
+    "static_check_failed": 1
+  },
+  "attempts": [
+    {
+      "attempt_index": 1,
+      "stage": "static_check_failed",
+      "error_type": "map_type_unsupported",
+      "can_fix": true,
+      "source_before": "/host/data/feature/map_type_unsupported/map_type_unsupported.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.4/log/agent_mode/feature/map_type_unsupported/repair/repair_1/map_type_unsupported_repair_1.bpf.c",
+      "analysis_report": "静态检查失败，根因是目标内核不支持 BPF_MAP_TYPE_RINGBUF 映射类型及其配套的 bpf_ringbuf_output helper 函数。根据知识库规则，map_type_unsupported 模式匹配此场景（aliases 包含 map_type_not_in_probe，stage_hints 包含 static_check_failed），且 can_fix 为 true。错误信息明确指出 BPF_MAP_TYPE_RINGBUF 不在支持列表中，且 bpf_ringbuf_output helper 也不在允许列表中。这是典型的新内核特性（ringbuf）在老内核上不兼容的问题，可以通过修改源码替换为兼容的映射类型和 helper 来解决。",
+      "repair_method": "修改代码：将不支持的映射类型 BPF_MAP_TYPE_RINGBUF 替换为兼容的映射类型 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并同步替换其配套的 helper 调用，将 bpf_ringbuf_output 替换为 bpf_perf_event_output。同时需要调整映射的定义、初始化和数据输出逻辑以适应新的映射类型。",
+      "rationale": "BPF_MAP_TYPE_PERF_EVENT_ARRAY 是广泛支持的映射类型，bpf_perf_event_output 也是老内核支持的 helper。将环形缓冲区替换为性能事件数组可以保持事件从内核态到用户态的传输能力。需要为 PERF_EVENT_ARRAY 映射定义 key 和 value 类型（通常为 int 和 u32），并调整 bpf_perf_event_output 的调用参数（需要传递 ctx、映射指针、标志位、数据指针和大小）。原始的条件判断和计数器递增逻辑完全保留，确保业务语义不变。"
+    },
+    {
+      "attempt_index": 2,
+      "stage": "static_check_failed",
+      "error_type": "map_type_unsupported",
+      "can_fix": true,
+      "source_before": "/host/output/5.4/log/agent_mode/feature/map_type_unsupported/repair/repair_1/map_type_unsupported_repair_1.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.4/log/agent_mode/feature/map_type_unsupported/repair/repair_2/map_type_unsupported_repair_2.bpf.c",
+      "analysis_report": "静态检查失败，根因是目标内核不支持 BPF_MAP_TYPE_RINGBUF 映射类型及其配套的 bpf_ringbuf_output helper 函数。根据知识库规则，map_type_unsupported 模式匹配此场景（aliases 包含 map_type_not_in_probe，stage_hints 包含 static_check_failed），且 can_fix 为 true。错误信息明确指出 BPF_MAP_TYPE_RINGBUF 不在支持列表中，且 bpf_ringbuf_output helper 也不在允许列表中。这是典型的新内核特性（ringbuf）在老内核上不兼容的问题，可以通过修改源码替换为兼容的映射类型和 helper 来解决。",
+      "repair_method": "修改代码：将不支持的映射类型 BPF_MAP_TYPE_RINGBUF 替换为兼容的映射类型 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并同步替换其配套的 helper 调用，将 bpf_ringbuf_output 替换为 bpf_perf_event_output。同时需要调整映射的定义、初始化和数据输出逻辑以适应新的映射类型。",
+      "rationale": "将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERCPU_ARRAY，将 bpf_ringbuf_output 替换为 bpf_map_update_elem。PERCPU_ARRAY 是广泛支持的映射类型，bpf_map_update_elem 也是老内核支持的 helper。修改后的事件映射将使用 PERCPU_ARRAY 来存储事件数据，通过 bpf_map_update_elem 写入，然后通过用户态程序读取。这保持了事件数据从内核态到用户态的传输能力，同时解决了兼容性问题。原始的条件判断、计数器递增和时间戳记录等核心业务逻辑完全保留。"
+    },
+    {
+      "attempt_index": 3,
+      "stage": "static_check_failed",
+      "error_type": "map_type_unsupported",
+      "can_fix": true,
+      "source_before": "/host/output/5.4/log/agent_mode/feature/map_type_unsupported/repair/repair_2/map_type_unsupported_repair_2.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.4/log/agent_mode/feature/map_type_unsupported/repair/repair_3/map_type_unsupported_repair_3.bpf.c",
+      "analysis_report": "静态检查失败，根因是目标内核不支持 BPF_MAP_TYPE_RINGBUF 映射类型及其配套的 bpf_ringbuf_output helper 函数。根据知识库规则，map_type_unsupported 模式匹配此场景（aliases 包含 map_type_not_in_probe，stage_hints 包含 static_check_failed），且 can_fix 为 true。错误信息明确指出 BPF_MAP_TYPE_RINGBUF 不在支持列表中，且 bpf_ringbuf_output helper 也不在允许列表中。这是典型的新内核特性（ringbuf）在老内核上不兼容的问题，可以通过修改源码替换为兼容的映射类型和 helper 来解决。",
+      "repair_method": "修改代码：将不支持的映射类型 BPF_MAP_TYPE_RINGBUF 替换为兼容的映射类型 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并同步替换其配套的 helper 调用，将 bpf_ringbuf_output 替换为 bpf_perf_event_output。同时需要调整映射的定义、初始化和数据输出逻辑以适应新的映射类型。",
+      "rationale": "Inspector 明确指出必须严格按照 Analyzer 的建议进行修复。Analyzer 建议的修复方案是：将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERF_EVENT_ARRAY，将 bpf_ringbuf_output 替换为 bpf_perf_event_output。PERF_EVENT_ARRAY 是广泛支持的映射类型，bpf_perf_event_output 也是老内核支持的 helper。这种替换可以保持事件数据从内核态到用户态的传输能力，同时解决内核不支持 RINGBUF 的问题。需要确保 PERF_EVENT_ARRAY 映射的定义符合规范（key 类型为 int，value 类型为 __u32），并正确调用 bpf_perf_event_output（传递 ctx、映射指针、BPF_F_CURRENT_CPU 标志、事件数据指针和大小）。原始的业务逻辑（包括事件结构体、时间戳记录、target_tgid 条件判断、计数器递增）将完全保留，确保语义一致性。"
+    },
+    {
+      "attempt_index": 4,
+      "stage": "static_check_failed",
+      "error_type": "map_type_unsupported",
+      "can_fix": true,
+      "source_before": "/host/output/5.4/log/agent_mode/feature/map_type_unsupported/repair/repair_3/map_type_unsupported_repair_3.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.4/log/agent_mode/feature/map_type_unsupported/repair/repair_4/map_type_unsupported_repair_4.bpf.c",
+      "analysis_report": "静态检查失败，根因是目标内核不支持 BPF_MAP_TYPE_RINGBUF 映射类型及其配套的 bpf_ringbuf_output helper 函数。根据知识库规则，map_type_unsupported 模式匹配此场景（aliases 包含 map_type_not_in_probe，stage_hints 包含 static_check_failed），且 can_fix 为 true。错误信息明确指出 BPF_MAP_TYPE_RINGBUF 不在支持列表中，且 bpf_ringbuf_output helper 也不在允许列表中。这是典型的新内核特性（ringbuf）在老内核上不兼容的问题，可以通过修改源码替换为兼容的映射类型和 helper 来解决。",
+      "repair_method": "修改代码：将不支持的映射类型 BPF_MAP_TYPE_RINGBUF 替换为兼容的映射类型 BPF_MAP_TYPE_PERF_EVENT_ARRAY，并同步替换其配套的 helper 调用，将 bpf_ringbuf_output 替换为 bpf_perf_event_output。同时需要调整映射的定义、初始化和数据输出逻辑以适应新的映射类型。",
+      "rationale": "将 BPF_MAP_TYPE_RINGBUF 替换为 BPF_MAP_TYPE_PERCPU_ARRAY，将 bpf_ringbuf_output 替换为 bpf_map_update_elem。PERCPU_ARRAY 是广泛支持的映射类型，bpf_map_update_elem 也是老内核支持的 helper。修改后的事件映射将使用 PERCPU_ARRAY 来存储事件数据，通过 bpf_map_update_elem 写入，然后通过用户态程序读取。这保持了事件数据从内核态到用户态的传输能力，同时避免了不支持的映射类型和 helper。原始的条件判断和计数器递增逻辑保持不变。"
+    }
+  ]
+}

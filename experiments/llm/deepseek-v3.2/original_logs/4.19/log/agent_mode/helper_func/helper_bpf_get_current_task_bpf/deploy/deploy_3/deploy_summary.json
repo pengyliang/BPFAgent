@@ -1,0 +1,34 @@
+{
+  "success": false,
+  "stage": "compile_failed",
+  "steps": {
+    "static_check": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null
+    },
+    "compile": {
+      "status": "failed",
+      "success": false,
+      "error_log": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:18:26: warning: declaration of 'struct trace_event_raw_sys_enter' will not be visible outside of this function [-Wvisibility]\nint helper_absent(struct trace_event_raw_sys_enter *ctx)\n                         ^\n/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:37:56: error: incomplete definition of type 'struct task_struct'\n    bpf_probe_read(&task_tgid, sizeof(task_tgid), &task->tgid);\n                                                   ~~~~^\n/usr/include/bpf/bpf_helper_defs.h:31:8: note: forward declaration of 'struct task_struct'\nstruct task_struct;\n       ^\n1 warning and 1 error generated."
+    },
+    "load": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "attach": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "runtime": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    }
+  }
+}

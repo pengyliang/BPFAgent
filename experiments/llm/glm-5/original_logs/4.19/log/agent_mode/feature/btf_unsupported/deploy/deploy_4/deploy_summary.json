@@ -1,0 +1,34 @@
+{
+  "success": false,
+  "stage": "compile_failed",
+  "steps": {
+    "static_check": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null
+    },
+    "compile": {
+      "status": "failed",
+      "success": false,
+      "error_log": "In file included from /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c:3:\nIn file included from /usr/include/bpf/bpf_helpers.h:11:\n/usr/include/bpf/bpf_helper_defs.h:444:57: error: unknown type name '__be16'\nstatic long (*bpf_skb_vlan_push)(struct __sk_buff *skb, __be16 vlan_proto, __u16 vlan_tci) = (void *) 18;\n                                                        ^\n/usr/include/bpf/bpf_helper_defs.h:444:76: error: unknown type name '__u16'\nstatic long (*bpf_skb_vlan_push)(struct __sk_buff *skb, __be16 vlan_proto, __u16 vlan_tci) = (void *) 18;\n                                                                           ^\n/usr/include/bpf/bpf_helper_defs.h:794:31: error: unknown type name '__be32'; did you mean '__u32'?\nstatic __s64 (*bpf_csum_diff)(__be32 *from, __u32 from_size, __be32 *to, __u32 to_size, __wsum seed) = (void *) 28;\n                              ^\n/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c:1:22: note: '__u32' declared here\ntypedef unsigned int __u32;\n                     ^\nIn file included from /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c:3:\nIn file included from /usr/include/bpf/bpf_helpers.h:11:\n/usr/include/bpf/bpf_helper_defs.h:794:62: error: unknown type name '__be32'; did you mean '__u32'?\nstatic __s64 (*bpf_csum_diff)(__be32 *from, __u32 from_size, __be32 *to, __u32 to_size, __wsum seed) = (void *) 28;\n                                                             ^\n/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c:1:22: note: '__u32' declared here\ntypedef unsigned int __u32;\n                     ^\nIn file included from /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c:3:\nIn file included from /usr/include/bpf/bpf_helpers.h:11:\n/usr/include/bpf/bpf_helper_defs.h:794:89: error: unknown type name '__wsum'\nstatic __s64 (*bpf_csum_diff)(__be32 *from, __u32 from_size, __be32 *to, __u32 to_size, __wsum seed) = (void *) 28;\n                                                                                        ^\n/usr/include/bpf/bpf_helper_defs.h:794:14: error: function cannot return function type 'int (__u32 *, __u32, __u32 *, __u32, int)' (aka 'int (unsigned int *, unsigned int, unsigned int *, unsigned int, int)')\nstatic __s64 (*bpf_csum_diff)(__be32 *from, __u32 from_size, __be32 *to, __u32 to_size, __wsum seed) = (void *) 28;\n             ^\n/usr/include/bpf/bpf_helper_defs.h:861:60: error: unknown type name '__be16'\nstatic long (*bpf_skb_change_proto)(struct __sk_buff *skb, __be16 proto, __u64 flags) = (void *) 31;\n                                                           ^\n/usr/include/bpf/bpf_helper_defs.h:1061:56: error: unknown type name '__wsum'\nstatic __s64 (*bpf_csum_update)(struct __sk_buff *skb, __wsum csum) = (void *) 40;\n                                                       ^\n/usr/include/bpf/bpf_helper_defs.h:1061:14: error: function cannot return function type 'int (struct __sk_buff *, int)'\nstatic __s64 (*bpf_csum_update)(struct __sk_buff *skb, __wsum csum) = (void *) 40;\n             ^\n/usr/include/bpf/bpf_helper_defs.h:1289:59: error: unknown type name '__s32'; did you mean '__u32'?\nstatic long (*bpf_skb_adjust_room)(struct __sk_buff *skb, __s32 len_diff, __u32 mode, __u64 flags) = (void *) 50;\n                                                          ^\n/host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c:1:22: note: '__u32' declared here\ntypedef unsigned int __u32;\n                     ^\nIn file included from /host/output/4.19/log/agent_mode/feature/btf_unsupported/repair/repair_3/btf_unsupported_repair_3.bpf.c:3:\nIn file included from /usr/include/bpf/bpf_helpers.h:11:\n/usr/include/bpf/bpf_helper_defs.h:1985:77: error: unknown type name '__s32'; did you mean\n...<truncated>"
+    },
+    "load": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "attach": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    },
+    "runtime": {
+      "status": "unknown",
+      "success": null,
+      "error_log": null,
+      "reason": "compile_failed"
+    }
+  }
+}

@@ -1,0 +1,315 @@
+{
+  "generated_at": "2026-03-23T15:58:30.068142+00:00",
+  "node": "Analyzer",
+  "node_index": 2,
+  "from_node": "deploy_tool",
+  "inputs": {
+    "source_file": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+    "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counter SEC(\".maps\");\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u32); /* target tgid */\n} cfg SEC(\".maps\");\nconst char expected_str[] = \"ok\";\nstatic __always_inline long my_strncmp(const char *s1, __u32 n, const char *s2)\n{\n    char buf1[64];\n    char buf2[64];\n    long res = 0;\n    __u32 i;\n    \n    if (bpf_probe_read(buf1, sizeof(buf1), s1) < 0)\n        return -1;\n    if (bpf_probe_read(buf2, sizeof(buf2), s2) < 0)\n        return -1;\n    \n    for (i = 0; i < n; i++) {\n        if (buf1[i] == '\\0' || buf2[i] == '\\0')\n            break;\n        if (buf1[i] != buf2[i]) {\n            res = (long)buf1[i] - (long)buf2[i];\n            break;\n        }\n    }\n    \n    return res;\n}\nSEC(\"tracepoint/syscalls/sys_enter_openat\")\nint helper_arg_decrease(struct trace_event_raw_sys_enter *ctx)\n{\n    __u32 key = 0;\n    __u64 *val = bpf_map_lookup_elem(&counter, &key);\n    __u32 *target_tgid = bpf_map_lookup_elem(&cfg, &key);\n    const char s1[] = \"ok\";\n    long ret;\n    if (!val)\n        return 0;\n    if (target_tgid && *target_tgid) {\n        __u32 tgid = (__u32)(bpf_get_current_pid_tgid() >> 32);\n        if (tgid != *target_tgid)\n            return 0;\n    }\n    /* Crutial block */\n    ret = my_strncmp(s1, sizeof(s1), expected_str);\n    /* Crutial block end */\n    if (ret == 0)\n        (*val)++;\n    return 0;\n}\nchar LICENSE[] SEC(\"license\") = \"GPL\";\n",
+    "failed_stage": "load_failed",
+    "failed_stage_result_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/deploy/deploy_2/load_result.json",
+    "failed_stage_result": {
+      "success": false,
+      "stage": "load",
+      "via_libbpf_loader_daemon": true,
+      "command": [
+        "sudo",
+        "/host/src/ebpf/utils/loader",
+        "--obj",
+        "/host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o",
+        "--pin-path",
+        "/sys/fs/bpf/ebpf_agent_helper_bpf_strncmp"
+      ],
+      "pid": 5099,
+      "ready_line": null,
+      "stdout": "",
+      "stderr": "libbpf: loading object from /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 496, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_decrease' at insn offset 0 (0 bytes), code size 62 insns (496 bytes)\nlibbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 48, link 28, flags 40, type=9\nlibbpf: elf: section(5) .rodata, size 3, link 0, flags 2, type=1\nlibbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1\nlibbpf: elf: section(7) license, size 4, link 0, flags 3, type=1\nlibbpf: license of /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o is GPL\nlibbpf: elf: section(18) .BTF, size 1562, link 0, flags 0, type=1\nlibbpf: elf: section(20) .BTF.ext, size 624, link 0, flags 0, type=1\nlibbpf: elf: section(28) .symtab, size 528, link 1, flags 0, type=2\nlibbpf: looking for externs among 22 symbols...\nlibbpf: collected 0 externs total\nlibbpf: map 'counter': at sec_idx 6, offset 0.\nlibbpf: map 'counter': found type = 2.\nlibbpf: map 'counter': found key [8], sz = 4.\nlibbpf: map 'counter': found value [11], sz = 8.\nlibbpf: map 'counter': found max_entries = 1.\nlibbpf: map 'cfg': at sec_idx 6, offset 32.\nlibbpf: map 'cfg': found type = 2.\nlibbpf: map 'cfg': found key [8], sz = 4.\nlibbpf: map 'cfg': found value [8], sz = 4.\nlibbpf: map 'cfg': found max_entries = 1.\nlibbpf: map 'helper_b.rodata' (global data): at sec_idx 5, offset 0, flags 480.\nlibbpf: map 2 is \"helper_b.rodata\"\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': collecting relocation for section(3) 'tracepoint/syscalls/sys_enter_openat'\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'\nlibbpf: prog 'helper_arg_decrease': found map 0 (counter, sec 6, off 0) for insn #4\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'\nlibbpf: prog 'helper_arg_decrease': found map 1 (cfg, sec 6, off 32) for insn #9\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #2: insn #36 against 'expected_str'\nlibbpf: prog 'helper_arg_decrease': found data map 2 (helper_b.rodata, sec 5, off 0) for insn 36\nlibbpf: map 'counter': created successfully, fd=4\nlibbpf: map 'cfg': created successfully, fd=5\nlibbpf: map 'helper_b.rodata': skipped auto-creating...\nlibbpf: prog 'helper_arg_decrease': relo #2: poisoning insn #36 that loads map #2 'helper_b.rodata'\nlibbpf: prog 'helper_arg_decrease': BPF program load failed: Invalid argument\nlibbpf: prog 'helper_arg_decrease': -- BEGIN PROG LOAD LOG --\n0: (b7) r8 = 0\n1: (63) *(u32 *)(r10 -132) = r8\n2: (bf) r7 = r10\n3: (07) r7 += -132\n4: (18) r1 = 0xffff888110ba1200\n6: (bf) r2 = r7\n7: (85) call bpf_map_lookup_elem#1\n8: (bf) r6 = r0\n9: (18) r1 = 0xffff888110ba1600\n11: (bf) r2 = r7\n12: (85) call bpf_map_lookup_elem#1\n13: (bf) r7 = r0\n14: (73) *(u8 *)(r10 -134) = r8\n15: (b7) r1 = 27503\n16: (6b) *(u16 *)(r10 -136) = r1\n17: (15) if r6 == 0x0 goto pc+31\n R0=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R1=inv27503 R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R8=inv0 R10=fp0,call_-1\n18: (15) if r7 == 0x0 goto pc+6\n R0=map_value(id=0,off=0,ks=4,vs=4,imm=0) R1=inv27503 R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7=map_value(id=0,off=0,ks=4,vs=4,imm=0) R8=inv0 R10=fp0,call_-1\n19: (61) r1 = *(u32 *)(r7 +0)\n R0=map_value(id=0,off=0,ks=4,vs=4,imm=0) R1_w=inv27503 R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7=map_value(id=0,off=0,ks=4,vs=4,imm=0) R8=inv0 R10=fp0,call_-1libbpf: prog 'helper_arg_decrease': failed to load: -22\nlibbpf: failed to load object '/host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o'\nload failed: -22\n",
+      "returncode": 10,
+      "error_message": "load failed: -22",
+      "load_success": false,
+      "attach_success": false,
+      "phase_details": {
+        "load": {
+          "phase": "load",
+          "ok": false,
+          "stdout": "",
+          "stderr": "libbpf: loading object from /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o\nlibbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 496, link 0, flags 6, type=1\nlibbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_decrease' at insn offset 0 (0 bytes), code size 62 insns (496 bytes)\nlibbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 48, link 28, flags 40, type=9\nlibbpf: elf: section(5) .rodata, size 3, link 0, flags 2, type=1\nlibbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1\nlibbpf: elf: section(7) license, size 4, link 0, flags 3, type=1\nlibbpf: license of /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o is GPL\nlibbpf: elf: section(18) .BTF, size 1562, link 0, flags 0, type=1\nlibbpf: elf: section(20) .BTF.ext, size 624, link 0, flags 0, type=1\nlibbpf: elf: section(28) .symtab, size 528, link 1, flags 0, type=2\nlibbpf: looking for externs among 22 symbols...\nlibbpf: collected 0 externs total\nlibbpf: map 'counter': at sec_idx 6, offset 0.\nlibbpf: map 'counter': found type = 2.\nlibbpf: map 'counter': found key [8], sz = 4.\nlibbpf: map 'counter': found value [11], sz = 8.\nlibbpf: map 'counter': found max_entries = 1.\nlibbpf: map 'cfg': at sec_idx 6, offset 32.\nlibbpf: map 'cfg': found type = 2.\nlibbpf: map 'cfg': found key [8], sz = 4.\nlibbpf: map 'cfg': found value [8], sz = 4.\nlibbpf: map 'cfg': found max_entries = 1.\nlibbpf: map 'helper_b.rodata' (global data): at sec_idx 5, offset 0, flags 480.\nlibbpf: map 2 is \"helper_b.rodata\"\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': collecting relocation for section(3) 'tracepoint/syscalls/sys_enter_openat'\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'\nlibbpf: prog 'helper_arg_decrease': found map 0 (counter, sec 6, off 0) for insn #4\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'\nlibbpf: prog 'helper_arg_decrease': found map 1 (cfg, sec 6, off 32) for insn #9\nlibbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #2: insn #36 against 'expected_str'\nlibbpf: prog 'helper_arg_decrease': found data map 2 (helper_b.rodata, sec 5, off 0) for insn 36\nlibbpf: map 'counter': created successfully, fd=4\nlibbpf: map 'cfg': created successfully, fd=5\nlibbpf: map 'helper_b.rodata': skipped auto-creating...\nlibbpf: prog 'helper_arg_decrease': relo #2: poisoning insn #36 that loads map #2 'helper_b.rodata'\nlibbpf: prog 'helper_arg_decrease': BPF program load failed: Invalid argument\nlibbpf: prog 'helper_arg_decrease': -- BEGIN PROG LOAD LOG --\n0: (b7) r8 = 0\n1: (63) *(u32 *)(r10 -132) = r8\n2: (bf) r7 = r10\n3: (07) r7 += -132\n4: (18) r1 = 0xffff888110ba1200\n6: (bf) r2 = r7\n7: (85) call bpf_map_lookup_elem#1\n8: (bf) r6 = r0\n9: (18) r1 = 0xffff888110ba1600\n11: (bf) r2 = r7\n12: (85) call bpf_map_lookup_elem#1\n13: (bf) r7 = r0\n14: (73) *(u8 *)(r10 -134) = r8\n15: (b7) r1 = 27503\n16: (6b) *(u16 *)(r10 -136) = r1\n17: (15) if r6 == 0x0 goto pc+31\n R0=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R1=inv27503 R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R8=inv0 R10=fp0,call_-1\n18: (15) if r7 == 0x0 goto pc+6\n R0=map_value(id=0,off=0,ks=4,vs=4,imm=0) R1=inv27503 R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7=map_value(id=0,off=0,ks=4,vs=4,imm=0) R8=inv0 R10=fp0,call_-1\n19: (61) r1 = *(u32 *)(r7 +0)\n R0=map_value(id=0,off=0,ks=4,vs=4,imm=0) R1_w=inv27503 R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7=map_value(id=0,off=0,ks=4,vs=4,imm=0) R8=inv0 R10=fp0,call_-1libbpf: prog 'helper_arg_decrease': failed to load: -22\nlibbpf: failed to load object '/host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o'\nload failed: -22\n",
+          "error_message": "load failed: -22"
+        }
+      },
+      "stdout_lines": [],
+      "stderr_lines": [
+        "libbpf: loading object from /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o",
+        "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 496, link 0, flags 6, type=1",
+        "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_decrease' at insn offset 0 (0 bytes), code size 62 insns (496 bytes)",
+        "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 48, link 28, flags 40, type=9",
+        "libbpf: elf: section(5) .rodata, size 3, link 0, flags 2, type=1",
+        "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+        "libbpf: elf: section(7) license, size 4, link 0, flags 3, type=1",
+        "libbpf: license of /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o is GPL",
+        "libbpf: elf: section(18) .BTF, size 1562, link 0, flags 0, type=1",
+        "libbpf: elf: section(20) .BTF.ext, size 624, link 0, flags 0, type=1",
+        "libbpf: elf: section(28) .symtab, size 528, link 1, flags 0, type=2",
+        "libbpf: looking for externs among 22 symbols...",
+        "libbpf: collected 0 externs total",
+        "libbpf: map 'counter': at sec_idx 6, offset 0.",
+        "libbpf: map 'counter': found type = 2.",
+        "libbpf: map 'counter': found key [8], sz = 4.",
+        "libbpf: map 'counter': found value [11], sz = 8.",
+        "libbpf: map 'counter': found max_entries = 1.",
+        "libbpf: map 'cfg': at sec_idx 6, offset 32.",
+        "libbpf: map 'cfg': found type = 2.",
+        "libbpf: map 'cfg': found key [8], sz = 4.",
+        "libbpf: map 'cfg': found value [8], sz = 4.",
+        "libbpf: map 'cfg': found max_entries = 1.",
+        "libbpf: map 'helper_b.rodata' (global data): at sec_idx 5, offset 0, flags 480.",
+        "libbpf: map 2 is \"helper_b.rodata\"",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': collecting relocation for section(3) 'tracepoint/syscalls/sys_enter_openat'",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'",
+        "libbpf: prog 'helper_arg_decrease': found map 0 (counter, sec 6, off 0) for insn #4",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'",
+        "libbpf: prog 'helper_arg_decrease': found map 1 (cfg, sec 6, off 32) for insn #9",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #2: insn #36 against 'expected_str'",
+        "libbpf: prog 'helper_arg_decrease': found data map 2 (helper_b.rodata, sec 5, off 0) for insn 36",
+        "libbpf: map 'counter': created successfully, fd=4",
+        "libbpf: map 'cfg': created successfully, fd=5",
+        "libbpf: map 'helper_b.rodata': skipped auto-creating...",
+        "libbpf: prog 'helper_arg_decrease': relo #2: poisoning insn #36 that loads map #2 'helper_b.rodata'",
+        "libbpf: prog 'helper_arg_decrease': BPF program load failed: Invalid argument",
+        "libbpf: prog 'helper_arg_decrease': -- BEGIN PROG LOAD LOG --",
+        "0: (b7) r8 = 0",
+        "1: (63) *(u32 *)(r10 -132) = r8",
+        "2: (bf) r7 = r10",
+        "3: (07) r7 += -132",
+        "4: (18) r1 = 0xffff888110ba1200",
+        "6: (bf) r2 = r7",
+        "7: (85) call bpf_map_lookup_elem#1",
+        "8: (bf) r6 = r0",
+        "9: (18) r1 = 0xffff888110ba1600",
+        "11: (bf) r2 = r7",
+        "12: (85) call bpf_map_lookup_elem#1",
+        "13: (bf) r7 = r0",
+        "14: (73) *(u8 *)(r10 -134) = r8",
+        "15: (b7) r1 = 27503",
+        "16: (6b) *(u16 *)(r10 -136) = r1",
+        "17: (15) if r6 == 0x0 goto pc+31",
+        " R0=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R1=inv27503 R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7=map_value_or_null(id=2,off=0,ks=4,vs=4,imm=0) R8=inv0 R10=fp0,call_-1",
+        "18: (15) if r7 == 0x0 goto pc+6",
+        " R0=map_value(id=0,off=0,ks=4,vs=4,imm=0) R1=inv27503 R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7=map_value(id=0,off=0,ks=4,vs=4,imm=0) R8=inv0 R10=fp0,call_-1",
+        "19: (61) r1 = *(u32 *)(r7 +0)",
+        " R0=map_value(id=0,off=0,ks=4,vs=4,imm=0) R1_w=inv27503 R6=map_value(id=0,off=0,ks=4,vs=8,imm=0) R7=map_value(id=0,off=0,ks=4,vs=4,imm=0) R8=inv0 R10=fp0,call_-1libbpf: prog 'helper_arg_decrease': failed to load: -22",
+        "libbpf: failed to load object '/host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o'",
+        "load failed: -22"
+      ]
+    },
+    "deploy_summary_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/deploy/deploy_2/deploy_summary.json",
+    "deploy_summary": {
+      "success": false,
+      "stage": "load_failed",
+      "steps": {
+        "static_check": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null
+        },
+        "compile": {
+          "status": "success",
+          "success": true,
+          "error_log": null
+        },
+        "load": {
+          "status": "failed",
+          "success": false,
+          "error_log": "load failed: -22"
+        },
+        "attach": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "load_failed"
+        },
+        "runtime": {
+          "status": "unknown",
+          "success": null,
+          "error_log": null,
+          "reason": "load_or_attach_failed"
+        }
+      }
+    },
+    "shared_history": [
+      {
+        "ts": "2026-03-23T15:57:36.378125+00:00",
+        "node": "Analyzer",
+        "node_index": 1,
+        "from_node": "deploy_tool",
+        "summary": "分析阶段 static_check_failed，can_fix=True，建议=修改代码：将不支持的字符串比较 helper `bpf_strncmp` 替换为手动实现：使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。将自定义的兼容实现函数重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免被静态检查器误识别为内核 helper。",
+        "inputs": {
+          "failed_stage": "static_check_failed",
+          "failed_stage_result": {
+            "success": false,
+            "error_warning_count": {
+              "error": "1",
+              "warning": ""
+            },
+            "issues": [
+              "{\"check\": \"helper_availability\", \"level\": \"error\", \"code\": \"helper_not_in_probe\", \"message\": \"Helper bpf_strncmp is not present in bpftool helper whitelist.\", \"suggestion\": \"Replace helper with compatible one or deploy to a kernel supportin...(truncated)"
+            ],
+            "results": [
+              "{\"source_file\": \"/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c\", \"program_sections\": [\"tracepoint/syscalls/sys_enter_openat\"], \"program_types\": [\"tracepoint\"], \"license\": \"GPL\", \"map_types\": [\"BPF_MAP_TYPE_ARRAY\"], \"hel...(truncated)"
+            ],
+            "summary": {
+              "error_count": "1",
+              "warning_count": ""
+            }
+          },
+          "deploy_summary": {
+            "success": false,
+            "stage": "static_check_failed",
+            "steps": {
+              "static_check": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null}",
+              "compile": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "load": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "attach": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}",
+              "runtime": "{\"status\": \"unknown\", \"success\": null, \"error_log\": null, \"reason\": \"static_check_failed\"}"
+            }
+          }
+        },
+        "outputs": {
+          "can_fix": true,
+          "analysis_report": "静态检查失败，错误代码为 'helper_not_in_probe'，具体信息为 'Helper bpf_strncmp is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 `bpf_strncmp` 这个 helper 函数。根据知识库规则，'helper_unsupported' 模式匹配此错误（其别名包含 'helper_not_in_probe'），且该模式在 'static_check_failed' ...(truncated)",
+          "repair_action": {
+            "error_type": "helper_unsupported",
+            "repair_method": "修改代码：将不支持的字符串比较 helper `bpf_strncmp` 替换为手动实现：使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。将自定义的兼容实现函数重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免被静态检查器误识别为内核 helper。",
+            "key_lines": [
+              "Helper bpf_strncmp is not present in bpftool helper whitelist."
+            ]
+          }
+        },
+        "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"helper_unsupported\",\n  \"analysis_report\": \"静态检查失败，错误代码为 'helper_not_in_probe'，具体信息为 'Helper bpf_strncmp is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 `bpf_strncmp` 这个 helper 函数。根据知识库规则，'helper_unsupported' 模式匹配此错误（其别名包含 'helper_not_in_probe'），且该模式在 'static_check...(truncated)"
+      },
+      {
+        "ts": "2026-03-23T15:58:06.360335+00:00",
+        "node": "Repairer",
+        "node_index": 1,
+        "from_node": "Analyzer",
+        "summary": "生成修复补丁，patched=True，next=2",
+        "inputs": {
+          "previous_node": "Analyzer",
+          "repair_context": {
+            "source_file": "/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c",
+            "source_code": "#include <linux/types.h>\n#include <linux/bpf.h>\n#include <bpf/bpf_helpers.h>\n#include <bpf/bpf_tracing.h>\n\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} counte...(truncated)",
+            "analysis_report": "静态检查失败，错误代码为 'helper_not_in_probe'，具体信息为 'Helper bpf_strncmp is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 `bpf_strncmp` 这个 helper 函数。根据知识库规则，'helper_unsupported' 模式匹配此错误（其别名包含 'helper_not_in_probe'），且该模式在 'static_check_failed' ...(truncated)",
+            "repair_action": {
+              "error_type": "helper_unsupported",
+              "repair_method": "修改代码：将不支持的字符串比较 helper `bpf_strncmp` 替换为手动实现：使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。将自定义的兼容实现函数重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免被静态检查器误识别为内核 helper。",
+              "key_lines": "[\"Helper bpf_strncmp is not present in bpftool helper whitelist.\"]"
+            },
+            "error_signal": {
+              "stage": "static_check_failed",
+              "error_types": "[\"helper_not_in_probe\"]",
+              "key_lines": "[\"Helper bpf_strncmp is not present in bpftool helper whitelist.\"]"
+            }
+          }
+        },
+        "outputs": {
+          "patched": true,
+          "patched_path": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+          "code_change_summary": "新增 24 行，删除 9 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } count...(truncated)",
+          "patched_code_file": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+          "rationale": "1. 添加一个自定义的 my_strncmp 函数，使用 bpf_probe_read 将字符串读入栈缓冲区，然后通过循环逐字节比较，遇到空字符时停止，返回比较结果。\n2. 将原有的 bpf_strncmp 调用替换为 my_strncmp 调用。\n3. 保持原有的条件判断逻辑不变，特别是 (*val)++ 的执行条件。\n4. 这是最小必要修改，只替换不支持的 helper，不改变原始业务语义。"
+        },
+        "thought_process": "```json\n{\n  \"thought\": \"依据 Analyzer 的分析报告，静态检查失败是因为目标内核不支持 bpf_strncmp helper。根据 repair_action 的指导，需要将 bpf_strncmp 替换为手动实现的字符串比较函数，并重命名为不以 bpf_ 开头的名称。原始代码中 bpf_strncmp 用于比较 s1 和 expected_str 两个字符串，如果相等则增加计数器。需要实现一个兼容的字符串比较函数来替代它，同时保持原有的业务逻辑不变。\",\n  \"rationale\": \"1. 添加一个自定义的 my_strncmp 函数，使用 bpf_probe_read 将字符串读入栈缓冲区，然后通...(truncated)"
+      },
+      {
+        "ts": "2026-03-23T15:58:13.133753+00:00",
+        "node": "Inspector",
+        "node_index": 1,
+        "from_node": "Repairer",
+        "summary": "检查补丁语义，equivalent=True，结论=修改符合 Analyzer 的修复建议。1. 将不支持的 `bpf_strncmp` helper 替换为自定义的 `my_strncmp` 函数，该函数使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回比较结果。2. 函数重命名为不以 `bpf_` 开头的名称，避免了静态检查器误识别。3. 关键的业务逻辑（`ret == 0` 时 `(*val)++`）完全保留，没有改变原始语义。4. 修改仅限于替换不支持的 helper，没有引入其他无关变更。",
+        "inputs": {
+          "source_before": "/host/data/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.c",
+          "source_after": "/host/output/4.19/log/agent_mode/helper_func/helper_bpf_strncmp/repair/repair_1/helper_bpf_strncmp_repair_1.bpf.c",
+          "analyzer_context": {
+            "analysis_report": "静态检查失败，错误代码为 'helper_not_in_probe'，具体信息为 'Helper bpf_strncmp is not present in bpftool helper whitelist.'。这表明目标部署内核不支持 `bpf_strncmp` 这个 helper 函数。根据知识库规则，'helper_unsupported' 模式匹配此错误（其别名包含 'helper_not_in_probe'），且该模式在 'static_check_failed' ...(truncated)",
+            "repair_action": {
+              "error_type": "helper_unsupported",
+              "repair_method": "修改代码：将不支持的字符串比较 helper `bpf_strncmp` 替换为手动实现：使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。将自定义的兼容实现函数重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免被静态检查器误识别为内核 helper。",
+              "key_lines": "[\"Helper bpf_strncmp is not present in bpftool helper whitelist.\"]"
+            }
+          },
+          "code_change_summary": "新增 24 行，删除 9 行。\n #include <linux/bpf.h>\n #include <bpf/bpf_helpers.h>\n #include <bpf/bpf_tracing.h>\n-\n struct {\n     __uint(type, BPF_MAP_TYPE_ARRAY);\n     __uint(max_entries, 1);\n     __type(key, __u32);\n     __type(value, __u64);\n } count...(truncated)"
+        },
+        "outputs": {
+          "semantic_equivalent": true,
+          "inspector_report": "修改符合 Analyzer 的修复建议。1. 将不支持的 `bpf_strncmp` helper 替换为自定义的 `my_strncmp` 函数，该函数使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回比较结果。2. 函数重命名为不以 `bpf_` 开头的名称，避免了静态检查器误识别。3. 关键的业务逻辑（`ret == 0` 时 `(*val)++`）完全保留，没有改变原始语义。4. 修改仅限于替换不支持的...(truncated)"
+        },
+        "thought_process": "```json\n{\n  \"equivalent\": true,\n  \"report\": \"修改符合 Analyzer 的修复建议。1. 将不支持的 `bpf_strncmp` helper 替换为自定义的 `my_strncmp` 函数，该函数使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回比较结果。2. 函数重命名为不以 `bpf_` 开头的名称，避免了静态检查器误识别。3. 关键的业务逻辑（`ret == 0` 时 `(*val)++`）完全保留，没有改变原始语义。4. 修改仅限于替换不支持的 helper，没有引入其他无关变更。\",\n  \"suggestion...(truncated)"
+      }
+    ],
+    "error_signature": "load_failed",
+    "knowledge_rules": "version: 2\npatterns:\n  helper_signature_mismatch:\n    summary: helper 或辅助宏的声明、参数类型或返回值用法与当前源码不匹配。\n    aliases:\n    - missing_declaration\n    - implicit_function_declaration\n    - helper_mismatch\n    - verifier_reject\n    stage_hints:\n    - compile_failed\n    - load_failed\n    can_fix: true\n    evidence_hint:\n    - implicit declaration\n    - incompatible function\n    - too many arguments\n    - passing argument\n    repair_methods:\n    - 对齐 helper 的声明、参数类型和调用方式，优先采用当前头文件和 helper 约束下的最小兼容写法。\n    - 若问题来自 CO-RE 相关辅助宏，先补齐必要头文件，再校正调用签名和目标字段类型。\n    - 将对 `__builtin_memcmp` 等内置函数的调用替换为显式的、verifier 可验证的逐字节比较循环，以消除对任何外部或内置函数的依赖。\n  helper_unsupported:\n    summary: 当前内核或 verifier 不允许使用某个 helper，需要改写为兼容实现。\n    aliases:\n    - unknown_func\n    - invalid_func\n    - helper_not_allowed\n    - helper_not_in_probe\n    - helper_bpf_snprintf\n    stage_hints:\n    - static_check_failed\n    - load_failed\n    can_fix: true\n    evidence_hint:\n    - unknown func\n    - helper call\n    - not allowed\n    repair_methods:\n    - 将目标内核不支持的 helper 替换为等价的兼容 helper，或改写为不依赖该 helper 的简单实现。\n    - 将不支持的 helper 函数（如 `bpf_get_current_task_btf`）替换为功能等价的早期兼容版本（如 `bpf_get_current_task`）。\n    - 将不支持的 helper 函数（如 `bpf_probe_read_kernel`）或依赖它的高级宏（如 `BPF_CORE_READ`）替换为目标内核支持的通用\n      helper（如 `bpf_probe_read`），并根据数据来源调整参数。\n    - 修改代码：1) 将 bpf_probe_read_kernel 替换为更兼容的 bpf_probe_read（这是老版本内核中可用的 helper，功能类似但缺少用户/内核空间区分）。2)\n      确保所有结构体字段访问都使用 bpf_probe_read 配合硬编码偏移量，完全消除任何 CO-RE 特征。\n    - 移除仅用于条件判断且输出未被使用的格式化 helper 调用，直接执行核心逻辑，以消除对不支持 helper 的依赖。\n    - 将不支持的字符串比较 helper（如 `bpf_strncmp`）替换为手动实现：使用 `bpf_probe_read` 或 `bpf_probe_read_kernel`\n      将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。\n    - 若自定义的兼容实现函数被静态检查器误识别为内核 helper，应将其重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免误判。\n    - 将不支持的格式化 helper（如 `bpf_snprintf`）替换为目标内核支持的 helper（如 `bpf_trace_printk`），并确保格式字符串是\n      verifier 可验证的常量。\n    - 若替换后的 helper 仍因 verifier 内存边界证明问题导致加载失败，可考虑移除非核心的格式化输出逻辑，直接模拟其成功返回值以保留核心业务逻辑。\n    - 修改代码：1) 将 `bpf_get_current_task_btf` 替换为更兼容的 `bpf_get_current_task`。2) 删除 `vmlinux.h`\n      头文件依赖，增加 `<linux/types.h>` 和 `<linux/bpf.h>` 头文件依赖。\n    - 将不支持的 CO-RE 辅助宏（如 `bpf_core_field_exists`、`bpf_core_field_offset`）替换为适用于目标内核版本的硬编码偏移量，并移除对\n      `bpf/bpf_core_read.h` 等依赖 BTF 的头文件。\n    - 若运行时测试因硬编码偏移量不匹配而失败，可暂时注释掉依赖该偏移量的过滤条件，以验证程序基本逻辑和 helper 替换的正确性。\n    - 将不支持的 helper 函数（如 `bpf_ktime_get_boot_ns`）替换为功能等价的早期兼容版本（如 `bpf_ktime_get_ns`），以保持获取单调递增时间戳的核心语义。\n    - 修改代码：将 bpf_probe_read_kernel 替换为更兼容的 bpf_probe_read（这是老版本内核中可用的 helper，功能类似但缺少用户/内核空间区分）。\n    - 将不支持的 CO-RE 辅助宏（如 `BPF_CORE_READ`）替换为目标内核支持的通用 helper（如 `bpf_probe_read`），以消除对\n      BTF 或新内核 helper 的依赖。\n    - 将不支持的字符串比较 helper（如 `bpf_strncmp`）替换为手动实现：使用 `bpf_probe_read` 将字符串读入栈缓冲区，然后通过循环逐字节比较，并在遇到空字符时停止，最后返回相应的比较结果。\n    - 将自定义的兼容实现函数重命名为不以 `bpf_` 开头的名称（如 `my_strncmp`），以避免被静态检查器误识别为内核 helper。\n    - 将不支持的格式化 helper（如 `bpf_snprintf`）替换为目标内核支持的 helper（如 `bpf_trace_printk`），并将格式字符串从全局只读数据区移动到栈上局部变量，以避免创建不支持的映射类型。\n    - 修改代码：将不支持的 helper 函数 `bpf_probe_read_kernel` 替换为目标内核支持的通用 helper `bpf_probe_read`，并根据数据来源调整参数（例如，将\n      `bpf_probe_read_kernel(dst, size, src)` 替换为 `bpf_probe_read(dst, size, src)`）。\n    - 修改代码：将 manual_strncmp 函数中使用的 bpf_probe_read_kernel 替换为目标内核支持的 bpf_probe_read\n      helper，以消除对不支持的 helper 的依赖。\n    - 修改代码：将不支持的 helper 函数 bpf_probe_read_kernel 替换为目标内核支持的通用 helper bpf_probe_read，并根据数据来源调整参数（例如，将\n      bpf_probe_read_kernel(dst, size, src) 替换为 bpf_probe_read(dst, size, src)）。\n  kernel_struct_offset_mismatch:\n    summary: 读取内核结构体字段时依赖硬编码偏移或错误字段布局，导致运行时语义不匹配。\n    aliases:\n    - hardcoded_offset_read\n    - field_offset_mismatch\n    - kernel_struct_offset_mismatch\n    stage_hints:\n    - runtime_test_failed\n    - load_failed\n    can_fix: true\n    evidence_hint:\n    - 硬编码 offset\n    - field offset\n    - 读取字段值异常\n    - 结构体布局变化\n    repair_methods:\n    - 将硬编码字段偏移访问替换为 CO-RE 感知的字段读取。若目标环境缺少 BTF，再实现受控的非 CO-RE 兼容路径。\n    - 统一收敛到 `BPF_CORE_READ` 或等价安全读取接口，避免直接依赖 `task_struct` 等内核结构体的固定布局。\n    - 修改代码：将硬编码偏移量 0x5e0 替换为更兼容的字段读取方式。由于目标内核缺少 BTF，无法使用 CO-RE，建议采用以下方法之一：1) 使用 bpf_probe_read_kernel\n      配合 sizeof 和 offsetof 宏（如果可用）来动态计算偏移。\n    - 当目标内核不支持 CO-RE 宏时，应避免引入它们，转而使用经过验证的、适用于目标内核版本的硬编码偏移量。\n    - 当硬编码偏移量不匹配导致运行时语义错误时，应通过试错法（如尝试0x5e0、0x5e8、0x5d8、0x5f0等常见偏移量）找到适用于目标内核版本的偏移量，并保留所有原始业务逻辑。\n  map_type_unsupported:\n    summary: 当前 map 类型或相关 map 特性不受目标内核支持。\n    aliases:\n    - invalid_map_type\n    - map_feature_incompatible\n    - map_type_not_in_probe\n    - helper_not_in_probe\n    stage_hints:\n    - static_check_failed\n    - load_failed\n    can_fix: true\n    evidence_hint:\n    - unsupported map\n    - map type\n    - map feature\n    repair_methods:\n    - 将不兼容的 map 类型或特性替换为目标内核支持的实现，并同步调整对应的读写逻辑和初始化方式。\n    - 将不支持的映射类型（如 BPF_MAP_TYPE_RINGBUF）替换为兼容的映射类型（如 BPF_MAP_TYPE_PERF_EVENT_ARRAY\n      或 BPF_MAP_TYPE_ARRAY），并同步替换其配套的 helper 调用（如将 bpf_ringbuf_output 替换为 bpf_perf_event_output\n      或 bpf_map_update_elem）。\n    - 将不支持的映射类型（如 BPF_MAP_TYPE_RINGBUF）替换为兼容的映射类型（如 BPF_MAP_TYPE_PERF_EVENT_ARRAY），并同步替换其配套的\n      helper 调用（如将 bpf_ringbuf_output 替换为 bpf_perf_event_output）。\n  verifier_memory_bounds:\n    summary: verifier 无法证明当前内存访问安全，通常需要补充边界检查或缩小访问范围。\n    aliases:\n    - invalid_mem_access\n    - out_of_bounds\n    - ptr_to_stack\n    stage_hints:\n    - load_failed\n    can_fix: true\n    evidence_hint:\n    - invalid mem access\n    - out of bounds\n    - ptr_to_stack\n    repair_methods:\n    - 在可疑指针解引用前补充 verifier 可证明的空值、范围和长度检查，并缩小一次访问的内存跨度。\n    - 尽量把复杂指针运算拆成 verifier 更容易推理的简单步骤，必要时引入临时变量保存中间结果。",
+    "error_signal": {
+      "stage": "load_failed",
+      "error_types": [
+        "verifier_reject"
+      ],
+      "key_lines": [
+        "libbpf: loading object from /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o",
+        "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 496, link 0, flags 6, type=1",
+        "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_decrease' at insn offset 0 (0 bytes), code size 62 insns (496 bytes)",
+        "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 48, link 28, flags 40, type=9",
+        "libbpf: elf: section(5) .rodata, size 3, link 0, flags 2, type=1",
+        "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+        "libbpf: elf: section(7) license, size 4, link 0, flags 3, type=1",
+        "libbpf: license of /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o is GPL",
+        "libbpf: elf: section(18) .BTF, size 1562, link 0, flags 0, type=1",
+        "libbpf: elf: section(20) .BTF.ext, size 624, link 0, flags 0, type=1",
+        "libbpf: elf: section(28) .symtab, size 528, link 1, flags 0, type=2",
+        "libbpf: map 'counter': at sec_idx 6, offset 0.",
+        "libbpf: map 'counter': found type = 2.",
+        "libbpf: map 'counter': found key [8], sz = 4.",
+        "libbpf: map 'counter': found value [11], sz = 8.",
+        "libbpf: map 'counter': found max_entries = 1.",
+        "libbpf: map 'cfg': at sec_idx 6, offset 32.",
+        "libbpf: map 'cfg': found type = 2.",
+        "libbpf: map 'cfg': found key [8], sz = 4.",
+        "libbpf: map 'cfg': found value [8], sz = 4.",
+        "libbpf: map 'cfg': found max_entries = 1.",
+        "libbpf: map 'helper_b.rodata' (global data): at sec_idx 5, offset 0, flags 480.",
+        "libbpf: map 2 is \"helper_b.rodata\"",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #0: insn #4 against 'counter'",
+        "libbpf: prog 'helper_arg_decrease': found map 0 (counter, sec 6, off 0) for insn #4",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #1: insn #9 against 'cfg'",
+        "libbpf: prog 'helper_arg_decrease': found map 1 (cfg, sec 6, off 32) for insn #9",
+        "libbpf: sec '.reltracepoint/syscalls/sys_enter_openat': relo #2: insn #36 against 'expected_str'",
+        "libbpf: prog 'helper_arg_decrease': found data map 2 (helper_b.rodata, sec 5, off 0) for insn 36",
+        "libbpf: map 'counter': created successfully, fd=4"
+      ]
+    }
+  },
+  "thought_process": "```json\n{\n  \"can_fix\": true,\n  \"error_type\": \"verifier_memory_bounds\",\n  \"analysis_report\": \"程序在加载阶段失败（load_failed），返回错误码-22（Invalid argument）。从加载日志可见，程序通过了静态检查和编译，但在内核verifier验证时失败。关键线索是：1）日志显示'libbpf: prog 'helper_arg_decrease': relo #2: poisoning insn #36 that loads map #2 'helper_b.rodata''，这表明libbpf对.rodata数据映射的处理可能存在问题。2）verifier日志在指令19处中断：'19: (61) r1 = *(u32 *)(r7 +0)'，此时寄存器状态显示R7=map_value(id=0,off=0,ks=4,vs=4,imm=0)，但紧接着日志就显示'failed to load: -22'，没有后续指令的验证信息。结合历史，此前Repairer已将不支持的bpf_strncmp helper替换为自定义的my_strncmp函数，该函数使用bpf_probe_read读取字符串到栈缓冲区。分析认为，失败原因可能是verifier无法证明自定义字符串比较函数中的内存访问边界安全，特别是bpf_probe_read调用和后续的循环比较可能涉及verifier难以推理的指针运算和边界条件。这属于verifier_memory_bounds模式（别名包含invalid_mem_access、out_of_bounds），该模式在load_failed阶段常见且can_fix=true。\",\n  \"repair_method\": \"修改代码：在自定义的my_strncmp函数中，为bpf_probe_read调用添加明确的边界检查，确保源地址不为空且目标栈缓冲区大小足够。将循环比较逻辑拆分为更简单的步骤，使用临时变量存储中间结果，避免复杂的指针运算。确保所有内存访问都在verifier可证明的范围内，必要时缩小一次访问的内存跨度。\"\n}\n```",
+  "outputs": {
+    "can_fix": true,
+    "analysis_report": "程序在加载阶段失败（load_failed），返回错误码-22（Invalid argument）。从加载日志可见，程序通过了静态检查和编译，但在内核verifier验证时失败。关键线索是：1）日志显示'libbpf: prog 'helper_arg_decrease': relo #2: poisoning insn #36 that loads map #2 'helper_b.rodata''，这表明libbpf对.rodata数据映射的处理可能存在问题。2）verifier日志在指令19处中断：'19: (61) r1 = *(u32 *)(r7 +0)'，此时寄存器状态显示R7=map_value(id=0,off=0,ks=4,vs=4,imm=0)，但紧接着日志就显示'failed to load: -22'，没有后续指令的验证信息。结合历史，此前Repairer已将不支持的bpf_strncmp helper替换为自定义的my_strncmp函数，该函数使用bpf_probe_read读取字符串到栈缓冲区。分析认为，失败原因可能是verifier无法证明自定义字符串比较函数中的内存访问边界安全，特别是bpf_probe_read调用和后续的循环比较可能涉及verifier难以推理的指针运算和边界条件。这属于verifier_memory_bounds模式（别名包含invalid_mem_access、out_of_bounds），该模式在load_failed阶段常见且can_fix=true。",
+    "repair_action": {
+      "error_type": "verifier_memory_bounds",
+      "repair_method": "修改代码：在自定义的my_strncmp函数中，为bpf_probe_read调用添加明确的边界检查，确保源地址不为空且目标栈缓冲区大小足够。将循环比较逻辑拆分为更简单的步骤，使用临时变量存储中间结果，避免复杂的指针运算。确保所有内存访问都在verifier可证明的范围内，必要时缩小一次访问的内存跨度。",
+      "key_lines": [
+        "libbpf: loading object from /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o",
+        "libbpf: elf: section(3) tracepoint/syscalls/sys_enter_openat, size 496, link 0, flags 6, type=1",
+        "libbpf: sec 'tracepoint/syscalls/sys_enter_openat': found program 'helper_arg_decrease' at insn offset 0 (0 bytes), code size 62 insns (496 bytes)",
+        "libbpf: elf: section(4) .reltracepoint/syscalls/sys_enter_openat, size 48, link 28, flags 40, type=9",
+        "libbpf: elf: section(5) .rodata, size 3, link 0, flags 2, type=1",
+        "libbpf: elf: section(6) .maps, size 64, link 0, flags 3, type=1",
+        "libbpf: elf: section(7) license, size 4, link 0, flags 3, type=1",
+        "libbpf: license of /host/output/4.19/build/helper_func/helper_bpf_strncmp/helper_bpf_strncmp.bpf.o is GPL",
+        "libbpf: elf: section(18) .BTF, size 1562, link 0, flags 0, type=1",
+        "libbpf: elf: section(20) .BTF.ext, size 624, link 0, flags 0, type=1"
+      ]
+    }
+  },
+  "result_params": {
+    "fixed_time": 1,
+    "max_fix_time": 4
+  }
+}

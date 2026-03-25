@@ -1,0 +1,14 @@
+case_id,initial_deploy_state,final_deploy_state,total_time,final_failed_stage,final_error_type,total_repair_round,analyzer_round,repairer_round,inspector_round,refiner_round,analyzer_time_consumption,repairer_time_consumption,inspector_time_consumption,refiner_time_consumption,total_agent_calls,deploy_tool_round,first_analyzer_can_fix,last_analyzer_can_fix
+feature/attach_type_unsupported,false,false,44.03,static_check_failed,attach_target_missing,0,1,0,0,1,23.68,0.00,0.00,20.35,2,1,false,false
+feature/btf_unsupported,false,false,336.07,compile_failed,missing_type_definition,4,4,4,4,1,79.20,144.92,95.06,15.47,13,4,true,false
+feature/map_type_unsupported,false,true,73.80,,,1,1,1,1,1,22.89,14.92,24.28,10.89,4,2,true,true
+feature/program_type_unsupported,false,false,39.71,static_check_failed,attach_type_unsupported,0,1,0,0,1,30.37,0.00,0.00,9.34,2,1,false,false
+helper_func/helper_bpf_get_current_task_bpf,false,false,448.36,runtime_test_failed,,4,4,4,4,1,82.63,284.51,57.74,20.84,13,5,true,true
+helper_func/helper_bpf_ktime_get_boot_ns,false,true,50.43,,,1,1,1,1,1,17.15,11.97,9.62,10.75,4,2,true,true
+helper_func/helper_bpf_snprintf,false,false,424.36,static_check_failed,helper_api_compatibility,4,1,4,4,1,13.80,309.52,75.77,25.26,10,1,true,true
+helper_func/helper_bpf_strncmp,false,false,541.72,static_check_failed,helper_api_compatibility,4,1,4,4,1,14.10,437.12,68.88,21.63,10,1,true,true
+kernel_struct/field_add_remove,false,false,889.87,static_check_failed,core_requires_btf,4,2,4,4,1,44.13,752.78,71.57,21.10,11,2,true,true
+kernel_struct/field_offset_change,false,false,794.99,runtime_test_failed,runtime_test_failed,4,4,4,4,1,71.78,652.13,46.42,22.21,13,4,true,true
+kernel_struct/field_renamed,false,false,226.23,static_check_failed,helper_api_compatibility,4,1,4,4,1,16.95,131.77,51.76,25.74,10,1,true,true
+verifier/loop_support,false,true,56.89,,,1,1,1,1,1,16.03,20.52,9.35,10.03,4,2,true,true
+verifier/state_explosion,false,false,620.91,compile_failed,,4,4,4,4,1,80.82,462.46,60.80,14.05,13,5,true,true

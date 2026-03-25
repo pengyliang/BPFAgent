@@ -1,0 +1,79 @@
+{
+  "success": false,
+  "error_warning_count": {
+    "error": 2,
+    "warning": 0
+  },
+  "issues": [
+    {
+      "check": "program_type_attach_availability",
+      "level": "error",
+      "code": "program_type_not_supported",
+      "message": "Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel.",
+      "suggestion": "Use a program type listed in kernel_profile program_type_support, or upgrade the kernel / bpftool probe environment.",
+      "evidence": {
+        "sec": "fentry/__x64_sys_clock_nanosleep",
+        "program_type": "fentry"
+      },
+      "source_file": "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c"
+    },
+    {
+      "check": "program_type_attach_availability",
+      "level": "error",
+      "code": "fentry_fexit_require_btf",
+      "message": "SEC(\"fentry/__x64_sys_clock_nanosleep\") requires BTF-enabled kernel.",
+      "suggestion": "Switch to kprobe/tracepoint fallback when BTF is unavailable.",
+      "evidence": {
+        "sec": "fentry/__x64_sys_clock_nanosleep"
+      },
+      "source_file": "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c"
+    }
+  ],
+  "results": [
+    {
+      "source_file": "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c",
+      "program_sections": [
+        "fentry/__x64_sys_clock_nanosleep"
+      ],
+      "program_types": [
+        "fentry"
+      ],
+      "license": "GPL",
+      "map_types": [
+        "BPF_MAP_TYPE_ARRAY"
+      ],
+      "helper_calls": [
+        "bpf_map_lookup_elem",
+        "bpf_map_lookup_elem",
+        "bpf_get_current_pid_tgid"
+      ],
+      "issues": [
+        {
+          "check": "program_type_attach_availability",
+          "level": "error",
+          "code": "program_type_not_supported",
+          "message": "Program type \"fentry\" from SEC(\"fentry/__x64_sys_clock_nanosleep\") is not in bpftool program type support list for this kernel.",
+          "suggestion": "Use a program type listed in kernel_profile program_type_support, or upgrade the kernel / bpftool probe environment.",
+          "evidence": {
+            "sec": "fentry/__x64_sys_clock_nanosleep",
+            "program_type": "fentry"
+          }
+        },
+        {
+          "check": "program_type_attach_availability",
+          "level": "error",
+          "code": "fentry_fexit_require_btf",
+          "message": "SEC(\"fentry/__x64_sys_clock_nanosleep\") requires BTF-enabled kernel.",
+          "suggestion": "Switch to kprobe/tracepoint fallback when BTF is unavailable.",
+          "evidence": {
+            "sec": "fentry/__x64_sys_clock_nanosleep"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "error_count": 2,
+    "warning_count": 0
+  }
+}

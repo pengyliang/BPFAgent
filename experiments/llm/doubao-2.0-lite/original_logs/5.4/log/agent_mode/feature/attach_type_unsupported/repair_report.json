@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-03-24T03:13:58.452569+00:00",
+  "case_display": "feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+  "final_stage": "static_check_failed",
+  "same_error_threshold": 3,
+  "error_signature_counts": {
+    "attach_failed": 2,
+    "static_check_failed": 1
+  },
+  "attempts": [
+    {
+      "attempt_index": 1,
+      "stage": "attach_failed",
+      "error_type": "attach_type_unsupported",
+      "can_fix": true,
+      "source_before": "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_1/attach_type_unsupported_repair_1.bpf.c",
+      "analysis_report": "本次attach失败原因为当前内核不支持对目标符号do_sys_openat2的kprobeattach类型，尝试创建kprobe perf event时找不到对应内核符号，返回No such file or directory错误，问题出在eBPF程序的attach类型选择与当前内核环境不兼容，属于可通过修改源码调整attach类型解决的问题。",
+      "repair_method": "修改代码，将kprobe类型替换为kretprobe，若该内核符号仅允许kretprobe挂载或导出符号命名存在差异，调整section声明为kretprobe/do_sys_openat2并适配对应probe逻辑。",
+      "rationale": "修改SEC声明的attach类型为kretprobe即可解决attach类型不支持的问题，原有计数逻辑和条件判断都保留，不改变原始语义"
+    },
+    {
+      "attempt_index": 2,
+      "stage": "attach_failed",
+      "error_type": "attach_type_unsupported",
+      "can_fix": true,
+      "source_before": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_1/attach_type_unsupported_repair_1.bpf.c",
+      "patched": true,
+      "patched_path": "/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_2/attach_type_unsupported_repair_2.bpf.c",
+      "analysis_report": "第一次尝试kprobe类型attach do_sys_openat2失败，修改为kretprobe类型后仍然attach失败，报错依然是创建perf event时找不到目标符号do_sys_openat2，说明当前内核中该符号没有以允许kprobe/kretprobe直接挂载的形式导出，属于attach目标符号与探针类型不兼容，可通过修改源码使用fentry/fexit替换kprobe/kretprobe解决。",
+      "repair_method": "修改代码，将kretprobe类型替换为fexit，调整section声明为fexit/do_sys_openat2，并适配对应probe的上下文逻辑，保留原有计数判断逻辑。",
+      "rationale": "将section声明修改为fexit/do_sys_openat2，适配fexit的BPF_PROG宏参数，保留原有所有计数和条件判断逻辑，不改变原始语义，解决attach类型不兼容的问题"
+    }
+  ]
+}

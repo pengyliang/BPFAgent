@@ -1,0 +1,5 @@
+status: SUCCESS
+source_file: /host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_4/attach_type_unsupported_repair_4.bpf.c
+command: clang -target bpf -Xclang -ast-dump=json -fsyntax-only -I/host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_4 -I/usr/include/x86_64-linux-gnu -D__TARGET_ARCH_x86 -I/host/output/5.4/log /host/output/5.4/log/agent_mode/feature/attach_type_unsupported/repair/repair_4/attach_type_unsupported_repair_4.bpf.c
+stderr:
+<empty>

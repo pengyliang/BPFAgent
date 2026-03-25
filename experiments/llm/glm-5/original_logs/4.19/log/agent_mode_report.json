@@ -1,0 +1,429 @@
+{
+  "metrics_1_40": [
+    {
+      "id": 1,
+      "name": "per_case_agent_calls_during_repair",
+      "value": {
+        "feature/attach_type_unsupported": 2,
+        "feature/btf_unsupported": 13,
+        "feature/map_type_unsupported": 4,
+        "feature/program_type_unsupported": 2,
+        "helper_func/helper_bpf_get_current_task_bpf": 13,
+        "helper_func/helper_bpf_ktime_get_boot_ns": 4,
+        "helper_func/helper_bpf_snprintf": 12,
+        "helper_func/helper_bpf_strncmp": 4,
+        "kernel_struct/field_add_remove": 10,
+        "kernel_struct/field_offset_change": 12,
+        "kernel_struct/field_renamed": 10,
+        "verifier/loop_support": 4,
+        "verifier/state_explosion": 13
+      }
+    },
+    {
+      "id": 2,
+      "name": "total_agent_calls_during_repair",
+      "value": 103
+    },
+    {
+      "id": 3,
+      "name": "initial_failure_count",
+      "value": 13
+    },
+    {
+      "id": 4,
+      "name": "total_repair_attempt_count",
+      "value": 28
+    },
+    {
+      "id": 5,
+      "name": "total_repair_success_case_count",
+      "value": 4
+    },
+    {
+      "id": 6,
+      "name": "total_repair_success_rate",
+      "value": 0.3076923076923077
+    },
+    {
+      "id": 7,
+      "name": "total_fixed_time_sum",
+      "value": 22
+    },
+    {
+      "id": 8,
+      "name": "total_token_consumption_sum",
+      "value": null
+    },
+    {
+      "id": 9,
+      "name": "category_has_repair_needed",
+      "value": {
+        "feature": true,
+        "helper_func": true,
+        "kernel_struct": true,
+        "verifier": true
+      }
+    },
+    {
+      "id": 10,
+      "name": "category_repair_needed_case_count",
+      "value": {
+        "feature": 4,
+        "helper_func": 4,
+        "kernel_struct": 3,
+        "verifier": 2
+      }
+    },
+    {
+      "id": 11,
+      "name": "category_repair_success_case_count",
+      "value": {
+        "feature": 1,
+        "helper_func": 2,
+        "kernel_struct": 0,
+        "verifier": 1
+      }
+    },
+    {
+      "id": 12,
+      "name": "category_repair_success_rate",
+      "value": {
+        "feature": 0.25,
+        "helper_func": 0.5,
+        "kernel_struct": 0.0,
+        "verifier": 0.5
+      }
+    },
+    {
+      "id": 13,
+      "name": "category_total_fixed_time_sum",
+      "value": {
+        "feature": 5,
+        "helper_func": 8,
+        "kernel_struct": 4,
+        "verifier": 5
+      }
+    },
+    {
+      "id": 14,
+      "name": "category_total_token_consumption_sum",
+      "value": {
+        "feature": null,
+        "helper_func": null,
+        "kernel_struct": null,
+        "verifier": null
+      }
+    },
+    {
+      "id": 15,
+      "name": "initial_failed_stage_distribution_count",
+      "value": {
+        "static_check_failed": 11,
+        "load_failed": 2
+      }
+    },
+    {
+      "id": 16,
+      "name": "initial_failed_stage_distribution_ratio",
+      "value": {
+        "static_check_failed": 0.8461538461538461,
+        "load_failed": 0.15384615384615385
+      }
+    },
+    {
+      "id": 17,
+      "name": "final_repair_result_counts",
+      "value": {
+        "success_count": 4,
+        "failure_count": 9
+      }
+    },
+    {
+      "id": 18,
+      "name": "final_failed_stage_distribution_count_need_repair_initially",
+      "value": {
+        "static_check_failed": 5,
+        "compile_failed": 2,
+        "load_failed": 2
+      }
+    },
+    {
+      "id": 19,
+      "name": "final_failed_stage_distribution_ratio_need_repair_initially",
+      "value": {
+        "static_check_failed": 0.5555555555555556,
+        "compile_failed": 0.2222222222222222,
+        "load_failed": 0.2222222222222222
+      }
+    },
+    {
+      "id": 20,
+      "name": "per_stage_repair_success_rate",
+      "value": {
+        "static_check_failed": 0.2727272727272727,
+        "load_failed": 0.5
+      }
+    },
+    {
+      "id": 21,
+      "name": "per_stage_repair_success_cases_count",
+      "value": {
+        "static_check_failed": 3,
+        "load_failed": 1
+      }
+    },
+    {
+      "id": 22,
+      "name": "per_stage_repair_total_cases_count",
+      "value": {
+        "static_check_failed": 11,
+        "load_failed": 2
+      }
+    },
+    {
+      "id": 23,
+      "name": "final_failure_stage_distribution_all",
+      "value": {
+        "static_check_failed": 5,
+        "compile_failed": 2,
+        "load_failed": 2
+      }
+    },
+    {
+      "id": 24,
+      "name": "final_failure_stage_distribution_all_ratio",
+      "value": {
+        "static_check_failed": 0.5555555555555556,
+        "compile_failed": 0.2222222222222222,
+        "load_failed": 0.2222222222222222
+      }
+    },
+    {
+      "id": 25,
+      "name": "repair_round_histogram",
+      "value": {
+        "0": 6,
+        "4": 7
+      }
+    },
+    {
+      "id": 26,
+      "name": "repair_round_average",
+      "value": 2.1538461538461537
+    },
+    {
+      "id": 27,
+      "name": "repair_round_max",
+      "value": 4
+    },
+    {
+      "id": 28,
+      "name": "repair_rounds_per_case",
+      "value": {
+        "feature/attach_type_unsupported": 0,
+        "feature/btf_unsupported": 4,
+        "feature/map_type_unsupported": 0,
+        "feature/program_type_unsupported": 0,
+        "helper_func/helper_bpf_get_current_task_bpf": 4,
+        "helper_func/helper_bpf_ktime_get_boot_ns": 0,
+        "helper_func/helper_bpf_snprintf": 4,
+        "helper_func/helper_bpf_strncmp": 0,
+        "kernel_struct/field_add_remove": 4,
+        "kernel_struct/field_offset_change": 4,
+        "kernel_struct/field_renamed": 4,
+        "verifier/loop_support": 0,
+        "verifier/state_explosion": 4
+      }
+    },
+    {
+      "id": 29,
+      "name": "analyzer_last_can_fix_distribution",
+      "value": {
+        "can_fix_true": 11,
+        "can_fix_false": 2,
+        "can_fix_none": 0
+      }
+    },
+    {
+      "id": 30,
+      "name": "can_fix_true_final_success_case_count",
+      "value": 4
+    },
+    {
+      "id": 31,
+      "name": "can_fix_true_final_failed_case_count",
+      "value": 7
+    },
+    {
+      "id": 32,
+      "name": "can_fix_false_final_success_case_count",
+      "value": 0
+    },
+    {
+      "id": 33,
+      "name": "can_fix_false_final_failed_case_count",
+      "value": 2
+    },
+    {
+      "id": 34,
+      "name": "analyze_can_fix_mismatch_rate",
+      "value": 0.5384615384615384
+    },
+    {
+      "id": 35,
+      "name": "error_signature_counts_top10",
+      "value": [
+        [
+          "static_check_failed",
+          12
+        ],
+        [
+          "load_failed",
+          4
+        ],
+        [
+          "runtime_test_failed",
+          2
+        ],
+        [
+          "compile_failed:/usr/include/bpf/bpf_helper_defs.h:78:83: error: unknown type name '__u64'",
+          1
+        ],
+        [
+          "compile_failed:/usr/include/bpf/bpf_helper_defs.h:444:57: error: unknown type name '__be16'",
+          1
+        ],
+        [
+          "compile_failed:/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_2/helper_bpf_get_current_task_btf_repair_2.bpf.c:9:18: error: use of ",
+          1
+        ],
+        [
+          "compile_failed:/host/output/4.19/log/agent_mode/helper_func/helper_bpf_get_current_task_bpf/repair/repair_4/helper_bpf_get_current_task_btf_repair_4.bpf.c:35:60: error: incomp",
+          1
+        ],
+        [
+          "compile_failed:/host/output/4.19/log/agent_mode/kernel_struct/field_offset_change/repair/repair_4/field_offset_change_repair_4.bpf.c:36:62: error: use of undeclared identifier",
+          1
+        ],
+        [
+          "compile_failed:/host/output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_2/state_explosion_repair_2.bpf.c:22:5: error: Looks like the BPF stack limit of 512 byte",
+          1
+        ],
+        [
+          "compile_failed:output/4.19/log/agent_mode/verifier/state_explosion/repair/repair_3/state_explosion_repair_3.bpf.c:58:23: error: Looks like the BPF stack limit of 512 bytes is ",
+          1
+        ]
+      ]
+    },
+    {
+      "id": 36,
+      "name": "cases_hit_same_error_threshold_count",
+      "value": 2
+    },
+    {
+      "id": 37,
+      "name": "cases_hit_same_error_threshold_details",
+      "value": [
+        {
+          "case": "feature/btf_unsupported",
+          "hit": true,
+          "same_error_threshold": 3,
+          "max_signature": "static_check_failed",
+          "max_count": 3
+        },
+        {
+          "case": "verifier/state_explosion",
+          "hit": true,
+          "same_error_threshold": 3,
+          "max_signature": "load_failed",
+          "max_count": 3
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "name": "error_signature_counts_aggregate_total_unique_signatures",
+      "value": 10
+    },
+    {
+      "id": 39,
+      "name": "per_case_last_analyzer_can_fix",
+      "value": {
+        "feature/attach_type_unsupported": false,
+        "feature/btf_unsupported": true,
+        "feature/map_type_unsupported": true,
+        "feature/program_type_unsupported": false,
+        "helper_func/helper_bpf_get_current_task_bpf": true,
+        "helper_func/helper_bpf_ktime_get_boot_ns": true,
+        "helper_func/helper_bpf_snprintf": true,
+        "helper_func/helper_bpf_strncmp": true,
+        "kernel_struct/field_add_remove": true,
+        "kernel_struct/field_offset_change": true,
+        "kernel_struct/field_renamed": true,
+        "verifier/loop_support": true,
+        "verifier/state_explosion": true
+      }
+    },
+    {
+      "id": 40,
+      "name": "per_case_final_status",
+      "value": {
+        "feature/attach_type_unsupported": "static_check_failed",
+        "feature/btf_unsupported": "static_check_failed",
+        "feature/map_type_unsupported": "success",
+        "feature/program_type_unsupported": "static_check_failed",
+        "helper_func/helper_bpf_get_current_task_bpf": "compile_failed",
+        "helper_func/helper_bpf_ktime_get_boot_ns": "success",
+        "helper_func/helper_bpf_snprintf": "load_failed",
+        "helper_func/helper_bpf_strncmp": "success",
+        "kernel_struct/field_add_remove": "static_check_failed",
+        "kernel_struct/field_offset_change": "compile_failed",
+        "kernel_struct/field_renamed": "static_check_failed",
+        "verifier/loop_support": "success",
+        "verifier/state_explosion": "load_failed"
+      }
+    }
+  ],
+  "generated_at": "2026-03-23T16:55:39.272927+00:00",
+  "cases": [
+    "feature/attach_type_unsupported",
+    "feature/btf_unsupported",
+    "feature/map_type_unsupported",
+    "feature/program_type_unsupported",
+    "helper_func/helper_bpf_get_current_task_bpf",
+    "helper_func/helper_bpf_ktime_get_boot_ns",
+    "helper_func/helper_bpf_snprintf",
+    "helper_func/helper_bpf_strncmp",
+    "kernel_struct/field_add_remove",
+    "kernel_struct/field_offset_change",
+    "kernel_struct/field_renamed",
+    "verifier/loop_support",
+    "verifier/state_explosion"
+  ],
+  "total_files": 13,
+  "deploy_success_count": 4,
+  "deploy_failure_count": 9,
+  "deploy_success_rate": 30.77,
+  "deploy_failed_files": [
+    "/host/data/feature/attach_type_unsupported/attach_type_unsupported.bpf.c",
+    "/host/data/feature/btf_unsupported/btf_unsupported.bpf.c",
+    "/host/data/feature/program_type_unsupported/program_type_unsupported.bpf.c",
+    "/host/data/helper_func/helper_bpf_get_current_task_bpf/helper_bpf_get_current_task_btf.bpf.c",
+    "/host/data/helper_func/helper_bpf_snprintf/helper_bpf_snprintf.bpf.c",
+    "/host/data/kernel_struct/field_add_remove/field_add_remove.bpf.c",
+    "/host/data/kernel_struct/field_offset_change/field_offset_change.bpf.c",
+    "/host/data/kernel_struct/field_renamed/field_renamed.bpf.c",
+    "/host/data/verifier/state_explosion/state_explosion.bpf.c"
+  ],
+  "deploy_failed_stages": [
+    "static_check_failed",
+    "static_check_failed",
+    "static_check_failed",
+    "compile_failed",
+    "load_failed",
+    "static_check_failed",
+    "compile_failed",
+    "static_check_failed",
+    "load_failed"
+  ]
+}

@@ -1,0 +1,78 @@
+说明：本目录的图表都以每个版本下的 `reports/case_summary.csv` 为数据源（可按不同 `LLM_name` 分组对比）。字段来自仓库的 `数据设计` 文档中 `case_summary.csv` 的列定义。
+
+下面这些图表都直接可从 `case_summary.csv` 聚合得到（不依赖 `case_stage_record.csv`）。
+
+
+后续的脚本，都默认以GLM的数据为基础。只需要统计GLM模型的数据即可。
+
+再写个画图脚本，画出
+
+
+1. 总体部署成功率（Deploy Success Rate）
+- 画法：
+  - 横轴是version，每个version有4个柱子，分别对应4个llm。表示在version下，每个llm的部署成功率。注意可使用不同图例来显示
+  - 每个柱子还应该显示初始部署成功率，用虚线表示。色彩可用灰色或浅一点的颜色显示。总之每个柱子能看出初始部署成功率和最终部署成功率。
+  - 每个柱子顶端显示具体数据。
+- 纵轴/衡量：成功率（0~100%）。
+- 建议图型：分组柱状图。
+- 实验含义：衡量该 LLM 在不同内核版本下的整体修复有效性。
+
+2. “初始失败 -> 最终成功”的修复转化率（Repair rate）
+- 画法：筛选 `initial_deploy_state=false` 的 case；在这些 case 中，统计 `final_deploy_state=true` 的占比。
+  - 横轴是version，每个version有4个柱子，分别对应4个llm。表示在version下，每个llm的修复转化率。注意可使用不同图例来显示
+- 建议图型：分组柱状图
+- 实验含义：只关注“修复带来的提升”，避免把“初始就成功”的 case 混入总体成功率。
+
+3. 总耗时分布（Total Time Distribution）
+- 画法：每个 `LLM_name`，平均修复率计算所有version中，修复成功case占初始失败case的比例（点状），和 `total_time` 分布。
+  - 双 y 轴（Dual Axis）左轴：total_time（箱线图）右轴：repair_rate（点）
+
+- 建议图型：箱线图（Box Plot） + 均值点（Mean Overlay）
+- 实验含义：比较不同 LLM 的效率与稳定性（看中位数/离群点/宽度），并区分成功与失败的耗时特征。
+
+- 成功修复和失败修复耗时分布
+- 画法：每个LLM_name，分别统计平均的成功修复和失败修复的耗时分布。
+  - 分组柱状图，每个柱子有2个条形，分别对应成功修复的平均和失败修复的平均时间。
+- 建议图型：箱线图（Box Plot） 
+
+
+
+5. 总修复轮数分布（Total Repair Rounds Distribution）
+- 画法：对每个 `version`、`LLM_name`，比较 `total_repair_round` 的分布，并可按成功/失败拆分。
+- 建议图型：箱线图 / 条形直方图（离散值的频数）。
+- 实验含义：修复轮数反映“需要迭代多少轮才能收敛”，用于评估算法/提示策略的收敛效率。
+
+
+
+8. 最终失败阶段分布（Final Failed Stage Distribution）
+- 画法：对每个 `version`、`LLM_name`，统计 `final_deploy_state=false` 的 case 中 `final_failed_stage` 的频数（成功 case 通常该字段为空）。
+- 建议图型：条形图（按失败阶段分类计数）；也可画堆叠柱状图展示在不同 LLM 下的失败结构变化。
+- 实验含义：判断失败更集中在哪个 stage（如 compile_failed / load_failed / verifier 等），用于评估“修复策略覆盖面”。
+
+9. 最终错误类型 Top-N（Final Error Type Top-N）
+- 画法：对每个 `version`、`LLM_name`，统计失败 case 的 `final_error_type` 频数，取 Top-N（如 N=10）。
+- 建议图型：Top-N 水平条形图。
+- 实验含义：找出最常见的失败模式，辅助后续修复器/提示词针对性改进。
+
+
+10. “能否修复”的分析可修复性指标（Analyzer Can-Fix Rates）
+- 画法：在每个 `version`、`LLM_name` 上统计：
+  - `first_analyzer_can_fix=true` 时最终成功的占比（即在该子集内 `final_deploy_state=true` 的比例）
+  - `last_analyzer_can_fix=true` 时最终成功的占比
+  以及 false 子集的成功率。
+- 建议图型：2x2 小面板（first/last × can_fix=true/false），或者两条折线图分别画 success rate。
+- 实验含义：验证 analyzer 的判断是否具有“预测成功”的能力；如果预测准确度低，说明 analyze/report 的指导信息可能不可靠。
+
+11. Deploy Tool 调用轮数与成功率（Deploy Tool Rounds vs Success）
+- 画法：对每个 `version`、`LLM_name`，以 `deploy_tool_round` 为自变量（离散值），统计每个取值下的成功率。
+- 建议图型：离散 x 轴的折线图或散点图。
+- 实验含义：测量“需要尝试 deploy 几次才能成功”的成本，反映修复后的落地稳定性。
+
+12. 总 agent calls 与效率/效果（Total Agent Calls）
+- 画法：对每个 `version`、`LLM_name`，比较：
+  - `total_agent_calls` 的均值/中位数（成功 vs 失败分开）
+  - 并绘制 `total_agent_calls` vs `total_time` 的相关性散点图（可加趋势线）。
+- 建议图型：箱线图 + 散点图（或散点图+颜色标记成功/失败）。
+- 实验含义：在成功的前提下，评估“召回/迭代成本”与耗时/效果的关系。
+
+如果你希望后续把图表做成自动化批处理，我建议你优先实现 1、2、3、8、9、10 这六类图，因为它们最直接回答“不同 LLM 在不同版本下是否更有效/更高效/失败集中在哪里/分析是否能预测可修复性”。
